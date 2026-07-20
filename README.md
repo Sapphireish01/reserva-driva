@@ -81,7 +81,8 @@
 ## 📁 Project Structure
 
 ```text
-reserva-driver/
+├── app/                    # Expo Router layout & page routes
+│   └── _layout.tsx         # Root layout, font loader & QueryClientProvider
 ├── assets/                 # SVGs, icons, onboarding illustrations
 │   ├── icons/              # Custom navigation vector icons (bookings.svg, wallet.svg)
 │   └── onboarding/         # Onboarding slide images
@@ -96,6 +97,6 @@ reserva-driver/
 │   │   └── main/           # Main driver app screens (Home, CreateTrip, PassengerRequests, Earnings)
 │   ├── state/              # Global state stores (authStore)
 │   └── theme/              # Design system tokens (palette, spacing, typography)
-├── App.js                  # Entry point
-└── app.json                # Expo project configuration
+├── app.json                # Expo project configuration
+└── index.js                # App entry point (expo-router/entry)
 ```
