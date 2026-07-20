@@ -1,0 +1,133 @@
+// Design System Color Tokens & Palette
+
+export const palette = {
+  neutral: {
+    0: "#FFFFFF",
+    50: "#F6F7F8",
+    100: "#EBEBEF",
+    200: "#D7D8E0",
+    300: "#BDBFCC",
+    400: "#A0A3B6",
+    500: "#7B7F99",
+    600: "#6D718D",
+    700: "#60637C",
+    800: "#505368",
+    900: "#353745",
+    950: "#262731",
+    1000: "#181920",
+  },
+  slate: {
+    50: "#F8FAFC",
+    100: "#F1F5F9",
+    200: "#E2E8F0",
+    300: "#CAD5E2",
+    400: "#90A1B9",
+    500: "#62748E",
+    600: "#45556C",
+    700: "#314158",
+    800: "#1D293D",
+    900: "#0F172B",
+    950: "#020618",
+  },
+  success: {
+    50: "#F0FDF4",
+    100: "#DCFCE7",
+    200: "#B9F8CF",
+    300: "#7BF1A8",
+    400: "#05DF72",
+    500: "#00C950",
+    600: "#00A63E",
+    700: "#008236",
+    800: "#016630",
+    900: "#0D542B",
+    950: "#032E15",
+  },
+  warning: {
+    50: "#FFF7ED",
+    100: "#FFEDD4",
+    200: "#FFD6A8",
+    300: "#FFB86A",
+    400: "#FF8904",
+    500: "#FF6900",
+    600: "#F54900",
+    700: "#CA3500",
+    800: "#9F2D00",
+    900: "#7E2A0C",
+    950: "#441306",
+  },
+  information: {
+    50: "#EFF6FF",
+    100: "#DBEAFE",
+    200: "#BEDBFF",
+    300: "#8EC5FF",
+    400: "#51A2FF",
+    500: "#2B7FFF",
+    600: "#155DFC",
+    700: "#1447E6",
+    800: "#193CB8",
+    900: "#1C398E",
+    950: "#162456",
+  },
+  error: {
+    50: "#FEF2F2",
+    100: "#FFE2E2",
+    200: "#FFC9C9",
+    300: "#FFA2A2",
+    400: "#FF6467",
+    500: "#FB2C36",
+    600: "#E7000B",
+    700: "#C10007",
+    800: "#9F0712",
+    900: "#82181A",
+    950: "#460809",
+  },
+};
+
+export const colors = {
+  background: palette.neutral[0],
+  navy: palette.slate[900],
+  primary: palette.information[600], // #155DFC
+  primaryDisabled: palette.information[200], // #BEDBFF
+  text: palette.slate[900],
+  textMuted: palette.slate[500],
+  border: palette.slate[200],
+  error: palette.error[600],
+  success: palette.success[600],
+  warning: palette.warning[500],
+  transparent: "transparent",
+  palette,
+};
+
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
+
+export const typography = {
+  h1: { fontSize: 24, fontWeight: "700" as const },
+  h2: { fontSize: 18, fontWeight: "600" as const },
+  body: { fontSize: 14, fontWeight: "400" as const },
+  caption: { fontSize: 12, fontWeight: "400" as const },
+};
+
+export const Colors = {
+  light: {
+    text: palette.slate[900],
+    background: palette.neutral[0],
+    tint: palette.information[600],
+    icon: palette.slate[500],
+    tabIconDefault: palette.slate[400],
+    tabIconSelected: palette.information[600],
+  },
+  dark: {
+    text: palette.slate[50],
+    background: palette.slate[950],
+    tint: palette.neutral[0],
+    icon: palette.slate[400],
+    tabIconDefault: palette.slate[500],
+    tabIconSelected: palette.neutral[0],
+  },
+};
