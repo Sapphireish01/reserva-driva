@@ -87,13 +87,16 @@ export const colors = {
   background: palette.neutral[0],
   navy: palette.slate[900],
   primary: palette.information[600], // #155DFC
-  primaryDisabled: palette.information[200], // #BEDBFF
+  primaryDisabled: "#F6F8FA", // #BEDBFF
   text: palette.slate[900],
-  textMuted: palette.slate[500],
-  border: palette.slate[200],
+  textMuted: "#868C98",
+  border: "#EBEBEF",
   error: palette.error[600],
   success: palette.success[600],
   warning: palette.warning[500],
+  grey: "#868C98",
+  inputTextColor: palette.slate[950],
+  dark: palette.slate[950],
   transparent: "transparent",
   palette,
 };
@@ -101,16 +104,17 @@ export const colors = {
 export const spacing = {
   xs: 4,
   sm: 8,
+  smlg: 12,
   md: 16,
   lg: 24,
   xl: 32,
 };
 
 export const typography = {
-  h1: { fontSize: 24, fontWeight: "700" as const },
-  h2: { fontSize: 18, fontWeight: "600" as const },
-  body: { fontSize: 14, fontWeight: "400" as const },
-  caption: { fontSize: 12, fontWeight: "400" as const },
+  h1: { fontFamily: "DM Sans", fontSize: 24, fontWeight: "700" as const, letterSpacing: 0.03, lineHeight: 30 },
+  h2: { fontFamily: "DM Sans", fontSize: 18, fontWeight: "600" as const, letterSpacing: 0.03 },
+  body: { fontFamily: "DM Sans", fontSize: 14, fontWeight: "400" as const, letterSpacing: 0.03 },
+  caption: { fontFamily: "DM Sans", fontSize: 14, fontWeight: "500" as const, letterSpacing: 0.03 },
 };
 
 export const Colors = {

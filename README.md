@@ -1,6 +1,6 @@
-# Reserva Driver 🚗💨
+# rezarva Driver 🚗💨
 
-**Reserva Driver** is the official mobile application built for drivers on the Reserva carpooling and ride-sharing network. Designed for speed, clarity, and ease of use, Reserva Driver empowers drivers to post scheduled routes, manage passenger seat requests, track real-time earnings, and complete identity verification.
+**rezarva Driver** is the official mobile application built for drivers on the rezarva carpooling and ride-sharing network. Designed for speed, clarity, and ease of use, rezarva Driver empowers drivers to post scheduled routes, manage passenger seat requests, track real-time earnings, and complete identity verification.
 
 ---
 
@@ -55,8 +55,8 @@
 1. **Clone the repository** (or navigate to the workspace directory):
 
    ```bash
-   git clone git@github-personal:Sapphireish01/reserva-driva.git
-   cd reserva-driver
+   git clone git@github-personal:Sapphireish01/rezarva-driva.git
+   cd rezarva-driver
    ```
 
 2. **Install dependencies**:

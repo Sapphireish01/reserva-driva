@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from "axios";
 import * as SecureStore from "expo-secure-store";
 
-const TOKEN_KEY = "reserva_driver_token";
+const TOKEN_KEY = "rezarva_driver_token";
 
 export const getStoredToken = () => SecureStore.getItemAsync(TOKEN_KEY);
 export const setStoredToken = (token: string) => SecureStore.setItemAsync(TOKEN_KEY, token);
@@ -29,5 +29,5 @@ export const createApiClient = (baseURL: string): AxiosInstance => {
 };
 
 export const apiClient = createApiClient(
-  process.env.EXPO_PUBLIC_API_URL ?? "https://api.reserva.app/driver"
+  process.env.EXPO_PUBLIC_API_URL ?? "https://api.rezarva.app/driver"
 );

@@ -148,7 +148,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
           >
             {/* Header / SubLogo */}
             <View style={styles.header}>
-              <Text style={styles.subLogo}>Reserva</Text>
+              <Text style={styles.subLogo}>Rezarva</Text>
             </View>
 
             {/* Dynamic Image Container for Long Screens */}
@@ -222,7 +222,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
                 },
               ]}
             >
-              Reserva
+              Rezarva
             </Animated.Text>
 
             {/* Target DM Sans SubLogo (header style) */}
@@ -234,7 +234,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
                 },
               ]}
             >
-              Reserva
+              Rezarva
             </Animated.Text>
           </Animated.View>
         </Animated.View>

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "reserva-driver",
-    "slug": "reserva-driver",
+    "name": "rezarva-driver",
+    "slug": "rezarva-driver",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "reservadriver",
+    "scheme": "rezarvadriver",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

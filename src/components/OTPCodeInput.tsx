@@ -50,9 +50,12 @@ export const OTPCodeInput = ({ value, onChange, onComplete }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  root: { justifyContent: "space-between" },
+  root: {
+    flexDirection: "row",
+    gap: 9,
+  },
   cell: {
-    width: 44,
+    flex: 1,
     height: 52,
     borderWidth: 1,
     borderColor: colors.border,
@@ -60,6 +63,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  cellFocused: { borderColor: colors.primary },
-  cellText: { ...typography.h2, color: colors.text },
+  cellFocused: { borderColor: colors.dark },
+  cellText: { ...typography.h2, fontWeight: "700", color: colors.text },
 });
