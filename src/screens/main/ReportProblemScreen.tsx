@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Modal,
   ScrollView,
   StyleSheet,
@@ -16,53 +17,57 @@ import { spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "ReportProblem">;
 
-interface FAQItem {
-  id: string;
-  question: string;
-  answer: string;
-}
-
-const FAQ_LIST: FAQItem[] = [
-  {
-    id: "1",
-    question: "How do I book this vehicle?",
-    answer:
-      "You can book this vehicle by selecting your pickup and return dates, reviewing the total price, and confirming your reservation through our secure checkout.",
-  },
-  {
-    id: "2",
-    question: "Do I need to select dates before booking?",
-    answer:
-      "Yes. You must select your pickup and return dates so we can check availability and calculate the total rental cost.",
-  },
-  {
-    id: "3",
-    question: "What happens after I book?",
-    answer:
-      "Once your booking is confirmed, you'll receive a confirmation with the pickup location, vehicle details, and rental instructions.",
-  },
-  {
-    id: "4",
-    question: "How long can i schedule a trip for?",
-    answer:
-      "You can schedule trips ranging from single day rentals up to multiple weeks, depending on host availability and reservation requirements.",
-  },
-  {
-    id: "5",
-    question: "How to initiate a refund?",
-    answer:
-      "To initiate a refund, navigate to your bookings tab, select the active trip, and choose 'Request Cancellation & Refund' according to our policy.",
-  },
+const CATEGORIES = [
+  "Passenger",
+  "Account Issues",
+  "Security Concern",
+  "Other",
+  "Bug",
 ];
+
+interface AttachmentFile {
+  name: string;
+  size: string;
+  status: "uploading" | "completed";
+}
 
 export const ReportProblemScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFAQ, setSelectedFAQ] = useState<FAQItem | null>(null);
 
-  const filteredFAQs = FAQ_LIST.filter((item) =>
-    item.question.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [category, setCategory] = useState("");
+  const [description, setDescription] = useState("");
+  const [attachment, setAttachment] = useState<AttachmentFile | null>(null);
+
+  // Modals state
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
+  const [showAttachmentSheet, setShowAttachmentSheet] = useState(false);
+
+  // Submission state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSent, setIsSent] = useState(false);
+
+  const isFormValid = category.trim().length > 0 && description.trim().length > 0;
+
+  const handleSelectAttachment = (filename: string = "Issue.png") => {
+    setShowAttachmentSheet(false);
+    setAttachment({ name: filename, size: "0 KB of 120 KB", status: "uploading" });
+
+    setTimeout(() => {
+      setAttachment({ name: filename, size: "0 KB of 120 KB", status: "completed" });
+    }, 1000);
+  };
+
+  const handleSubmit = () => {
+    if (!isFormValid || isSubmitting) return;
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setIsSent(true);
+      setTimeout(() => {
+        navigation.goBack();
+      }, 1200);
+    }, 1200);
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -75,68 +80,222 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
         >
           <Ionicons name="arrow-back" size={24} color="#0F172A" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>FAQs</Text>
+        <Text style={styles.headerTitle}>Report a Problem</Text>
         <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Search Bar */}
-        <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={18} color="#94A3B8" style={{ marginRight: 8 }} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search..."
-            placeholderTextColor="#94A3B8"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-        </View>
-
-        {/* FAQ Accordion List */}
-        {filteredFAQs.map((faq) => (
+        {/* Category Field */}
+        <View style={styles.fieldGroup}>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Category</Text>
+            <Text style={styles.asterisk}> *</Text>
+          </View>
           <TouchableOpacity
-            key={faq.id}
-            style={styles.faqCard}
-            onPress={() => setSelectedFAQ(faq)}
+            style={styles.inputCard}
+            onPress={() => setShowCategorySheet(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.faqQuestion}>{faq.question}</Text>
+            <Text style={[styles.inputField, !category && styles.placeholderText]}>
+              {category || "e.g Payment Issue"}
+            </Text>
             <Ionicons name="chevron-down" size={18} color="#94A3B8" />
           </TouchableOpacity>
-        ))}
+        </View>
 
-        {/* Contact Us Option */}
-        <TouchableOpacity
-          style={styles.contactUsBanner}
-          onPress={() => navigation.navigate("ContactUs")}
-          activeOpacity={0.8}
-        >
-          <View style={styles.contactUsLeft}>
-            <Ionicons name="chatbubbles-outline" size={20} color="#375DFB" style={{ marginRight: 10 }} />
-            <Text style={styles.contactUsText}>Still need help? Contact Us</Text>
+        {/* Description Field */}
+        <View style={styles.fieldGroup}>
+          <View style={styles.labelRow}>
+            <Text style={styles.label}>Description</Text>
+            <Text style={styles.asterisk}> *</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-        </TouchableOpacity>
-      </ScrollView>
+          <View style={styles.editorCard}>
+            {/* Formatting Toolbar Header */}
+            <View style={styles.toolbarHeader}>
+              <TouchableOpacity style={styles.toolbarBtn}>
+                <Text style={styles.toolbarBold}>B</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolbarBtn}>
+                <Text style={styles.toolbarItalic}>I</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolbarBtn}>
+                <Text style={styles.toolbarUnderline}>U</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolbarBtn}>
+                <Ionicons name="options-outline" size={16} color="#64748B" />
+              </TouchableOpacity>
+              <View style={styles.toolbarDivider} />
+              <TouchableOpacity style={styles.toolbarBtn}>
+                <Ionicons name="list" size={16} color="#64748B" />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.toolbarBtn}>
+                <Ionicons name="menu" size={16} color="#64748B" />
+              </TouchableOpacity>
+              <View style={styles.toolbarDivider} />
+              <TouchableOpacity style={styles.toolbarBtn}>
+                <Ionicons name="link-outline" size={16} color="#64748B" />
+              </TouchableOpacity>
 
-      {/* FAQ Answer Detail Modal */}
-      <Modal visible={!!selectedFAQ} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <TouchableOpacity
-            style={styles.modalBackdrop}
-            onPress={() => setSelectedFAQ(null)}
-          />
-          <View style={styles.modalSheet}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetQuestionTitle} numberOfLines={1}>
-                {selectedFAQ?.question}
-              </Text>
-              <TouchableOpacity onPress={() => setSelectedFAQ(null)}>
-                <Text style={styles.sheetCancelText}>Cancel</Text>
+              {/* Image / Attachment Icon */}
+              <TouchableOpacity
+                style={styles.toolbarBtn}
+                onPress={() => setShowAttachmentSheet(true)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="image-outline" size={16} color="#375DFB" />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.sheetAnswerText}>{selectedFAQ?.answer}</Text>
+            {/* Multiline Description Input */}
+            <TextInput
+              style={styles.editorInput}
+              placeholder="Placeholder text..."
+              placeholderTextColor="#94A3B8"
+              multiline
+              textAlignVertical="top"
+              maxLength={200}
+              value={description}
+              onChangeText={setDescription}
+            />
+
+            {/* Character Counter Footer */}
+            <View style={styles.editorFooter}>
+              <Text style={styles.charCount}>{description.length}/200</Text>
+              <Ionicons name="pencil" size={12} color="#94A3B8" style={{ marginLeft: 4 }} />
+            </View>
+          </View>
+        </View>
+
+        {/* Attachment Upload / Completed Card */}
+        {attachment && (
+          <View style={styles.attachmentCard}>
+            <View style={styles.attachmentLeft}>
+              <View style={styles.pngBadge}>
+                <Text style={styles.pngBadgeText}>PNG</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.attachmentName}>{attachment.name}</Text>
+                <View style={styles.attachmentStatusRow}>
+                  <Text style={styles.attachmentSizeText}>{attachment.size} • </Text>
+                  {attachment.status === "uploading" ? (
+                    <Text style={styles.uploadingText}>Uploading...</Text>
+                  ) : (
+                    <>
+                      <Ionicons name="checkmark-circle" size={12} color="#22C55E" style={{ marginRight: 2 }} />
+                      <Text style={styles.completedText}>Completed</Text>
+                    </>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            {attachment.status === "uploading" ? (
+              <TouchableOpacity onPress={() => setAttachment(null)}>
+                <Ionicons name="close" size={18} color="#94A3B8" />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={() => setAttachment(null)}>
+                <Ionicons name="trash-outline" size={18} color="#94A3B8" />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Submit Report Button */}
+        <TouchableOpacity
+          style={[
+            styles.submitButton,
+            !isFormValid && styles.submitButtonDisabled,
+            isSent && styles.submitButtonSuccess,
+          ]}
+          disabled={!isFormValid || isSubmitting}
+          onPress={handleSubmit}
+          activeOpacity={0.85}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : isSent ? (
+            <View style={styles.successRow}>
+              <Text style={styles.submitBtnText}>Sent</Text>
+              <Ionicons name="checkmark-circle" size={18} color="#22C55E" style={{ marginLeft: 6 }} />
+            </View>
+          ) : (
+            <Text
+              style={[
+                styles.submitBtnText,
+                !isFormValid && styles.submitBtnTextDisabled,
+              ]}
+            >
+              Submit Report
+            </Text>
+          )}
+        </TouchableOpacity>
+      </ScrollView>
+
+      {/* Category Bottom Sheet Modal */}
+      <Modal visible={showCategorySheet} transparent animationType="slide">
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            onPress={() => setShowCategorySheet(false)}
+          />
+          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Choose Category</Text>
+              <TouchableOpacity onPress={() => setShowCategorySheet(false)}>
+                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={styles.categoryItem}
+                onPress={() => {
+                  setCategory(cat);
+                  setShowCategorySheet(false);
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.categoryItemText}>{cat}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Attachment Options Bottom Sheet Modal */}
+      <Modal visible={showAttachmentSheet} transparent animationType="slide">
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            onPress={() => setShowAttachmentSheet(false)}
+          />
+          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Choose Attachment</Text>
+              <TouchableOpacity onPress={() => setShowAttachmentSheet(false)}>
+                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={() => handleSelectAttachment("Issue.png")}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.optionRowText}>Choose from files</Text>
+              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.optionRow}
+              onPress={() => handleSelectAttachment("ScannedDoc.png")}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.optionRowText}>Scan document</Text>
+              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -145,10 +304,7 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
+  container: { flex: 1, backgroundColor: "#FFFFFF" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -156,120 +312,124 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-  },
-  searchBar: {
+  backButton: { width: 40, height: 40, justifyContent: "center" },
+  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl * 2 },
+  fieldGroup: { marginBottom: spacing.lg },
+  labelRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
+  label: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "700", color: "#0F172A" },
+  asterisk: { fontFamily: "DM Sans Bold", fontSize: 14, color: "#EF4444", fontWeight: "700" },
+
+  inputCard: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     borderWidth: 1,
     borderColor: "#E2E8F0",
     borderRadius: 10,
     paddingHorizontal: spacing.md,
-    paddingVertical: 10,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+  },
+  inputField: { flex: 1, fontFamily: "DM Sans", fontSize: 14, color: "#0F172A" },
+  placeholderText: { color: "#94A3B8" },
+
+  editorCard: {
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+  },
+  toolbarHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 8,
+    gap: 12,
+  },
+  toolbarBtn: { padding: 4, justifyContent: "center", alignItems: "center" },
+  toolbarBold: { fontFamily: "DM Sans Bold", fontWeight: "900", fontSize: 14, color: "#475569" },
+  toolbarItalic: { fontFamily: "DM Sans", fontStyle: "italic", fontSize: 14, color: "#475569" },
+  toolbarUnderline: { fontFamily: "DM Sans", textDecorationLine: "underline", fontSize: 14, color: "#475569" },
+  toolbarDivider: { width: 1, height: 16, backgroundColor: "#E2E8F0" },
+
+  editorInput: {
+    height: 120,
+    fontFamily: "DM Sans",
+    fontSize: 14,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    color: "#0F172A",
+  },
+  editorFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    paddingHorizontal: spacing.md,
+    paddingBottom: 10,
+  },
+  charCount: { fontFamily: "DM Sans", fontSize: 11, color: "#94A3B8" },
+
+  /* Attachment Card */
+  attachmentCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    padding: spacing.md,
     marginBottom: spacing.lg,
     backgroundColor: "#FFFFFF",
   },
-  searchInput: {
-    flex: 1,
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    color: "#0F172A",
-  },
-  faqCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+  attachmentLeft: { flexDirection: "row", alignItems: "center", flex: 1, marginRight: 10 },
+  pngBadge: { backgroundColor: "#3B82F6", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4, marginRight: 10 },
+  pngBadgeText: { fontFamily: "DM Sans Bold", fontSize: 10, color: "#FFFFFF", fontWeight: "800" },
+  attachmentName: { fontFamily: "DM Sans Bold", fontSize: 13, fontWeight: "700", color: "#0F172A" },
+  attachmentStatusRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
+  attachmentSizeText: { fontFamily: "DM Sans", fontSize: 11, color: "#94A3B8" },
+  uploadingText: { fontFamily: "DM Sans", fontSize: 11, color: "#3B82F6", fontWeight: "600" },
+  completedText: { fontFamily: "DM Sans", fontSize: 11, color: "#22C55E", fontWeight: "600" },
+
+  submitButton: {
+    backgroundColor: "#375DFB",
     borderRadius: 10,
-    paddingHorizontal: spacing.md,
     paddingVertical: 14,
-    marginBottom: spacing.sm,
-    backgroundColor: "#FFFFFF",
-  },
-  faqQuestion: {
-    flex: 1,
-    fontFamily: "DM Sans Bold",
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#0F172A",
-    marginRight: 8,
-  },
-  contactUsBanner: {
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
+    justifyContent: "center",
     marginTop: spacing.md,
   },
-  contactUsLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  contactUsText: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#375DFB",
-  },
+  submitButtonDisabled: { backgroundColor: "#F8FAFC" },
+  submitButtonSuccess: { backgroundColor: "#375DFB" },
+  successRow: { flexDirection: "row", alignItems: "center" },
+  submitBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
+  submitBtnTextDisabled: { color: "#CBD5E1" },
 
-  /* FAQ Detail Sheet Styles */
-  modalOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
-  },
-  modalSheet: {
+  /* Bottom Sheets */
+  sheetOverlay: { flex: 1, justifyContent: "flex-end" },
+  sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15, 23, 42, 0.4)" },
+  sheetContainer: {
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: spacing.lg,
-    paddingBottom: spacing.xl * 2,
   },
-  sheetHeader: {
+  sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg },
+  sheetTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  categoryItem: { backgroundColor: "#F8FAFC", borderRadius: 12, padding: spacing.md, marginBottom: spacing.sm },
+  categoryItemText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: "#0F172A" },
+  optionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: spacing.md,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
-  sheetQuestionTitle: {
-    flex: 1,
-    fontFamily: "DM Sans Bold",
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0F172A",
-    marginRight: 12,
-  },
-  sheetCancelText: {
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    color: "#94A3B8",
-  },
-  sheetAnswerText: {
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    lineHeight: 22,
-    color: "#64748B",
-  },
+  optionRowText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: "#0F172A" },
 });

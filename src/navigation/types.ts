@@ -41,6 +41,7 @@ export type MainStackParamList = {
   BankDetails: undefined;
   Preferences: undefined;
   Referrals: undefined;
+  FAQs: undefined;
   EditName: { currentName: string };
   EditEmail: { currentEmail: string };
   EditPhone: { currentPhone: string };

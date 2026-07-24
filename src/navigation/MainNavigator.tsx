@@ -8,6 +8,7 @@ import { ContactUsScreen } from "../screens/main/ContactUsScreen";
 import { CreateTripScreen } from "../screens/main/CreateTripScreen";
 import { EarningsScreen } from "../screens/main/EarningsScreen";
 import { EmergencyContactsScreen } from "../screens/main/EmergencyContactsScreen";
+import { FAQsScreen } from "../screens/main/FAQsScreen";
 import { HomeScreen } from "../screens/main/HomeScreen";
 import { NotificationsScreen } from "../screens/main/NotificationsScreen";
 import { PassengerRequestsScreen } from "../screens/main/PassengerRequestsScreen";
@@ -143,6 +144,11 @@ export const MainNavigator = () => (
     <Stack.Screen
       name="Referrals"
       component={ReferralsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="FAQs"
+      component={FAQsScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen

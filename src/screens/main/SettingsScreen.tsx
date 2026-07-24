@@ -175,7 +175,7 @@ export const SettingsScreen = ({ navigation }: Props) => {
           <SettingItem
             icon={<FAQIconItem color="#868C98" size={20} />}
             label="FAQs"
-            onPress={() => navigation.navigate("ReportProblem")}
+            onPress={() => navigation.navigate("FAQs")}
           />
           <View style={styles.divider} />
           <SettingItem
