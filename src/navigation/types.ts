@@ -37,6 +37,8 @@ export type MainStackParamList = {
   TwoFactorAuth: undefined;
   ContactUs: undefined;
   ChatWithSupport: undefined;
+  Vehicles: undefined;
+  BankDetails: undefined;
   EditName: { currentName: string };
   EditEmail: { currentEmail: string };
   EditPhone: { currentPhone: string };

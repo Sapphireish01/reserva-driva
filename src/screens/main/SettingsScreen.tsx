@@ -110,6 +110,7 @@ export const SettingsScreen = ({ navigation }: Props) => {
           <SettingItem
             icon={<VehiclesIconItem color="#868C98" size={20} />}
             label="Vehicles"
+            onPress={() => navigation.navigate("Vehicles")}
           />
           <View style={styles.divider} />
           <SettingItem
@@ -121,6 +122,7 @@ export const SettingsScreen = ({ navigation }: Props) => {
           <SettingItem
             icon={<BankDetailsIconItem color="#868C98" size={20} />}
             label="Bank Details"
+            onPress={() => navigation.navigate("BankDetails")}
           />
           <View style={styles.divider} />
           <SettingItem

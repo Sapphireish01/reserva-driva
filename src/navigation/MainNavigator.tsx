@@ -2,6 +2,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { BookingsIcon, HomeIcon, ProfileIcon, TripsIcon, WalletIcon } from "../components/NavIcons";
+import { BankDetailsScreen } from "../screens/main/BankDetailsScreen";
 import { ChatWithSupportScreen } from "../screens/main/ChatWithSupportScreen";
 import { ContactUsScreen } from "../screens/main/ContactUsScreen";
 import { CreateTripScreen } from "../screens/main/CreateTripScreen";
@@ -14,6 +15,7 @@ import { ProfileDetailsScreen } from "../screens/main/ProfileDetailsScreen";
 import { ReportProblemScreen } from "../screens/main/ReportProblemScreen";
 import { SettingsScreen } from "../screens/main/SettingsScreen";
 import { TwoFactorAuthScreen } from "../screens/main/TwoFactorAuthScreen";
+import { VehiclesScreen } from "../screens/main/VehiclesScreen";
 import { colors } from "../theme/colors";
 import { MainStackParamList, MainTabParamList } from "./types";
 
@@ -119,6 +121,16 @@ export const MainNavigator = () => (
     <Stack.Screen
       name="ChatWithSupport"
       component={ChatWithSupportScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="Vehicles"
+      component={VehiclesScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="BankDetails"
+      component={BankDetailsScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen
