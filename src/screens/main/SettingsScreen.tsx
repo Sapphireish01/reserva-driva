@@ -81,8 +81,8 @@ export const SettingsScreen = ({ navigation }: Props) => {
         >
           <Image source={{ uri: DEFAULT_AVATAR }} style={styles.userAvatar} />
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>Prosper Edward</Text>
-            <Text style={styles.userEmail}>Prosperedward001@gmail.com</Text>
+            <Text style={styles.userName}>Sapphire Simi</Text>
+            <Text style={styles.userEmail}>sapphiresimi101@gmail.com</Text>
           </View>
         </TouchableOpacity>
 

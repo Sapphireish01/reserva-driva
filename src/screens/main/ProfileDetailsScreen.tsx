@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import * as ImagePicker from "expo-image-picker";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,15 +14,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import PhoneInput from "react-native-phone-number-input";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MainStackParamList } from "../../navigation/types";
 import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "ProfileDetails">;
 
-const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=400";
+const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400";
 
 const GALLERY_PHOTOS = [
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300",
@@ -40,8 +39,8 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
 
   // Profile States
   const [profileImage, setProfileImage] = useState(DEFAULT_AVATAR);
-  const [name, setName] = useState("Prosper Edward");
-  const [email, setEmail] = useState("Prosper.Edward@hotmail.com");
+  const [name, setName] = useState("Sapphire Simi");
+  const [email, setEmail] = useState("Sapphire.Edward@hotmail.com");
   const [phone, setPhone] = useState("(555) 000-0000");
   const [address, setAddress] = useState("42 Montgomery Road, Houston");
 
@@ -354,12 +353,12 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
               {otpStep
                 ? "OTP Verification"
                 : editingField === "name"
-                ? "Name"
-                : editingField === "email"
-                ? "Email Address"
-                : editingField === "phone"
-                ? "Phone Number"
-                : "House Address"}
+                  ? "Name"
+                  : editingField === "email"
+                    ? "Email Address"
+                    : editingField === "phone"
+                      ? "Phone Number"
+                      : "House Address"}
             </Text>
             {!otpStep ? (
               <TouchableOpacity onPress={handleSaveField}>

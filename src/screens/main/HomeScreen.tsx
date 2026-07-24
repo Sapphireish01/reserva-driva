@@ -89,7 +89,7 @@ export const HomeScreen = ({ navigation }: Props) => {
         {/* Top Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.greetingTitle}>Hello Prosper,</Text>
+            <Text style={styles.greetingTitle}>Hello Sapphire,</Text>
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={14} color="#64748B" style={{ marginRight: 4 }} />
               <Text style={styles.locationText}>42 Montgomery Road, Yaba</Text>
@@ -283,7 +283,7 @@ export const HomeScreen = ({ navigation }: Props) => {
               />
               <View style={styles.passengerInfo}>
                 <View style={styles.nameRow}>
-                  <Text style={styles.passengerName}>Edward Prosper</Text>
+                  <Text style={styles.passengerName}>Edward Sapphire</Text>
                   <Ionicons name="checkmark-circle" size={16} color="#2563EB" style={{ marginLeft: 4 }} />
                   <View style={styles.ratingRow}>
                     <Ionicons name="star" size={13} color="#F59E0B" />

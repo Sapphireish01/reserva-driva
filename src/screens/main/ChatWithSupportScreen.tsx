@@ -28,7 +28,7 @@ const INITIAL_MESSAGES: ChatMessage[] = [
   {
     id: "1",
     sender: "support",
-    text: "Hello Prosper! Welcome to Drifully Support. How can we help you today?",
+    text: "Hello Sapphire! Welcome to Drifully Support. How can we help you today?",
     time: "9:30 AM",
   },
 ];

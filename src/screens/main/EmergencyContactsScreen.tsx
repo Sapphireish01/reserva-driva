@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MainStackParamList } from "../../navigation/types";
-import { colors, spacing } from "../../theme/colors";
+import { spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "EmergencyContacts">;
 
@@ -24,8 +24,8 @@ interface Contact {
 }
 
 const INITIAL_CONTACTS: Contact[] = [
-  { id: "1", name: "Prosper Edward", phone: "+23428495069" },
-  { id: "2", name: "Edward Prosper", phone: "+23428495069" },
+  { id: "1", name: "Sapphire Simi", phone: "+23428495069" },
+  { id: "2", name: "Edward Sapphire", phone: "+23428495069" },
 ];
 
 export const EmergencyContactsScreen = ({ navigation }: Props) => {
@@ -205,7 +205,7 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
             <View style={styles.inputCard}>
               <TextInput
                 style={styles.inputField}
-                placeholder="e.g Prosper Edward"
+                placeholder="e.g Sapphire Simi"
                 placeholderTextColor="#94A3B8"
                 value={contactName}
                 onChangeText={setContactName}
