@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as DocumentPicker from "expo-document-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UploadIconItem } from "../../components/ProfileIcons";
 import { MainStackParamList } from "../../navigation/types";
@@ -88,6 +89,21 @@ export const VehiclesScreen = ({ navigation }: Props) => {
 
   // Selection Dropdown Sheets inside Add/Edit Modal
   const [activeDropdown, setActiveDropdown] = useState<"make" | "brand" | "year" | null>(null);
+
+  const handlePickDocument = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "*/*",
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const pickedFile = result.assets[0];
+        setDocName(pickedFile.name || "vehicle_docs.pdf");
+      }
+    } catch (err) {
+      console.log("Document picker error:", err);
+    }
+  };
 
   const handleOpenAdd = () => {
     setEditingVehicleId(null);
@@ -373,7 +389,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
               ) : (
                 <TouchableOpacity
                   style={styles.dropzoneCard}
-                  onPress={() => setDocName("vehicle_docs.pdf")}
+                  onPress={handlePickDocument}
                   activeOpacity={0.8}
                 >
                   <View style={{ marginBottom: 6 }}>

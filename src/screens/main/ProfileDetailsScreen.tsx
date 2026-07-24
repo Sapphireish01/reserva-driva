@@ -13,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import PhoneInput from "react-native-phone-number-input";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MainStackParamList } from "../../navigation/types";
@@ -49,6 +50,41 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
   const [showCamera, setShowCamera] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [cameraPhoto, setCameraPhoto] = useState<string | null>(null);
+
+  const handleTakePhoto = async () => {
+    setShowPhotoOptions(false);
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access camera is required!");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setProfileImage(result.assets[0].uri);
+    }
+  };
+
+  const handleChooseFromGallery = async () => {
+    setShowPhotoOptions(false);
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access gallery is required!");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setProfileImage(result.assets[0].uri);
+    }
+  };
 
   // Edit Field Modals
   const [editingField, setEditingField] = useState<"name" | "email" | "phone" | "address" | null>(null);
@@ -196,11 +232,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
 
             <TouchableOpacity
               style={styles.sheetOption}
-              onPress={() => {
-                setShowPhotoOptions(false);
-                setCameraPhoto(null);
-                setShowCamera(true);
-              }}
+              onPress={handleTakePhoto}
               activeOpacity={0.7}
             >
               <View style={styles.optionLeft}>
@@ -212,10 +244,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
 
             <TouchableOpacity
               style={styles.sheetOption}
-              onPress={() => {
-                setShowPhotoOptions(false);
-                setShowGallery(true);
-              }}
+              onPress={handleChooseFromGallery}
               activeOpacity={0.7}
             >
               <View style={styles.optionLeft}>

@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MainStackParamList } from "../../navigation/types";
 import { spacing } from "../../theme/colors";
@@ -48,13 +49,51 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
 
   const isFormValid = category.trim().length > 0 && description.trim().length > 0;
 
-  const handleSelectAttachment = (filename: string = "Issue.png") => {
+  const handlePickFromGallery = async () => {
     setShowAttachmentSheet(false);
-    setAttachment({ name: filename, size: "0 KB of 120 KB", status: "uploading" });
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access gallery is required!");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: false, // NO cutout section
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const filename = asset.fileName || "Issue.png";
+      const sizeKb = asset.fileSize ? Math.round(asset.fileSize / 1024) : 120;
+      setAttachment({ name: filename, size: `0 KB of ${sizeKb} KB`, status: "uploading" });
 
-    setTimeout(() => {
-      setAttachment({ name: filename, size: "0 KB of 120 KB", status: "completed" });
-    }, 1000);
+      setTimeout(() => {
+        setAttachment({ name: filename, size: `0 KB of ${sizeKb} KB`, status: "completed" });
+      }, 1000);
+    }
+  };
+
+  const handlePickFromCamera = async () => {
+    setShowAttachmentSheet(false);
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permission to access camera is required!");
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: false, // NO cutout section
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      const asset = result.assets[0];
+      const filename = asset.fileName || "ScannedDoc.png";
+      const sizeKb = asset.fileSize ? Math.round(asset.fileSize / 1024) : 120;
+      setAttachment({ name: filename, size: `0 KB of ${sizeKb} KB`, status: "uploading" });
+
+      setTimeout(() => {
+        setAttachment({ name: filename, size: `0 KB of ${sizeKb} KB`, status: "completed" });
+      }, 1000);
+    }
   };
 
   const handleSubmit = () => {
@@ -281,7 +320,7 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
 
             <TouchableOpacity
               style={styles.optionRow}
-              onPress={() => handleSelectAttachment("Issue.png")}
+              onPress={handlePickFromGallery}
               activeOpacity={0.7}
             >
               <Text style={styles.optionRowText}>Choose from files</Text>
@@ -290,7 +329,7 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
 
             <TouchableOpacity
               style={styles.optionRow}
-              onPress={() => handleSelectAttachment("ScannedDoc.png")}
+              onPress={handlePickFromCamera}
               activeOpacity={0.7}
             >
               <Text style={styles.optionRowText}>Scan document</Text>
