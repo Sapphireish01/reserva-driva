@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { UploadIconItem } from "../../components/ProfileIcons";
 import { MainStackParamList } from "../../navigation/types";
 import { spacing } from "../../theme/colors";
 
@@ -375,7 +376,9 @@ export const VehiclesScreen = ({ navigation }: Props) => {
                   onPress={() => setDocName("vehicle_docs.pdf")}
                   activeOpacity={0.8}
                 >
-                  <Ionicons name="cloud-upload-outline" size={28} color="#94A3B8" style={{ marginBottom: 6 }} />
+                  <View style={{ marginBottom: 6 }}>
+                    <UploadIconItem size={32} color="#868C98" />
+                  </View>
                   <Text style={styles.dropzoneTitle}>Choose a file or drag & drop it here.</Text>
                   <Text style={styles.dropzoneSubtitle}>
                     JPEG, PNG, PDF, and MP4 formats, up to 50 MB.

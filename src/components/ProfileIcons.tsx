@@ -241,16 +241,18 @@ export const DeactivateIconItem: React.FC<IconProps> = ({ color = "#868C98", siz
 );
 
 export const ChatSupportIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 20 }) => (
-  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M7.08333 15.4167H4.58333C3.43274 15.4167 2.5 14.4839 2.5 13.3333V5.83333C2.5 4.68274 3.43274 3.75 4.58333 3.75H15.4167C16.5673 3.75 17.5 4.68274 17.5 5.83333V13.3333C17.5 14.4839 16.5673 15.4167 15.4167 15.4167H12.9167L9.16667 17.9167V15.4167Z"
+      d="M8.5 19H8C4 19 2 18 2 13V8C2 4 4 2 8 2H16C20 2 22 4 22 8V13C22 17 20 19 16 19H15.5C15.19 19 14.89 19.15 14.7 19.4L13.2 21.4C12.54 22.28 11.46 22.28 10.8 21.4L9.3 19.4C9.14 19.18 8.77 19 8.5 19Z"
       stroke={color}
-      strokeWidth="1.25"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    <Path d="M6.66699 8.33333H13.3337" stroke={color} strokeWidth="1.25" strokeLinecap="round" />
-    <Path d="M6.66699 11.25H10.8337" stroke={color} strokeWidth="1.25" strokeLinecap="round" />
+    <Path d="M15.9965 11H16.0054" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M11.9955 11H12.0045" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M7.99451 11H8.00349" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
@@ -272,33 +274,57 @@ export const FAQIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 20 
 );
 
 export const ContactUsIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 20 }) => (
-  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M4.16667 3.33333H7.5L9.16667 7.5L7.08333 9.16667C8.19662 11.4116 10.0884 13.3034 12.3333 14.4167L14.1667 12.3333L18.3333 14V17.3333C18.3333 17.7936 17.9602 18.1667 17.5 18.1667C9.91507 18.1667 3.33333 11.5849 3.33333 4C3.33333 3.53976 3.70643 3.33333 4.16667 3.33333Z"
+      d="M21.97 18.33C21.97 18.69 21.89 19.06 21.72 19.42C21.55 19.78 21.33 20.12 21.04 20.44C20.55 20.98 20.01 21.37 19.4 21.62C18.8 21.87 18.15 22 17.45 22C16.43 22 15.34 21.76 14.19 21.27C13.04 20.78 11.89 20.12 10.75 19.29C9.6 18.45 8.51 17.52 7.47 16.49C6.44 15.45 5.51 14.36 4.68 13.22C3.86 12.08 3.2 10.94 2.72 9.81C2.24 8.67 2 7.58 2 6.54C2 5.86 2.12 5.21 2.36 4.61C2.6 4 2.98 3.44 3.51 2.94C4.15 2.31 4.85 2 5.59 2C5.87 2 6.15 2.06 6.4 2.18C6.66 2.3 6.89 2.48 7.07 2.74L9.39 6.01C9.57 6.26 9.7 6.49 9.79 6.71C9.88 6.92 9.93 7.13 9.93 7.32C9.93 7.56 9.86 7.8 9.72 8.03C9.59 8.26 9.4 8.5 9.16 8.74L8.4 9.53C8.29 9.64 8.24 9.77 8.24 9.93C8.24 10.01 8.25 10.08 8.27 10.16C8.3 10.24 8.33 10.3 8.35 10.36C8.53 10.69 8.84 11.12 9.28 11.64C9.73 12.16 10.21 12.69 10.73 13.22C11.27 13.75 11.79 14.24 12.32 14.69C12.84 15.13 13.27 15.43 13.61 15.61C13.66 15.63 13.72 15.66 13.79 15.69C13.87 15.72 13.95 15.73 14.04 15.73C14.21 15.73 14.34 15.67 14.45 15.56L15.21 14.81C15.46 14.56 15.7 14.37 15.93 14.25C16.16 14.11 16.39 14.04 16.64 14.04C16.83 14.04 17.03 14.08 17.25 14.17C17.47 14.26 17.7 14.39 17.95 14.56L21.26 16.91C21.52 17.09 21.7 17.3 21.81 17.55C21.91 17.8 21.97 18.05 21.97 18.33Z"
       stroke={color}
-      strokeWidth="1.25"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
     />
   </Svg>
 );
 
 export const LogoutIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 20 }) => (
-  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
-      d="M7.5 17.5H4.16667C3.24619 17.5 2.5 16.7538 2.5 15.8333V4.16667C2.5 3.24619 3.24619 2.5 4.16667 2.5H7.5"
+      d="M8.8999 7.55999C9.2099 3.95999 11.0599 2.48999 15.1099 2.48999H15.2399C19.7099 2.48999 21.4999 4.27999 21.4999 8.74999V15.27C21.4999 19.74 19.7099 21.53 15.2399 21.53H15.1099C11.0899 21.53 9.2399 20.08 8.9099 16.54"
       stroke={color}
-      strokeWidth="1.25"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path d="M15.0001 12H3.62012" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M5.85 8.6499L2.5 11.9999L5.85 15.3499" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+export const UploadIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 28 }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path
+      d="M16.6097 19.9999C17.9497 20.0099 19.2397 19.5099 20.2297 18.6099C23.4997 15.7499 21.7497 10.0099 17.4397 9.46995C15.8997 0.129949 2.42973 3.66995 5.61973 12.5599"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <Path
-      d="M13.3333 14.1667L17.5 10L13.3333 5.83333"
+      d="M7.27938 12.9698C6.74938 12.6998 6.15938 12.5598 5.56938 12.5698C0.909376 12.8998 0.919376 19.6798 5.56938 20.0098"
       stroke={color}
-      strokeWidth="1.25"
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    <Path d="M17.5 10H7.5" stroke={color} strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+    <Path
+      d="M15.8203 9.89047C16.3403 9.63047 16.9003 9.49047 17.4803 9.48047"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path d="M12.9688 20H8.96875" stroke={color} strokeWidth="1.5" strokeMiterlimit="10" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M10.9688 22V18" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
