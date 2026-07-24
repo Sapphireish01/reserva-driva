@@ -11,7 +11,9 @@ import { EmergencyContactsScreen } from "../screens/main/EmergencyContactsScreen
 import { HomeScreen } from "../screens/main/HomeScreen";
 import { NotificationsScreen } from "../screens/main/NotificationsScreen";
 import { PassengerRequestsScreen } from "../screens/main/PassengerRequestsScreen";
+import { PreferencesScreen } from "../screens/main/PreferencesScreen";
 import { ProfileDetailsScreen } from "../screens/main/ProfileDetailsScreen";
+import { ReferralsScreen } from "../screens/main/ReferralsScreen";
 import { ReportProblemScreen } from "../screens/main/ReportProblemScreen";
 import { SettingsScreen } from "../screens/main/SettingsScreen";
 import { TwoFactorAuthScreen } from "../screens/main/TwoFactorAuthScreen";
@@ -131,6 +133,16 @@ export const MainNavigator = () => (
     <Stack.Screen
       name="BankDetails"
       component={BankDetailsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="Preferences"
+      component={PreferencesScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="Referrals"
+      component={ReferralsScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen

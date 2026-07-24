@@ -39,6 +39,8 @@ export type MainStackParamList = {
   ChatWithSupport: undefined;
   Vehicles: undefined;
   BankDetails: undefined;
+  Preferences: undefined;
+  Referrals: undefined;
   EditName: { currentName: string };
   EditEmail: { currentEmail: string };
   EditPhone: { currentPhone: string };

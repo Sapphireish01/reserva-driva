@@ -128,11 +128,13 @@ export const SettingsScreen = ({ navigation }: Props) => {
           <SettingItem
             icon={<PreferencesIconItem color="#868C98" size={20} />}
             label="Preferences"
+            onPress={() => navigation.navigate("Preferences")}
           />
           <View style={styles.divider} />
           <SettingItem
             icon={<ReferralsIconItem color="#868C98" size={20} />}
             label="Referrals"
+            onPress={() => navigation.navigate("Referrals")}
           />
         </View>
 
