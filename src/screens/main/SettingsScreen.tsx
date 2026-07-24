@@ -1,17 +1,33 @@
 import { Ionicons } from "@expo/vector-icons";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MainStackParamList } from "../../navigation/types";
-import { colors, spacing, typography } from "../../theme/colors";
+import {
+  BankDetailsIconItem,
+  ChatSupportIconItem,
+  CommunitiesIconItem,
+  ContactUsIconItem,
+  DeactivateIconItem,
+  EmergencyContactIconItem,
+  FAQIconItem,
+  LogoutIconItem,
+  NotificationIconItem,
+  PreferencesIconItem,
+  ProfileIconItem,
+  ReferralsIconItem,
+  ReportProblemIconItem,
+  TwoFAIconItem,
+  VehiclesIconItem,
+} from "../../components/ProfileIcons";
+import { useAuthStore } from "../../state/authStore";
+import { colors, spacing } from "../../theme/colors";
 
 type Props = any;
 
 const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300";
 
 interface SettingItemProps {
-  icon: keyof typeof Ionicons.glyphMap;
+  icon: React.ReactNode;
   label: string;
   badge?: string;
   onPress?: () => void;
@@ -21,12 +37,7 @@ interface SettingItemProps {
 const SettingItem = ({ icon, label, badge, onPress, destructive }: SettingItemProps) => (
   <TouchableOpacity style={styles.itemRow} onPress={onPress} activeOpacity={0.7}>
     <View style={styles.itemLeft}>
-      <Ionicons
-        name={icon}
-        size={20}
-        color={destructive ? colors.error : "#475569"}
-        style={styles.itemIcon}
-      />
+      <View style={styles.itemIconContainer}>{icon}</View>
       <Text style={[styles.itemLabel, destructive && styles.itemLabelDestructive]}>
         {label}
       </Text>
@@ -42,6 +53,16 @@ const SettingItem = ({ icon, label, badge, onPress, destructive }: SettingItemPr
 
 export const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const logout = useAuthStore((state) => state.logout);
+
+  const [showDeactivateModal, setShowDeactivateModal] = React.useState(false);
+  const [showLogoutModal, setShowLogoutModal] = React.useState(false);
+  const [hasActiveBookings, setHasActiveBookings] = React.useState(false);
+
+  const handleLogout = async () => {
+    setShowLogoutModal(false);
+    await logout();
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -69,40 +90,192 @@ export const SettingsScreen = ({ navigation }: Props) => {
         <Text style={styles.sectionHeader}>Account</Text>
         <View style={styles.sectionCard}>
           <SettingItem
-            icon="person-outline"
+            icon={<ProfileIconItem color="#868C98" size={20} />}
             label="Profile"
             onPress={() => navigation.navigate("ProfileDetails")}
           />
           <View style={styles.divider} />
-          <SettingItem icon="notifications-outline" label="Notifications" />
+          <SettingItem
+            icon={<NotificationIconItem color="#868C98" size={20} />}
+            label="Notifications"
+            onPress={() => navigation.navigate("Notifications")}
+          />
           <View style={styles.divider} />
-          <SettingItem icon="alert-circle-outline" label="Emergency Contact" />
+          <SettingItem
+            icon={<EmergencyContactIconItem color="#868C98" size={20} />}
+            label="Emergency Contact"
+            onPress={() => navigation.navigate("EmergencyContacts")}
+          />
           <View style={styles.divider} />
-          <SettingItem icon="car-outline" label="Vehicles" />
+          <SettingItem
+            icon={<VehiclesIconItem color="#868C98" size={20} />}
+            label="Vehicles"
+          />
           <View style={styles.divider} />
-          <SettingItem icon="people-outline" label="Communities" badge="Coming Soon" />
+          <SettingItem
+            icon={<CommunitiesIconItem color="#868C98" size={20} />}
+            label="Communities"
+            badge="Coming Soon"
+          />
           <View style={styles.divider} />
-          <SettingItem icon="card-outline" label="Bank Details" />
+          <SettingItem
+            icon={<BankDetailsIconItem color="#868C98" size={20} />}
+            label="Bank Details"
+          />
           <View style={styles.divider} />
-          <SettingItem icon="options-outline" label="Preferences" />
+          <SettingItem
+            icon={<PreferencesIconItem color="#868C98" size={20} />}
+            label="Preferences"
+          />
           <View style={styles.divider} />
-          <SettingItem icon="share-social-outline" label="Referrals" />
+          <SettingItem
+            icon={<ReferralsIconItem color="#868C98" size={20} />}
+            label="Referrals"
+          />
         </View>
 
         {/* Security Section */}
         <Text style={styles.sectionHeader}>Security</Text>
         <View style={styles.sectionCard}>
-          <SettingItem icon="shield-checkmark-outline" label="Two-factor Authentication" />
-          <View style={styles.divider} />
-          <SettingItem icon="help-circle-outline" label="Report a Problem" />
+          <SettingItem
+            icon={<TwoFAIconItem color="#868C98" size={20} />}
+            label="Two-factor Authentication"
+            onPress={() => navigation.navigate("TwoFactorAuth")}
+          />
           <View style={styles.divider} />
           <SettingItem
-            icon="person-remove-outline"
+            icon={<ReportProblemIconItem color="#868C98" size={20} />}
+            label="Report a Problem"
+            onPress={() => navigation.navigate("ReportProblem")}
+          />
+          <View style={styles.divider} />
+          <SettingItem
+            icon={<DeactivateIconItem color="#868C98" size={20} />}
             label="De-activate Account"
-            destructive
+            onPress={() => {
+              setHasActiveBookings(false);
+              setShowDeactivateModal(true);
+            }}
+          />
+        </View>
+
+        {/* Other Section */}
+        <Text style={styles.sectionHeader}>Other</Text>
+        <View style={styles.sectionCard}>
+          <SettingItem
+            icon={<ChatSupportIconItem color="#868C98" size={20} />}
+            label="Chat with support"
+            onPress={() => navigation.navigate("ChatWithSupport")}
+          />
+          <View style={styles.divider} />
+          <SettingItem
+            icon={<FAQIconItem color="#868C98" size={20} />}
+            label="FAQs"
+            onPress={() => navigation.navigate("ReportProblem")}
+          />
+          <View style={styles.divider} />
+          <SettingItem
+            icon={<ContactUsIconItem color="#868C98" size={20} />}
+            label="Contact Us"
+            onPress={() => navigation.navigate("ContactUs")}
+          />
+          <View style={styles.divider} />
+          <SettingItem
+            icon={<LogoutIconItem color="#868C98" size={20} />}
+            label="Logout"
+            onPress={() => setShowLogoutModal(true)}
           />
         </View>
       </ScrollView>
+
+      {/* 1. Deactivate Account Modal */}
+      <Modal visible={showDeactivateModal} transparent animationType="fade">
+        <View style={styles.dialogOverlay}>
+          <View style={styles.dialogCard}>
+            <View style={styles.dialogHeader}>
+              <Text style={styles.dialogTitle}>Deactivate Account?</Text>
+              <TouchableOpacity onPress={() => setShowDeactivateModal(false)}>
+                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.dialogSubtitle}>
+              Are you sure you want to deactivate this account, you will no longer have access to Drifully
+            </Text>
+
+            {/* Alert Banner */}
+            <View style={styles.alertBanner}>
+              <Ionicons name="information-circle-outline" size={18} color="#D97706" style={{ marginRight: 8 }} />
+              <Text style={styles.alertText}>
+                {hasActiveBookings
+                  ? "We cannot deactivate your account at the moment, you still have active bookings. Please complete bookings to proceed."
+                  : "Active bookings must be completed before deactivation."}
+              </Text>
+            </View>
+
+            {hasActiveBookings ? (
+              <TouchableOpacity
+                style={styles.blueBtn}
+                onPress={() => {
+                  setShowDeactivateModal(false);
+                  navigation.navigate("BookingsTab");
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.blueBtnText}>Back to Bookings</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.redBtn}
+                  onPress={() => setHasActiveBookings(true)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.redBtnText}>Deactivate</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.outlineBtn}
+                  onPress={() => setShowDeactivateModal(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.outlineBtnText}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* 2. Logout Modal */}
+      <Modal visible={showLogoutModal} transparent animationType="fade">
+        <View style={styles.dialogOverlay}>
+          <View style={styles.dialogCard}>
+            <View style={styles.dialogHeader}>
+              <Text style={styles.dialogTitle}>Logout?</Text>
+              <TouchableOpacity onPress={() => setShowLogoutModal(false)}>
+                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.dialogSubtitle}>
+              Are you sure you want to logout from this account?
+            </Text>
+
+            <TouchableOpacity style={styles.blueBtn} onPress={handleLogout} activeOpacity={0.8}>
+              <Text style={styles.blueBtnText}>Logout</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.outlineBtn}
+              onPress={() => setShowLogoutModal(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.outlineBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -122,22 +295,19 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#0F172A",
     marginTop: spacing.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   userCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    padding: spacing.md,
-    borderRadius: 14,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: 0,
     marginBottom: spacing.lg,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
   },
   userAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: "#E2E8F0",
   },
   userInfo: {
@@ -146,7 +316,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     fontFamily: "DM Sans Bold",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "700",
     color: "#0F172A",
     marginBottom: 2,
@@ -185,14 +355,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
   },
-  itemIcon: {
+  itemIconContainer: {
     marginRight: 14,
     width: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
   itemLabel: {
-    fontFamily: "DM Sans",
+    fontFamily: "DM Sans Bold",
     fontSize: 15,
-    fontWeight: "500",
+    fontWeight: "700",
     color: "#0F172A",
   },
   itemLabelDestructive: {
@@ -216,4 +388,60 @@ const styles = StyleSheet.create({
     backgroundColor: "#F1F5F9",
     marginLeft: 50,
   },
+  dialogOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.lg,
+  },
+  dialogCard: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: spacing.lg,
+  },
+  dialogHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.xs,
+  },
+  dialogTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  dialogSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.md, lineHeight: 20 },
+  alertBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFBEB",
+    borderWidth: 1,
+    borderColor: "#FDE68A",
+    borderRadius: 10,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  alertText: { flex: 1, fontFamily: "DM Sans", fontSize: 13, color: "#92400E", lineHeight: 18 },
+  blueBtn: {
+    backgroundColor: "#375DFB",
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  blueBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
+  redBtn: {
+    backgroundColor: "#EF4444",
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  redBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
+  outlineBtn: {
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  outlineBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: "#475569" },
 });

@@ -2,12 +2,18 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { BookingsIcon, HomeIcon, ProfileIcon, TripsIcon, WalletIcon } from "../components/NavIcons";
+import { ChatWithSupportScreen } from "../screens/main/ChatWithSupportScreen";
+import { ContactUsScreen } from "../screens/main/ContactUsScreen";
 import { CreateTripScreen } from "../screens/main/CreateTripScreen";
 import { EarningsScreen } from "../screens/main/EarningsScreen";
+import { EmergencyContactsScreen } from "../screens/main/EmergencyContactsScreen";
 import { HomeScreen } from "../screens/main/HomeScreen";
+import { NotificationsScreen } from "../screens/main/NotificationsScreen";
 import { PassengerRequestsScreen } from "../screens/main/PassengerRequestsScreen";
 import { ProfileDetailsScreen } from "../screens/main/ProfileDetailsScreen";
+import { ReportProblemScreen } from "../screens/main/ReportProblemScreen";
 import { SettingsScreen } from "../screens/main/SettingsScreen";
+import { TwoFactorAuthScreen } from "../screens/main/TwoFactorAuthScreen";
 import { colors } from "../theme/colors";
 import { MainStackParamList, MainTabParamList } from "./types";
 
@@ -83,6 +89,36 @@ export const MainNavigator = () => (
     <Stack.Screen
       name="ProfileDetails"
       component={ProfileDetailsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="Notifications"
+      component={NotificationsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="EmergencyContacts"
+      component={EmergencyContactsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ReportProblem"
+      component={ReportProblemScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="TwoFactorAuth"
+      component={TwoFactorAuthScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ContactUs"
+      component={ContactUsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ChatWithSupport"
+      component={ChatWithSupportScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen

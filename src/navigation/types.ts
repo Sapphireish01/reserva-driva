@@ -31,6 +31,12 @@ export type MainStackParamList = {
   Earnings: undefined;
   Settings: undefined;
   ProfileDetails: undefined;
+  Notifications: undefined;
+  EmergencyContacts: undefined;
+  ReportProblem: undefined;
+  TwoFactorAuth: undefined;
+  ContactUs: undefined;
+  ChatWithSupport: undefined;
   EditName: { currentName: string };
   EditEmail: { currentEmail: string };
   EditPhone: { currentPhone: string };
