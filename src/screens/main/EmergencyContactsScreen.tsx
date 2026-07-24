@@ -228,17 +228,21 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
         </View>
       </Modal>
 
-      {/* 3. Delete Contact Confirmation Modal */}
-      <Modal visible={showDeleteModal} transparent animationType="fade">
-        <View style={styles.deleteOverlay}>
-          <View style={styles.deleteDialog}>
-            <View style={styles.deleteHeader}>
-              <Text style={styles.deleteTitle}>Delete Contact?</Text>
+      {/* 3. Delete Contact Confirmation Bottom Sheet Modal */}
+      <Modal visible={showDeleteModal} transparent animationType="slide">
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            onPress={() => setShowDeleteModal(false)}
+          />
+          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Delete Contact?</Text>
               <TouchableOpacity onPress={() => setShowDeleteModal(false)}>
                 <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
               </TouchableOpacity>
             </View>
-            <Text style={styles.deleteSubtitle}>
+            <Text style={styles.sheetSubtitle}>
               Are you sure you want to delete this contact?
             </Text>
 
@@ -410,28 +414,7 @@ const styles = StyleSheet.create({
   countryPrefix: { fontFamily: "DM Sans Bold", fontSize: 14, marginRight: 8, color: "#0F172A" },
   inputField: { flex: 1, fontFamily: "DM Sans", fontSize: 15, color: "#0F172A" },
 
-  /* Delete Confirmation Modal Styles */
-  deleteOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.lg,
-  },
-  deleteDialog: {
-    width: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: spacing.lg,
-  },
-  deleteHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: spacing.xs,
-  },
-  deleteTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
-  deleteSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.lg },
+  sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.lg, lineHeight: 20 },
   deleteBtn: {
     backgroundColor: "#EF4444",
     borderRadius: 10,

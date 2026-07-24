@@ -188,18 +188,22 @@ export const SettingsScreen = ({ navigation }: Props) => {
         </View>
       </ScrollView>
 
-      {/* 1. Deactivate Account Modal */}
-      <Modal visible={showDeactivateModal} transparent animationType="fade">
-        <View style={styles.dialogOverlay}>
-          <View style={styles.dialogCard}>
-            <View style={styles.dialogHeader}>
-              <Text style={styles.dialogTitle}>Deactivate Account?</Text>
+      {/* 1. Deactivate Account Bottom Sheet Modal */}
+      <Modal visible={showDeactivateModal} transparent animationType="slide">
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            onPress={() => setShowDeactivateModal(false)}
+          />
+          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Deactivate Account?</Text>
               <TouchableOpacity onPress={() => setShowDeactivateModal(false)}>
                 <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.dialogSubtitle}>
+            <Text style={styles.sheetSubtitle}>
               Are you sure you want to deactivate this account, you will no longer have access to Drifully
             </Text>
 
@@ -247,18 +251,22 @@ export const SettingsScreen = ({ navigation }: Props) => {
         </View>
       </Modal>
 
-      {/* 2. Logout Modal */}
-      <Modal visible={showLogoutModal} transparent animationType="fade">
-        <View style={styles.dialogOverlay}>
-          <View style={styles.dialogCard}>
-            <View style={styles.dialogHeader}>
-              <Text style={styles.dialogTitle}>Logout?</Text>
+      {/* 2. Logout Bottom Sheet Modal */}
+      <Modal visible={showLogoutModal} transparent animationType="slide">
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            onPress={() => setShowLogoutModal(false)}
+          />
+          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Logout?</Text>
               <TouchableOpacity onPress={() => setShowLogoutModal(false)}>
                 <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.dialogSubtitle}>
+            <Text style={styles.sheetSubtitle}>
               Are you sure you want to logout from this account?
             </Text>
 
@@ -388,27 +396,29 @@ const styles = StyleSheet.create({
     backgroundColor: "#F1F5F9",
     marginLeft: 50,
   },
-  dialogOverlay: {
+  sheetOverlay: {
     flex: 1,
+    justifyContent: "flex-end",
+  },
+  sheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(15, 23, 42, 0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.lg,
   },
-  dialogCard: {
-    width: "100%",
+  sheetContainer: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     padding: spacing.lg,
+    paddingBottom: spacing.xl * 1.5,
   },
-  dialogHeader: {
+  sheetHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.xs,
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
   },
-  dialogTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
-  dialogSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.md, lineHeight: 20 },
+  sheetTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.md, lineHeight: 20 },
   alertBanner: {
     flexDirection: "row",
     alignItems: "center",
