@@ -1,6 +1,10 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { AccountCreatedScreen } from "../screens/auth/AccountCreatedScreen";
+import { ForgotPasswordOTPScreen } from "../screens/auth/ForgotPasswordOTPScreen";
+import { ForgotPasswordScreen } from "../screens/auth/ForgotPasswordScreen";
+import { LoginScreen } from "../screens/auth/LoginScreen";
+import { ResetPasswordScreen } from "../screens/auth/ResetPasswordScreen";
 import {
   LicenseBackCaptureScreen,
   LicenseFrontCaptureScreen,
@@ -26,6 +30,10 @@ export const AuthNavigator = () => (
     }}
   >
     <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+    <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: true, title: "" }} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: true, title: "" }} />
+    <Stack.Screen name="ForgotPasswordOTP" component={ForgotPasswordOTPScreen} options={{ headerShown: true, title: "" }} />
+    <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ headerShown: true, title: "" }} />
     <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: true, title: "" }} />
     <Stack.Screen
       name="VerificationMethod"

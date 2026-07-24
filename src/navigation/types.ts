@@ -1,5 +1,9 @@
 export type AuthStackParamList = {
   Onboarding: undefined;
+  Login: undefined;
+  ForgotPassword: undefined;
+  ForgotPasswordOTP: { email: string };
+  ResetPassword: { email: string };
   SignUp: undefined;
   VerificationMethod: { driverId: string };
   OTPVerification: { driverId: string; method: "sms" | "email" };
@@ -25,6 +29,11 @@ export type MainStackParamList = {
   CreateTrip: undefined;
   PassengerRequests: { tripId?: string } | undefined;
   Earnings: undefined;
+  Settings: undefined;
+  ProfileDetails: undefined;
+  EditName: { currentName: string };
+  EditEmail: { currentEmail: string };
+  EditPhone: { currentPhone: string };
 };
 
 

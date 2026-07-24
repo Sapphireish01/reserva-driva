@@ -6,6 +6,8 @@ import { CreateTripScreen } from "../screens/main/CreateTripScreen";
 import { EarningsScreen } from "../screens/main/EarningsScreen";
 import { HomeScreen } from "../screens/main/HomeScreen";
 import { PassengerRequestsScreen } from "../screens/main/PassengerRequestsScreen";
+import { ProfileDetailsScreen } from "../screens/main/ProfileDetailsScreen";
+import { SettingsScreen } from "../screens/main/SettingsScreen";
 import { colors } from "../theme/colors";
 import { MainStackParamList, MainTabParamList } from "./types";
 
@@ -55,7 +57,7 @@ const MainTabNavigator = () => (
     <Tab.Screen name="TripsTab" component={CreateTripScreen} options={{ tabBarLabel: "Trips" }} />
     <Tab.Screen name="BookingsTab" component={PassengerRequestsScreen} options={{ tabBarLabel: "Bookings" }} />
     <Tab.Screen name="WalletTab" component={EarningsScreen} options={{ tabBarLabel: "Wallet" }} />
-    <Tab.Screen name="ProfileTab" component={HomeScreen} options={{ tabBarLabel: "Profile" }} />
+    <Tab.Screen name="ProfileTab" component={SettingsScreen} options={{ tabBarLabel: "Profile" }} />
   </Tab.Navigator>
 );
 
@@ -71,6 +73,16 @@ export const MainNavigator = () => (
     <Stack.Screen
       name="MainTabs"
       component={MainTabNavigator}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="Settings"
+      component={SettingsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ProfileDetails"
+      component={ProfileDetailsScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen

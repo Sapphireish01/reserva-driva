@@ -330,7 +330,7 @@ export const SignUpScreen = ({ navigation }: Props) => {
 
         <TouchableOpacity
           style={styles.loginRow}
-          onPress={() => navigation.navigate("Onboarding")}
+          onPress={() => navigation.navigate("Login")}
           activeOpacity={0.7}
         >
           <Text style={styles.loginText}>

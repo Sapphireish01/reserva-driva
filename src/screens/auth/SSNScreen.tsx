@@ -1,9 +1,9 @@
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { driversService } from "../../api/services/drivers";
 import { AuthStackParamList } from "../../navigation/types";
 import { ssnSchema } from "../../schemas/signup";
-import { driversService } from "../../api/services/drivers";
 import { colors, spacing, typography } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SSN">;
@@ -42,10 +42,10 @@ export const SSNScreen = ({ route, navigation }: Props) => {
       <Text style={styles.label}>Social Security Number</Text>
       <TextInput
         style={styles.input}
-        placeholder="000000000"
+        placeholder="e.g 000000000"
         keyboardType="number-pad"
         maxLength={9}
-        secureTextEntry
+        // secureTextEntry
         value={ssn}
         onChangeText={(text) => setSsn(text.replace(/[^0-9]/g, ""))}
       />
@@ -67,9 +67,12 @@ export const SSNScreen = ({ route, navigation }: Props) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background, padding: spacing.lg },
   title: { ...typography.h1 },
-  subtitle: { ...typography.body, color: colors.textMuted, marginVertical: spacing.md },
-  label: { ...typography.caption, marginBottom: spacing.xs },
+  subtitle: { ...typography.body, color: colors.dark, fontWeight: 700, fontSize: 14, marginVertical: spacing.md, lineHeight: 27, letterSpacing: -0.3 },
+  label: { ...typography.caption, fontWeight: "700", marginBottom: spacing.xs },
   input: {
+    fontWeight: "700",
+    lineHeight: 17,
+    letterSpacing: -0.3,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: 8,

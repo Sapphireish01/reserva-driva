@@ -86,7 +86,7 @@ export const palette = {
 export const colors = {
   background: palette.neutral[0],
   navy: palette.slate[900],
-  primary: palette.information[600], // #155DFC
+  primary: "#375DFB", // #155DFC
   primaryDisabled: "#F6F8FA", // #BEDBFF
   text: palette.slate[900],
   textMuted: "#868C98",
