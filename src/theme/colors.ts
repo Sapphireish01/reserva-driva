@@ -90,7 +90,7 @@ export const colors = {
   primaryDisabled: "#F6F8FA", // #BEDBFF
   text: palette.slate[900],
   textMuted: "#868C98",
-  border: "#EBEBEF",
+  border: "#CDD0D5",
   error: palette.error[600],
   success: palette.success[600],
   warning: palette.warning[500],

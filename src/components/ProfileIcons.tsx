@@ -1,5 +1,6 @@
 import React from "react";
-import Svg, { Path } from "react-native-svg";
+import { TouchableOpacity } from "react-native";
+import Svg, { Path, Text as SvgText } from "react-native-svg";
 
 interface IconProps {
   color?: string;
@@ -328,3 +329,228 @@ export const UploadIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 
     <Path d="M10.9688 22V18" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
+
+export const EditIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 18 }) => (
+  <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+    <Path
+      d="M8.25 1.5H6.75C3 1.5 1.5 3 1.5 6.75V11.25C1.5 15 3 16.5 6.75 16.5H11.25C15 16.5 16.5 15 16.5 11.25V9.75"
+      stroke={color}
+      strokeWidth="1.125"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12.0304 2.26495L6.1204 8.17495C5.8954 8.39995 5.6704 8.84245 5.6254 9.16495L5.3029 11.4224C5.1829 12.2399 5.7604 12.8099 6.5779 12.6974L8.8354 12.3749C9.1504 12.3299 9.5929 12.1049 9.8254 11.8799L15.7354 5.96995C16.7554 4.94995 17.2354 3.76495 15.7354 2.26495C14.2354 0.764945 13.0504 1.24495 12.0304 2.26495Z"
+      stroke={color}
+      strokeWidth="1.125"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M11.1816 3.1123C11.6841 4.9048 13.0866 6.3073 14.8866 6.8173"
+      stroke={color}
+      strokeWidth="1.125"
+      strokeMiterlimit="10"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+export const CameraIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <Path
+      d="M5.63412 18.3332H14.3675C16.6675 18.3332 17.5841 16.9248 17.6925 15.2082L18.1258 8.32484C18.2425 6.52484 16.8091 4.99984 15.0008 4.99984C14.4925 4.99984 14.0258 4.70817 13.7925 4.25817L13.1925 3.04984C12.8091 2.2915 11.8091 1.6665 10.9591 1.6665H9.05079C8.19246 1.6665 7.19246 2.2915 6.80912 3.04984L6.20912 4.25817C5.97579 4.70817 5.50912 4.99984 5.00079 4.99984C3.19246 4.99984 1.75912 6.52484 1.87579 8.32484L2.30912 15.2082C2.40912 16.9248 3.33412 18.3332 5.63412 18.3332Z"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path d="M8.75 6.6665H11.25" stroke={color} strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" />
+    <Path
+      d="M9.99935 15.0002C11.491 15.0002 12.7077 13.7835 12.7077 12.2918C12.7077 10.8002 11.491 9.5835 9.99935 9.5835C8.50768 9.5835 7.29102 10.8002 7.29102 12.2918C7.29102 13.7835 8.50768 15.0002 9.99935 15.0002Z"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+export const GalleryIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <Path
+      d="M7.49935 18.3332H12.4993C16.666 18.3332 18.3327 16.6665 18.3327 12.4998V7.49984C18.3327 3.33317 16.666 1.6665 12.4993 1.6665H7.49935C3.33268 1.6665 1.66602 3.33317 1.66602 7.49984V12.4998C1.66602 16.6665 3.33268 18.3332 7.49935 18.3332Z"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M7.50065 8.33333C8.42113 8.33333 9.16732 7.58714 9.16732 6.66667C9.16732 5.74619 8.42113 5 7.50065 5C6.58018 5 5.83398 5.74619 5.83398 6.66667C5.83398 7.58714 6.58018 8.33333 7.50065 8.33333Z"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M2.22461 15.7918L6.33294 13.0335C6.99128 12.5918 7.94128 12.6418 8.53294 13.1501L8.80794 13.3918C9.45794 13.9501 10.5079 13.9501 11.1579 13.3918L14.6246 10.4168C15.2746 9.85846 16.3246 9.85846 16.9746 10.4168L18.3329 11.5835"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+interface ToggleIconProps {
+  value: boolean;
+  onValueChange?: (val: boolean) => void;
+}
+
+export const ToggleIconItem: React.FC<ToggleIconProps> = ({ value, onValueChange }) => {
+  const trackColor = value ? "#0A0D14" : "#F6F8FA";
+  return (
+    <TouchableOpacity
+      activeOpacity={0.8}
+      onPress={() => onValueChange && onValueChange(!value)}
+    >
+      <Svg width={44} height={24} viewBox="0 0 44 24" fill="none">
+        <Path
+          d="M0 12C0 5.37258 5.37258 0 12 0H32C38.6274 0 44 5.37258 44 12C44 18.6274 38.6274 24 32 24H12C5.37258 24 0 18.6274 0 12Z"
+          fill={trackColor}
+        />
+        {value ? (
+          <Path
+            d="M22 12C22 6.47715 26.4772 2 32 2C37.5228 2 42 6.47715 42 12C42 17.5228 37.5228 22 32 22C26.4772 22 22 17.5228 22 12Z"
+            fill="#FFFFFF"
+          />
+        ) : (
+          <Path
+            d="M2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12Z"
+            fill="#FFFFFF"
+          />
+        )}
+      </Svg>
+    </TouchableOpacity>
+  );
+};
+
+export const CopyIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 18 }) => (
+  <Svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+    <Path
+      d="M12 9.675V12.825C12 15.45 10.95 16.5 8.325 16.5H5.175C2.55 16.5 1.5 15.45 1.5 12.825V9.675C1.5 7.05 2.55 6 5.175 6H8.325C10.95 6 12 7.05 12 9.675Z"
+      stroke={color}
+      strokeWidth="1.125"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M16.5 5.175V8.325C16.5 10.95 15.45 12 12.825 12H12V9.675C12 7.05 10.95 6 8.325 6H6V5.175C6 2.55 7.05 1.5 9.675 1.5H12.825C15.45 1.5 16.5 2.55 16.5 5.175Z"
+      stroke={color}
+      strokeWidth="1.125"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+interface FileFormatIconProps {
+  filename?: string;
+  extension?: string;
+  size?: number;
+}
+
+export const FileFormatIconItem: React.FC<FileFormatIconProps> = ({
+  filename = "",
+  extension = "",
+  size = 40,
+}) => {
+  let ext = extension;
+  if (!ext && filename) {
+    const parts = filename.split(".");
+    if (parts.length > 1) {
+      ext = parts[parts.length - 1];
+    }
+  }
+  ext = (ext || "pdf").toUpperCase();
+
+  let badgeColor = "#DF1C41"; // Red for PDF
+  if (["PNG", "JPG", "JPEG", "WEBP", "GIF"].includes(ext)) {
+    badgeColor = "#2563EB"; // Blue
+  } else if (["MP4", "MOV", "AVI", "MKV"].includes(ext)) {
+    badgeColor = "#7C3AED"; // Purple
+  } else if (["XLS", "XLSX", "CSV"].includes(ext)) {
+    badgeColor = "#059669"; // Green
+  } else if (["DOC", "DOCX", "TXT"].includes(ext)) {
+    badgeColor = "#0284C7"; // Light Blue
+  } else if (["ZIP", "RAR"].includes(ext)) {
+    badgeColor = "#D97706"; // Amber
+  }
+
+  return (
+    <Svg width={size} height={size} viewBox="0 0 40 40" fill="none">
+      <Path
+        d="M30 40H10C6.68629 40 4 37.3137 4 34V6C4 2.68629 6.68629 0 10 0H20.5147C22.106 0 23.6321 0.632142 24.7574 1.75736L34.2426 11.2426C35.3679 12.3679 36 13.894 36 15.4853V34C36 37.3137 33.3137 40 30 40Z"
+        fill="#FFFFFF"
+      />
+      <Path
+        d="M10 0.75H20.5146C21.907 0.75 23.242 1.30354 24.2266 2.28809L33.7119 11.7734C34.6965 12.758 35.25 14.093 35.25 15.4854V34C35.25 36.8995 32.8995 39.25 30 39.25H10C7.10051 39.25 4.75 36.8995 4.75 34V6C4.75 3.10051 7.10051 0.75 10 0.75Z"
+        stroke="#CDD0D5"
+        strokeWidth="1.5"
+      />
+      <Path d="M23 1V9C23 11.2091 24.7909 13 27 13H35" stroke="#CDD0D5" strokeWidth="1.5" />
+
+      <Path
+        d="M0 22C0 19.7909 1.79086 18 4 18H24C26.2091 18 28 19.7909 28 22V30C28 32.2091 26.2091 34 24 34H4C1.79086 34 0 32.2091 0 30V22Z"
+        fill={badgeColor}
+      />
+      <SvgText
+        x="14"
+        y="28"
+        fill="#FFFFFF"
+        fontSize={ext.length > 3 ? "8" : "9.5"}
+        fontWeight="bold"
+        textAnchor="middle"
+      >
+        {ext}
+      </SvgText>
+    </Svg>
+  );
+};
+
+export const UsersIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 16 }) => (
+  <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <Path
+      d="M6.10573 7.24683C6.03906 7.24016 5.95906 7.24016 5.88573 7.24683C4.29906 7.1935 3.03906 5.8935 3.03906 4.2935C3.03906 2.66016 4.35906 1.3335 5.99906 1.3335C7.6324 1.3335 8.95906 2.66016 8.95906 4.2935C8.9524 5.8935 7.6924 7.1935 6.10573 7.24683Z"
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M10.9382 2.6665C12.2316 2.6665 13.2716 3.71317 13.2716 4.99984C13.2716 6.25984 12.2716 7.2865 11.0249 7.33317C10.9716 7.3265 10.9116 7.3265 10.8516 7.33317"
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M2.7725 9.7065C1.15917 10.7865 1.15917 12.5465 2.7725 13.6198C4.60583 14.8465 7.6125 14.8465 9.44583 13.6198C11.0592 12.5398 11.0592 10.7798 9.44583 9.7065C7.61917 8.4865 4.6125 8.4865 2.7725 9.7065Z"
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12.2266 13.3335C12.7066 13.2335 13.1599 13.0402 13.5332 12.7535C14.5732 11.9735 14.5732 10.6868 13.5332 9.90683C13.1666 9.62683 12.7199 9.44016 12.2466 9.3335"
+      stroke={color}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+
+
+
+
+

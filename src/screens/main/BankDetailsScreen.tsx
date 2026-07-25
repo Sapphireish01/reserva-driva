@@ -12,8 +12,9 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { EditIconItem } from "../../components/ProfileIcons";
 import { MainStackParamList } from "../../navigation/types";
-import { spacing } from "../../theme/colors";
+import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "BankDetails">;
 
@@ -34,7 +35,7 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
 
   const [bankName, setBankName] = useState("Zenith");
-  const [accountNumber, setAccountNumber] = useState("********0000");
+  const [accountNumber, setAccountNumber] = useState("*******0000");
   const [accountName, setAccountName] = useState("Drifully");
 
   // Edit Modal State
@@ -61,7 +62,7 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
       setIsResolving(true);
       setTimeout(() => {
         setIsResolving(false);
-        setResolvedAccountName("Onyekele Selemu");
+        setResolvedAccountName("Onyekele Salamu");
       }, 600);
     } else {
       setResolvedAccountName("");
@@ -71,7 +72,7 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
   const handleSave = () => {
     if (!editBank || !editAccNo || !resolvedAccountName) return;
     setBankName(editBank);
-    const masked = editAccNo.length >= 4 ? `********${editAccNo.slice(-4)}` : editAccNo;
+    const masked = editAccNo.length >= 4 ? `*******${editAccNo.slice(-4)}` : editAccNo;
     setAccountNumber(masked);
     setAccountName(resolvedAccountName);
     setShowEditModal(false);
@@ -92,7 +93,7 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color={colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bank Details</Text>
         <TouchableOpacity
@@ -100,7 +101,7 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
           onPress={handleOpenEdit}
           activeOpacity={0.7}
         >
-          <Ionicons name="pencil" size={20} color="#0F172A" />
+          <EditIconItem color="#868C98" size={22} />
         </TouchableOpacity>
       </View>
 
@@ -118,8 +119,6 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
             </View>
           </View>
 
-          <View style={styles.divider} />
-
           <View style={styles.infoCol}>
             <Text style={styles.infoLabel}>Account Name</Text>
             <Text style={styles.infoValue}>{accountName}</Text>
@@ -127,64 +126,67 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
         </View>
       </ScrollView>
 
-      {/* Edit Bank Details Modal */}
-      <Modal visible={showEditModal} animationType="slide">
-        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowEditModal(false)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalHeaderTitle}>Edit Bank Details</Text>
-            <TouchableOpacity onPress={handleSave} disabled={!isFormValid}>
-              <Text style={[styles.modalSaveText, !isFormValid && styles.modalSaveTextDisabled]}>
-                Save
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
-            {/* Bank Field */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Bank</Text>
-              <TouchableOpacity
-                style={styles.dropdownCard}
-                onPress={() => setShowBankPickerSheet(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={[styles.dropdownValue, !editBank && styles.placeholderText]}>
-                  {editBank || "e.g Zenith"}
+      {/* Edit Bank Details Modal (Bottom Sheet style) */}
+      <Modal visible={showEditModal} transparent animationType="slide">
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity style={styles.sheetBackdrop} onPress={() => setShowEditModal(false)} />
+          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.sheetHeader}>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.sheetTitle}>Edit Bank Details</Text>
+              <TouchableOpacity onPress={handleSave} disabled={!isFormValid}>
+                <Text style={[styles.modalSaveText, !isFormValid && styles.modalSaveTextDisabled]}>
+                  Save
                 </Text>
-                <Ionicons name="chevron-down" size={18} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
-            {/* Account Number Field */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Account Number</Text>
-              <View style={styles.inputCard}>
-                <TextInput
-                  style={styles.inputField}
-                  placeholder="e.g 0000000000"
-                  placeholderTextColor="#94A3B8"
-                  value={editAccNo}
-                  onChangeText={handleAccNoChange}
-                  keyboardType="number-pad"
-                  maxLength={10}
-                />
-                {isResolving && <ActivityIndicator size="small" color="#375DFB" />}
-                {!isResolving && resolvedAccountName.length > 0 && (
-                  <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
-                )}
+            <View style={styles.modalBody}>
+              {/* Bank Field */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Bank</Text>
+                <TouchableOpacity
+                  style={styles.dropdownCard}
+                  onPress={() => setShowBankPickerSheet(true)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.dropdownValue, !editBank && styles.placeholderText]}>
+                    {editBank || "e.g Zenith"}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color="#868C98" />
+                </TouchableOpacity>
               </View>
 
-              {/* Resolved Account Name Banner */}
-              {resolvedAccountName.length > 0 && (
-                <View style={styles.resolvedNameRow}>
-                  <Text style={styles.resolvedNameText}>{resolvedAccountName}</Text>
+              {/* Account Number Field */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Account Number</Text>
+                <View style={styles.inputCard}>
+                  <TextInput
+                    style={styles.inputField}
+                    placeholder="e.g 0000000000"
+                    placeholderTextColor="#868C98"
+                    value={editAccNo}
+                    onChangeText={handleAccNoChange}
+                    keyboardType="number-pad"
+                    maxLength={10}
+                  />
+                  {isResolving && <ActivityIndicator size="small" color="#375DFB" />}
+                  {!isResolving && resolvedAccountName.length > 0 && (
+                    <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
+                  )}
                 </View>
-              )}
+
+                {/* Resolved Account Name */}
+                {resolvedAccountName.length > 0 && (
+                  <View style={styles.resolvedNameRow}>
+                    <Text style={styles.resolvedNameText}>{resolvedAccountName}</Text>
+                  </View>
+                )}
+              </View>
             </View>
-          </ScrollView>
+          </View>
         </View>
       </Modal>
 
@@ -194,39 +196,44 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
           <TouchableOpacity style={styles.sheetBackdrop} onPress={() => setShowBankPickerSheet(false)} />
           <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Select Bank</Text>
               <TouchableOpacity onPress={() => setShowBankPickerSheet(false)}>
-                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
+                <Text style={styles.modalCancelText}>Back</Text>
+              </TouchableOpacity>
+              <Text style={styles.sheetTitle}>Edit Bank Details</Text>
+              <TouchableOpacity onPress={() => setShowBankPickerSheet(false)}>
+                <Text style={styles.modalSaveText}>Save</Text>
               </TouchableOpacity>
             </View>
 
             {/* Search Input */}
             <View style={styles.searchBar}>
-              <Ionicons name="search-outline" size={18} color="#94A3B8" style={{ marginRight: 8 }} />
+              <Ionicons name="search-outline" size={18} color="#868C98" style={{ marginRight: 8 }} />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search..."
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#868C98"
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
             </View>
 
             {/* Banks List */}
-            {filteredBanks.map((b) => (
-              <TouchableOpacity
-                key={b}
-                style={styles.bankItem}
-                onPress={() => {
-                  setEditBank(b);
-                  setShowBankPickerSheet(false);
-                }}
-                activeOpacity={0.7}
-              >
-                <View style={styles.bankCircle} />
-                <Text style={styles.bankItemText}>{b}</Text>
-              </TouchableOpacity>
-            ))}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {filteredBanks.map((b) => (
+                <TouchableOpacity
+                  key={b}
+                  style={styles.bankItem}
+                  onPress={() => {
+                    setEditBank(b);
+                    setShowBankPickerSheet(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.bankCircle} />
+                  <Text style={styles.bankItemText}>{b}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -245,100 +252,85 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 40, height: 40, justifyContent: "center" },
   editIconButton: { width: 40, height: 40, justifyContent: "center", alignItems: "flex-end" },
-  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 20, fontWeight: "700", color: colors.dark },
 
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl * 2 },
   infoCard: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    padding: spacing.lg,
-    backgroundColor: "#FFFFFF",
+    paddingVertical: spacing.xs,
   },
-  infoRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.md },
+  infoRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
   infoCol: {},
-  infoLabel: { fontFamily: "DM Sans", fontSize: 12, color: "#94A3B8", marginBottom: 4 },
-  infoValue: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#0F172A" },
-  divider: { height: 1, backgroundColor: "#F1F5F9", marginVertical: spacing.md },
+  infoLabel: { fontFamily: "DM Sans", fontSize: 13, color: "#868C98", marginBottom: 6 },
+  infoValue: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: colors.dark },
 
-  /* Modal Form */
-  modalContainer: { flex: 1, backgroundColor: "#FFFFFF" },
-  modalHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
+  /* Form & Bottom Sheet Styles */
+  sheetOverlay: { flex: 1, justifyContent: "flex-end" },
+  sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15, 23, 42, 0.4)" },
+  sheetContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: spacing.lg,
+    maxHeight: "85%",
   },
-  modalCancelText: { fontFamily: "DM Sans", fontSize: 15, color: "#94A3B8" },
-  modalHeaderTitle: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: "#0F172A" },
-  modalSaveText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#375DFB" },
+  sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg },
+  sheetTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: colors.dark },
+  modalCancelText: { fontFamily: "DM Sans", fontSize: 16, color: "#868C98" },
+  modalSaveText: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: colors.dark },
   modalSaveTextDisabled: { color: "#CBD5E1" },
-  modalBody: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl * 2 },
+
+  modalBody: { paddingVertical: spacing.xs },
   fieldGroup: { marginBottom: spacing.lg },
-  label: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "700", color: "#0F172A", marginBottom: 6 },
+  label: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: colors.dark, marginBottom: 8 },
   dropdownCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 10,
+    borderRadius: 14,
     paddingHorizontal: spacing.md,
-    paddingVertical: 12,
+    paddingVertical: 14,
     backgroundColor: "#FFFFFF",
   },
-  dropdownValue: { fontFamily: "DM Sans", fontSize: 14, color: "#0F172A" },
-  placeholderText: { color: "#94A3B8" },
+  dropdownValue: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: colors.dark },
+  placeholderText: { fontFamily: "DM Sans", fontSize: 16, color: "#868C98", fontWeight: "400" },
   inputCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 10,
+    borderRadius: 14,
     paddingHorizontal: spacing.md,
-    paddingVertical: 12,
+    paddingVertical: 14,
     backgroundColor: "#FFFFFF",
   },
-  inputField: { flex: 1, fontFamily: "DM Sans", fontSize: 14, color: "#0F172A" },
-  resolvedNameRow: { marginTop: 6, paddingLeft: 4 },
-  resolvedNameText: { fontFamily: "DM Sans Bold", fontSize: 13, color: "#475569", fontWeight: "600" },
+  inputField: { flex: 1, fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: colors.dark },
+  resolvedNameRow: { marginTop: 8, paddingLeft: 2 },
+  resolvedNameText: { fontFamily: "DM Sans Bold", fontSize: 14, color: colors.dark, fontWeight: "700" },
 
-  /* Bank Picker Sheet */
-  sheetOverlay: { flex: 1, justifyContent: "flex-end" },
-  sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15, 23, 42, 0.4)" },
-  sheetContainer: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: spacing.lg,
-    maxHeight: "75%",
-  },
-  sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
-  sheetTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  /* Searchable Bank Picker Sheet */
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 10,
+    borderRadius: 14,
     paddingHorizontal: spacing.md,
-    paddingVertical: 10,
+    paddingVertical: 12,
     marginBottom: spacing.md,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFFFFF",
   },
-  searchInput: { flex: 1, fontFamily: "DM Sans", fontSize: 14, color: "#0F172A" },
+  searchInput: { flex: 1, fontFamily: "DM Sans", fontSize: 15, color: colors.dark },
   bankItem: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F8FAFC",
-    borderRadius: 12,
+    borderRadius: 14,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  bankCircle: { width: 24, height: 24, borderRadius: 12, backgroundColor: "#E2E8F0", marginRight: 12 },
-  bankItemText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: "#0F172A" },
+  bankCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: "#FFFFFF", marginRight: 14 },
+  bankItemText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: colors.dark },
 });

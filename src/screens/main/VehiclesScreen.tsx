@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import * as DocumentPicker from "expo-document-picker";
 import React, { useState } from "react";
 import {
   Modal,
@@ -10,11 +11,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import * as DocumentPicker from "expo-document-picker";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { UploadIconItem } from "../../components/ProfileIcons";
+import { FileFormatIconItem, UploadIconItem, UsersIconItem } from "../../components/ProfileIcons";
 import { MainStackParamList } from "../../navigation/types";
-import { spacing } from "../../theme/colors";
+import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Vehicles">;
 
@@ -30,30 +30,7 @@ interface Vehicle {
   docName?: string;
 }
 
-const INITIAL_VEHICLES: Vehicle[] = [
-  {
-    id: "1",
-    make: "Toyota",
-    brand: "High Lander 2026",
-    year: "2026",
-    plateNumber: "KTU908GH",
-    color: "Black",
-    seats: "4",
-    isDefault: true,
-    docName: "vehicle_docs.pdf",
-  },
-  {
-    id: "2",
-    make: "Cadillac",
-    brand: "Escalade",
-    year: "2024",
-    plateNumber: "KTU908GH",
-    color: "Black",
-    seats: "4",
-    isDefault: false,
-    docName: "vehicle_docs.pdf",
-  },
-];
+const INITIAL_VEHICLES: Vehicle[] = [];
 
 const MAKES = ["Toyota", "Cadillac", "Honda", "Hyundai", "Mercedes-Benz", "Nissan"];
 const BRANDS: Record<string, string[]> = {
@@ -138,15 +115,15 @@ export const VehiclesScreen = ({ navigation }: Props) => {
         prev.map((item) =>
           item.id === editingVehicleId
             ? {
-                ...item,
-                make,
-                brand,
-                year,
-                plateNumber,
-                color,
-                seats,
-                docName,
-              }
+              ...item,
+              make,
+              brand,
+              year,
+              plateNumber,
+              color,
+              seats,
+              docName,
+            }
             : item
         )
       );
@@ -196,7 +173,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color={colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Vehicles</Text>
         <TouchableOpacity
@@ -204,14 +181,16 @@ export const VehiclesScreen = ({ navigation }: Props) => {
           onPress={handleOpenAdd}
           activeOpacity={0.7}
         >
-          <Ionicons name="add" size={24} color="#0F172A" />
+          <Ionicons name="add" size={24} color={colors.dark} />
         </TouchableOpacity>
       </View>
 
       {/* Main Content */}
       {vehicles.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="car-outline" size={64} color="#94A3B8" style={{ marginBottom: spacing.md }} />
+          {/* <View style={{ marginBottom: spacing.md }}>
+            <VehiclesIconItem size={64} color="#868C98" />
+          </View> */}
           <Text style={styles.emptyTitle}>No Vehicle Added</Text>
           <Text style={styles.emptySubtitle}>
             Add your vehicle details to start scheduling trips and accepting bookings.
@@ -232,25 +211,28 @@ export const VehiclesScreen = ({ navigation }: Props) => {
               }}
               activeOpacity={0.8}
             >
-              <View style={styles.vehicleCardHeader}>
-                <View style={styles.titleRow}>
-                  <Text style={styles.vehicleName}>
-                    {v.make} {v.brand} {v.year}
-                  </Text>
-                  {v.isDefault && (
-                    <View style={styles.defaultBadge}>
-                      <Text style={styles.defaultBadgeText}>Default</Text>
-                    </View>
-                  )}
-                </View>
+              <View style={styles.vehicleTopRow}>
+                <Text style={styles.vehicleName} numberOfLines={1}>
+                  {v.make} {v.brand} {v.year}
+                </Text>
+                {v.isDefault && (
+                  <View style={styles.defaultBadge}>
+                    <Text style={styles.defaultBadgeText}>Default</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.vehicleBottomRow}>
+                <Text style={styles.vehicleMeta}>
+                  {v.plateNumber} • {v.color || "Black"}
+                </Text>
                 <View style={styles.seatsRow}>
-                  <Ionicons name="people-outline" size={16} color="#64748B" style={{ marginRight: 4 }} />
+                  <View style={{ marginRight: 4 }}>
+                    <UsersIconItem color="#868C98" size={16} />
+                  </View>
                   <Text style={styles.seatsText}>{v.seats || "4"} Seats</Text>
                 </View>
               </View>
-              <Text style={styles.vehicleMeta}>
-                {v.plateNumber} • {v.color || "Black"}
-              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -370,14 +352,16 @@ export const VehiclesScreen = ({ navigation }: Props) => {
               {docName ? (
                 <View style={styles.docCard}>
                   <View style={styles.docLeft}>
-                    <View style={styles.pdfBadge}>
-                      <Text style={styles.pdfBadgeText}>PDF</Text>
+                    <View style={{ marginRight: 12 }}>
+                      <FileFormatIconItem filename={docName} size={40} />
                     </View>
-                    <View>
-                      <Text style={styles.docNameText}>{docName}</Text>
+                    <View style={styles.docTextContainer}>
+                      <Text style={styles.docNameText} numberOfLines={1} ellipsizeMode="middle">
+                        {docName}
+                      </Text>
                       <View style={styles.docStatusRow}>
                         <Text style={styles.docSizeText}>0 KB of 120 KB • </Text>
-                        <Ionicons name="checkmark-circle" size={12} color="#22C55E" style={{ marginRight: 2 }} />
+                        <Ionicons name="checkmark-circle" size={12} color="#38C793" style={{ marginRight: 2 }} />
                         <Text style={styles.docCompletedText}>Completed</Text>
                       </View>
                     </View>
@@ -419,8 +403,8 @@ export const VehiclesScreen = ({ navigation }: Props) => {
                 {activeDropdown === "make"
                   ? "Select Make"
                   : activeDropdown === "brand"
-                  ? "Select Brand"
-                  : "Select Year"}
+                    ? "Select Brand"
+                    : "Select Year"}
               </Text>
               <TouchableOpacity onPress={() => setActiveDropdown(null)}>
                 <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
@@ -430,8 +414,8 @@ export const VehiclesScreen = ({ navigation }: Props) => {
             {(activeDropdown === "make"
               ? MAKES
               : activeDropdown === "brand"
-              ? BRANDS[make] || BRANDS["Toyota"]
-              : YEARS
+                ? BRANDS[make] || BRANDS["Toyota"]
+                : YEARS
             ).map((opt) => (
               <TouchableOpacity
                 key={opt}
@@ -535,7 +519,7 @@ const styles = StyleSheet.create({
   },
   backButton: { width: 40, height: 40, justifyContent: "center" },
   plusButton: { width: 40, height: 40, justifyContent: "center", alignItems: "flex-end" },
-  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: colors.dark },
 
   emptyContainer: {
     flex: 1,
@@ -543,7 +527,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: spacing.xl,
   },
-  emptyTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A", marginBottom: 6 },
+  emptyTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: colors.dark, marginBottom: 6 },
   emptySubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", textAlign: "center", lineHeight: 20, marginBottom: spacing.lg },
   primaryButton: {
     width: "100%",
@@ -558,19 +542,58 @@ const styles = StyleSheet.create({
   vehicleCard: {
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 12,
+    borderRadius: 14,
     padding: spacing.md,
     marginBottom: spacing.md,
     backgroundColor: "#FFFFFF",
   },
-  vehicleCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-  titleRow: { flexDirection: "row", alignItems: "center" },
-  vehicleName: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#0F172A", marginRight: 8 },
-  defaultBadge: { backgroundColor: "#F1F5F9", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
-  defaultBadgeText: { fontFamily: "DM Sans", fontSize: 11, color: "#64748B", fontWeight: "600" },
-  seatsRow: { flexDirection: "row", alignItems: "center" },
-  seatsText: { fontFamily: "DM Sans", fontSize: 13, color: "#64748B" },
-  vehicleMeta: { fontFamily: "DM Sans", fontSize: 13, color: "#94A3B8" },
+  vehicleTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  vehicleName: {
+    flex: 1,
+    fontFamily: "DM Sans Bold",
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.dark,
+    marginRight: 8,
+  },
+  defaultBadge: {
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  defaultBadgeText: {
+    fontFamily: "DM Sans",
+    fontSize: 12,
+    color: "#64748B",
+    fontWeight: "600",
+  },
+  vehicleBottomRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  vehicleMeta: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: "#868C98",
+  },
+  seatsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  seatsText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: "#868C98",
+  },
 
   /* Modal Form */
   modalContainer: { flex: 1, backgroundColor: "#FFFFFF" },
@@ -583,13 +606,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
-  modalCancelText: { fontFamily: "DM Sans", fontSize: 15, color: "#94A3B8" },
-  modalHeaderTitle: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: "#0F172A" },
-  modalSaveText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#375DFB" },
+  modalCancelText: { fontFamily: "DM Sans", fontSize: 16, color: colors.grey, fontWeight: "700" },
+  modalHeaderTitle: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: colors.dark },
+  modalSaveText: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: colors.dark },
   modalSaveTextDisabled: { color: "#CBD5E1" },
   modalBody: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl * 2 },
   fieldGroup: { marginBottom: spacing.lg },
-  label: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "700", color: "#0F172A", marginBottom: 6 },
+  label: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "700", color: colors.dark, marginBottom: 6 },
   dropdownCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -601,8 +624,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: "#FFFFFF",
   },
-  dropdownValue: { fontFamily: "DM Sans", fontSize: 14, color: "#0F172A" },
-  placeholderText: { color: "#94A3B8" },
+  dropdownValue: { fontFamily: "DM Sans", fontSize: 16, color: colors.dark, fontWeight: "700" },
+  placeholderText: { color: colors.grey, fontWeight: "400" },
   inputCard: {
     borderWidth: 1,
     borderColor: "#E2E8F0",
@@ -611,7 +634,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: "#FFFFFF",
   },
-  inputField: { fontFamily: "DM Sans", fontSize: 14, color: "#0F172A" },
+  inputField: { fontFamily: "DM Sans", fontSize: 16, color: colors.dark, fontWeight: "700" },
 
   /* Dropzone & Upload Card */
   dropzoneCard: {
@@ -624,7 +647,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#FFFFFF",
   },
-  dropzoneTitle: { fontFamily: "DM Sans Bold", fontSize: 13, fontWeight: "700", color: "#0F172A", marginBottom: 4 },
+  dropzoneTitle: { fontFamily: "DM Sans Bold", fontSize: 13, fontWeight: "700", color: colors.dark, marginBottom: 4 },
   dropzoneSubtitle: { fontFamily: "DM Sans", fontSize: 11, color: "#94A3B8", textAlign: "center", marginBottom: spacing.md },
   browseButton: { borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 8, paddingHorizontal: 16, paddingVertical: 6 },
   browseButtonText: { fontFamily: "DM Sans Bold", fontSize: 12, color: "#475569" },
@@ -639,13 +662,12 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     backgroundColor: "#FFFFFF",
   },
-  docLeft: { flexDirection: "row", alignItems: "center" },
-  pdfBadge: { backgroundColor: "#EF4444", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4, marginRight: 10 },
-  pdfBadgeText: { fontFamily: "DM Sans Bold", fontSize: 10, color: "#FFFFFF", fontWeight: "800" },
-  docNameText: { fontFamily: "DM Sans Bold", fontSize: 13, fontWeight: "700", color: "#0F172A" },
+  docLeft: { flexDirection: "row", alignItems: "center", flex: 1, marginRight: 10 },
+  docTextContainer: { flex: 1 },
+  docNameText: { fontFamily: "DM Sans Bold", fontSize: 13, fontWeight: "700", color: colors.dark },
   docStatusRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
   docSizeText: { fontFamily: "DM Sans", fontSize: 11, color: "#94A3B8" },
-  docCompletedText: { fontFamily: "DM Sans", fontSize: 11, color: "#22C55E", fontWeight: "600" },
+  docCompletedText: { fontFamily: "DM Sans", fontSize: 11, color: colors.dark, fontWeight: "600" },
 
   /* Bottom Sheets */
   sheetOverlay: { flex: 1, justifyContent: "flex-end" },
@@ -657,10 +679,10 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md },
-  sheetTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  sheetTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: colors.dark },
   sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.lg, lineHeight: 20 },
   optionItem: { backgroundColor: "#F8FAFC", borderRadius: 12, padding: spacing.md, marginBottom: spacing.sm },
-  optionItemText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: "#0F172A" },
+  optionItemText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: colors.dark },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -670,7 +692,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  actionRowText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: "#0F172A" },
+  actionRowText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: colors.dark },
   redBtn: { backgroundColor: "#EF4444", borderRadius: 10, paddingVertical: 14, alignItems: "center", marginBottom: spacing.sm },
   redBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
   outlineBtn: { borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 10, paddingVertical: 14, alignItems: "center" },

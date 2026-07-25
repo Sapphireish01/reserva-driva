@@ -1,10 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
-import { ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from "react-native";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { NotificationIconItem, ToggleIconItem } from "../../components/ProfileIcons";
 import { MainStackParamList } from "../../navigation/types";
-import { spacing } from "../../theme/colors";
+import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Notifications">;
 
@@ -33,43 +34,30 @@ export const NotificationsScreen = ({ navigation }: Props) => {
         {/* In-App Notification */}
         <View style={styles.itemRow}>
           <View style={styles.itemLeft}>
-            <Ionicons name="notifications-outline" size={20} color="#0F172A" style={styles.icon} />
+            <View style={styles.icon}>
+              <NotificationIconItem color="#868C98" size={20} />
+            </View>
             <Text style={styles.itemLabel}>In-App Notification</Text>
           </View>
-          <Switch
-            value={inApp}
-            onValueChange={setInApp}
-            trackColor={{ false: "#E2E8F0", true: "#0F172A" }}
-            thumbColor="#FFFFFF"
-          />
+          <ToggleIconItem value={inApp} onValueChange={setInApp} />
         </View>
 
         {/* Email Notification */}
         <View style={styles.itemRow}>
           <View style={styles.itemLeft}>
-            <Ionicons name="mail-outline" size={20} color="#0F172A" style={styles.icon} />
+            <Ionicons name="mail-outline" size={20} color="#868C98" style={styles.icon} />
             <Text style={styles.itemLabel}>Email Notification</Text>
           </View>
-          <Switch
-            value={email}
-            onValueChange={setEmail}
-            trackColor={{ false: "#E2E8F0", true: "#0F172A" }}
-            thumbColor="#FFFFFF"
-          />
+          <ToggleIconItem value={email} onValueChange={setEmail} />
         </View>
 
         {/* SMS Notification */}
         <View style={styles.itemRow}>
           <View style={styles.itemLeft}>
-            <Ionicons name="call-outline" size={20} color="#0F172A" style={styles.icon} />
+            <Ionicons name="call-outline" size={20} color="#868C98" style={styles.icon} />
             <Text style={styles.itemLabel}>SMS Notification</Text>
           </View>
-          <Switch
-            value={sms}
-            onValueChange={setSms}
-            trackColor={{ false: "#E2E8F0", true: "#0F172A" }}
-            thumbColor="#FFFFFF"
-          />
+          <ToggleIconItem value={sms} onValueChange={setSms} />
         </View>
       </ScrollView>
     </View>
@@ -107,7 +95,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 16,
+    paddingVertical: 10,
   },
   itemLeft: {
     flexDirection: "row",
@@ -117,9 +105,9 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   itemLabel: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#0F172A",
+    fontFamily: "DM Sans",
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.dark,
   },
 });

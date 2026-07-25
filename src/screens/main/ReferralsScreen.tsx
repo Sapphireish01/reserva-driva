@@ -10,8 +10,9 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CopyIconItem } from "../../components/ProfileIcons";
 import { MainStackParamList } from "../../navigation/types";
-import { spacing } from "../../theme/colors";
+import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Referrals">;
 
@@ -38,67 +39,75 @@ export const ReferralsScreen = ({ navigation }: Props) => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color={colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Referrals</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Top Stats Cards */}
-        <View style={styles.statsRow}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Your Reward Points</Text>
-            <Text style={styles.statValue}>{rewardPoints}</Text>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+        ]}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.mainContent}>
+          {/* Top Stats Cards */}
+          <View style={styles.statsRow}>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>Your Reward Points</Text>
+              <Text style={styles.statValue}>{rewardPoints}</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statLabel}>No. Of Referrals</Text>
+              <Text style={styles.statValue}>{numReferrals}</Text>
+            </View>
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>No. Of Referrals</Text>
-            <Text style={styles.statValue}>{numReferrals}</Text>
+
+          {/* Invite Friends & Earn Rewards */}
+          <View style={styles.sectionGroup}>
+            <Text style={styles.sectionHeader}>Invite friends and earn rewards</Text>
+            <Text style={styles.bannerText}>
+              Earn an extra ₦1,000 for every successful driver you refer. Invite qualified drivers today and start turning your network into extra income.
+            </Text>
+          </View>
+
+          {/* Referral Code Box */}
+          <View style={styles.sectionGroup}>
+            <Text style={styles.labelHeader}>Referral Code</Text>
+            <TouchableOpacity
+              style={styles.codeCard}
+              onPress={handleCopyCode}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.codeText}>{referralCode}</Text>
+              <CopyIconItem color="#868C98" size={20} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Toast Popup */}
+          {copiedToast && (
+            <View style={styles.toastCard}>
+              <Ionicons name="checkmark-circle" size={16} color="#22C55E" style={{ marginRight: 6 }} />
+              <Text style={styles.toastText}>Referral code copied!</Text>
+            </View>
+          )}
+
+          {/* How It Works */}
+          <View style={styles.sectionGroup}>
+            <Text style={styles.howItWorksTitle}>How It Works</Text>
+            <Text style={styles.explainerSubtitle}>A simple three-step explainer:</Text>
+
+            <View style={styles.stepList}>
+              <Text style={styles.stepText}>1. Share your referral code.</Text>
+              <Text style={styles.stepText}>2. Your friend signs up and gets verified</Text>
+              <Text style={styles.stepText}>3. You both earn rewards.</Text>
+            </View>
           </View>
         </View>
 
-        {/* Invite Friends & Earn Rewards */}
-        <View style={styles.sectionGroup}>
-          <Text style={styles.sectionHeader}>Invite friends and earn rewards</Text>
-          <Text style={styles.bannerText}>
-            Earn an extra ₦1,000 for every successful driver you refer. Invite qualified drivers today and start turning your network into extra income.
-          </Text>
-        </View>
-
-        {/* Referral Code Box */}
-        <View style={styles.sectionGroup}>
-          <Text style={styles.labelHeader}>Referral Code</Text>
-          <TouchableOpacity
-            style={styles.codeCard}
-            onPress={handleCopyCode}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.codeText}>{referralCode}</Text>
-            <Ionicons name="copy-outline" size={20} color="#94A3B8" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Toast Popup */}
-        {copiedToast && (
-          <View style={styles.toastCard}>
-            <Ionicons name="checkmark-circle" size={16} color="#22C55E" style={{ marginRight: 6 }} />
-            <Text style={styles.toastText}>Referral code copied!</Text>
-          </View>
-        )}
-
-        {/* How It Works */}
-        <View style={styles.sectionGroup}>
-          <Text style={styles.howItWorksTitle}>How It Works</Text>
-          <Text style={styles.explainerSubtitle}>A simple three-step explainer:</Text>
-
-          <View style={styles.stepList}>
-            <Text style={styles.stepText}>1. Share your referral code.</Text>
-            <Text style={styles.stepText}>2. Your friend signs up and gets verified</Text>
-            <Text style={styles.stepText}>3. You both earn rewards.</Text>
-          </View>
-        </View>
-
-        {/* Footer Terms Note */}
+        {/* Footer Terms Note at the bottom */}
         <Text style={styles.footerNote}>
           Rewards are credited after your friend's first completed trip. Terms apply.
         </Text>
@@ -117,43 +126,45 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   backButton: { width: 40, height: 40, justifyContent: "center" },
-  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl * 2 },
+  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 20, fontWeight: "700", color: colors.dark },
+  content: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  mainContent: { flex: 1 },
 
-  statsRow: { flexDirection: "row", gap: 12, marginBottom: spacing.lg },
+  statsRow: { flexDirection: "row", gap: 16, marginBottom: spacing.xl },
   statCard: {
     flex: 1,
     backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: spacing.md,
+    borderRadius: 14,
+    paddingVertical: 18,
+    paddingHorizontal: spacing.sm,
     alignItems: "center",
     justifyContent: "center",
-    height: 72,
+    height: 88,
   },
-  statLabel: { fontFamily: "DM Sans", fontSize: 11, color: "#94A3B8", marginBottom: 4 },
-  statValue: { fontFamily: "DM Sans Bold", fontSize: 20, fontWeight: "800", color: "#0F172A" },
+  statLabel: { fontFamily: "DM Sans", fontSize: 12, color: "#868C98", marginBottom: 6 },
+  statValue: { fontFamily: "DM Sans Bold", fontSize: 22, fontWeight: "700", color: colors.dark },
 
-  sectionGroup: { marginBottom: spacing.lg },
-  sectionHeader: { fontFamily: "DM Sans", fontSize: 12, color: "#94A3B8", marginBottom: 6 },
+  sectionGroup: { marginBottom: spacing.xl },
+  sectionHeader: { fontFamily: "DM Sans", fontSize: 13, color: "#868C98", marginBottom: 8 },
   bannerText: {
     fontFamily: "DM Sans Bold",
-    fontSize: 13,
-    color: "#0F172A",
-    lineHeight: 20,
-    fontWeight: "600",
+    fontSize: 16,
+    color: colors.dark,
+    lineHeight: 22,
+    fontWeight: "700",
   },
 
-  labelHeader: { fontFamily: "DM Sans", fontSize: 12, color: "#94A3B8", marginBottom: 6 },
+  labelHeader: { fontFamily: "DM Sans", fontSize: 13, color: "#868C98", marginBottom: 8 },
   codeCard: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: "#F8FAFC",
-    borderRadius: 10,
+    borderRadius: 14,
     paddingHorizontal: spacing.md,
-    paddingVertical: 14,
+    paddingVertical: 16,
   },
-  codeText: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "700", color: "#0F172A" },
+  codeText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: colors.grey },
 
   toastCard: {
     flexDirection: "row",
@@ -167,18 +178,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     marginBottom: spacing.md,
   },
-  toastText: { fontFamily: "DM Sans Bold", fontSize: 13, color: "#166534" },
+  toastText: { fontFamily: "DM Sans Bold", fontSize: 14, color: "#166534" },
 
-  howItWorksTitle: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#0F172A", marginBottom: 4 },
-  explainerSubtitle: { fontFamily: "DM Sans", fontSize: 13, color: "#94A3B8", marginBottom: spacing.md },
-  stepList: { gap: 12 },
-  stepText: { fontFamily: "DM Sans", fontSize: 13, color: "#0F172A", lineHeight: 18 },
+  howItWorksTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: colors.dark, marginBottom: 6 },
+  explainerSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#868C98", marginBottom: spacing.md },
+  stepList: { gap: 14 },
+  stepText: { fontFamily: "DM Sans Bold", fontSize: 15, color: colors.dark, lineHeight: 22, fontWeight: "600" },
 
   footerNote: {
     fontFamily: "DM Sans",
-    fontSize: 12,
-    color: "#94A3B8",
-    lineHeight: 18,
-    marginTop: spacing.xl,
+    fontSize: 14,
+    color: "#868C98",
+    lineHeight: 20,
+    marginTop: spacing.xl * 1.5,
   },
 });

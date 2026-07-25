@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
 import React, { useRef, useState } from "react";
 import {
@@ -15,6 +16,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CameraIconItem, EditIconItem, GalleryIconItem } from "../../components/ProfileIcons";
 import { MainStackParamList } from "../../navigation/types";
 import { colors, spacing } from "../../theme/colors";
 
@@ -50,20 +52,44 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
   const [showGallery, setShowGallery] = useState(false);
   const [cameraPhoto, setCameraPhoto] = useState<string | null>(null);
 
+  // Camera state & permissions
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [facing, setFacing] = useState<"front" | "back">("front");
+  const cameraRef = useRef<CameraView>(null);
+
   const handleTakePhoto = async () => {
     setShowPhotoOptions(false);
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      alert("Permission to access camera is required!");
-      return;
+    if (!cameraPermission?.granted) {
+      const res = await requestCameraPermission();
+      if (!res.granted) {
+        alert("Permission to access camera is required!");
+        return;
+      }
     }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setProfileImage(result.assets[0].uri);
+    setCameraPhoto(null);
+    setShowCamera(true);
+  };
+
+  const toggleFacing = () => {
+    setFacing((prev) => (prev === "back" ? "front" : "back"));
+  };
+
+  const handleShutter = async () => {
+    try {
+      if (cameraRef.current) {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.85,
+          shutterSound: false,
+        });
+        if (photo?.uri) {
+          setCameraPhoto(photo.uri);
+          return;
+        }
+      }
+      setCameraPhoto(DEFAULT_AVATAR);
+    } catch (e) {
+      console.warn("Error taking picture:", e);
+      setCameraPhoto(DEFAULT_AVATAR);
     }
   };
 
@@ -168,7 +194,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
           >
             <Image source={{ uri: profileImage }} style={styles.avatarImage} />
             <View style={styles.editBadge}>
-              <Ionicons name="pencil" size={14} color="#475569" />
+              <EditIconItem color="#FFFFFF" size={16} />
             </View>
           </TouchableOpacity>
         </View>
@@ -211,7 +237,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
           <View style={styles.fieldCard}>
             <Text style={styles.fieldValue}>•••••••••</Text>
             <TouchableOpacity onPress={() => (navigation as any).navigate("ForgotPassword")} activeOpacity={0.7}>
-              <Ionicons name="create-outline" size={18} color="#475569" />
+              <EditIconItem color="#868C98" size={18} />
             </TouchableOpacity>
           </View>
         </View>
@@ -235,7 +261,9 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
               activeOpacity={0.7}
             >
               <View style={styles.optionLeft}>
-                <Ionicons name="camera-outline" size={20} color="#475569" style={{ marginRight: 12 }} />
+                <View style={{ marginRight: 12 }}>
+                  <CameraIconItem color="#868C98" size={20} />
+                </View>
                 <Text style={styles.optionText}>Take Photo</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
@@ -247,7 +275,9 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
               activeOpacity={0.7}
             >
               <View style={styles.optionLeft}>
-                <Ionicons name="images-outline" size={20} color="#475569" style={{ marginRight: 12 }} />
+                <View style={{ marginRight: 12 }}>
+                  <GalleryIconItem color="#868C98" size={20} />
+                </View>
                 <Text style={styles.optionText}>Choose from gallery</Text>
               </View>
               <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
@@ -294,13 +324,15 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
           {cameraPhoto ? (
             <Image source={{ uri: cameraPhoto }} style={styles.fullCameraPreview} />
           ) : (
-            <View style={styles.cameraPlaceholderView}>
-              <Text style={styles.cameraPlaceholderText}>Camera Viewfinder</Text>
-            </View>
+            <CameraView
+              ref={cameraRef}
+              style={styles.fullCameraPreview}
+              facing={facing}
+            />
           )}
 
           {/* Camera Bottom Bar */}
-          <View style={[styles.cameraBottomBar, { paddingBottom: Math.max(insets.bottom, 20) }]}>
+          <View style={[styles.cameraBottomBar, { paddingBottom: Math.max(insets.bottom + 12, 24) }]}>
             {cameraPhoto ? (
               <View style={styles.cameraActionRow}>
                 <TouchableOpacity onPress={() => setCameraPhoto(null)}>
@@ -318,24 +350,29 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
               </View>
             ) : (
               <View style={styles.cameraShutterRow}>
-                <TouchableOpacity onPress={() => setShowCamera(false)}>
-                  <Text style={styles.cameraActionText}>Cancel</Text>
+                <TouchableOpacity style={styles.shutterSideColLeft} onPress={() => setShowCamera(false)}>
+                  <Text style={styles.cameraCancelText}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.shutterRing}
-                  onPress={() => setCameraPhoto(DEFAULT_AVATAR)}
-                  activeOpacity={0.8}
-                >
-                  <View style={styles.shutterDot} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.cameraFlipBtn}
-                  onPress={() => {
-                    // Camera flip trigger
-                  }}
-                >
-                  <Ionicons name="sync-outline" size={22} color="#FFFFFF" />
-                </TouchableOpacity>
+
+                <View style={styles.shutterCenterCol}>
+                  <TouchableOpacity
+                    style={styles.shutterRing}
+                    onPress={handleShutter}
+                    activeOpacity={0.8}
+                  >
+                    <View style={styles.shutterDot} />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.shutterSideColRight}>
+                  <TouchableOpacity
+                    style={styles.cameraFlipBtn}
+                    onPress={toggleFacing}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="sync-outline" size={30} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           </View>
@@ -469,9 +506,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: "DM Sans Bold",
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.dark,
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,
@@ -497,9 +534,9 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#868C98",
     borderWidth: 1.5,
-    borderColor: "#E2E8F0",
+    borderColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
     elevation: 3,
@@ -513,9 +550,9 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontFamily: "DM Sans Bold",
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "700",
-    color: "#0F172A",
+    color: colors.dark,
     marginBottom: 6,
     marginLeft: 2,
   },
@@ -541,8 +578,9 @@ const styles = StyleSheet.create({
   },
   fieldValue: {
     fontFamily: "DM Sans",
-    fontSize: 15,
-    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.dark,
   },
 
   /* Bottom Sheet Styles */
@@ -587,10 +625,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   optionText: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#0F172A",
+    fontFamily: "DM Sans",
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.dark,
   },
 
   /* Gallery Modal Styles */
@@ -601,54 +639,68 @@ const styles = StyleSheet.create({
 
   /* Camera Modal Styles */
   cameraScreenContainer: { flex: 1, backgroundColor: "#000000" },
-  fullCameraPreview: { flex: 1, width: "100%" },
-  cameraPlaceholderView: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#292524",
-  },
-  cameraPlaceholderText: { color: "#E2E8F0", fontFamily: "DM Sans", fontSize: 16 },
+  fullCameraPreview: { flex: 1, width: "100%", resizeMode: "cover" },
   cameraBottomBar: {
-    backgroundColor: "rgba(100, 116, 139, 0.9)",
-    paddingVertical: 24,
+    backgroundColor: "rgba(135, 126, 112, 0.5)",
     paddingHorizontal: spacing.lg,
+    justifyContent: "center",
+    height: 150,
   },
   cameraActionRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingVertical: 12,
   },
   cameraShutterRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
+  },
+  shutterSideColLeft: {
+    width: 90,
+    alignItems: "flex-start",
+  },
+  shutterCenterCol: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shutterSideColRight: {
+    width: 90,
+    alignItems: "flex-end",
+  },
+  cameraCancelText: {
+    fontFamily: "DM Sans",
+    fontSize: 16,
+    color: "#FFFFFF",
+    fontWeight: "700",
   },
   cameraActionText: {
-    fontFamily: "DM Sans Bold",
+    fontFamily: "DM Sans",
     fontSize: 16,
     color: "#FFFFFF",
     fontWeight: "700",
   },
   shutterRing: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    borderWidth: 4,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
     borderColor: "#FFFFFF",
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "transparent",
   },
   shutterDot: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: "#FFFFFF",
   },
   cameraFlipBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: "rgba(255, 255, 255, 0.25)",
     justifyContent: "center",
     alignItems: "center",

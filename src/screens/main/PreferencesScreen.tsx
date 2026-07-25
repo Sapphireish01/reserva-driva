@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
+  PanResponder,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,9 +11,63 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MainStackParamList } from "../../navigation/types";
-import { spacing } from "../../theme/colors";
+import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Preferences">;
+
+interface SliderProps {
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onValueChange: (val: number) => void;
+}
+
+const InteractiveSlider: React.FC<SliderProps> = ({
+  value,
+  min = 0,
+  max = 5,
+  step = 0.1,
+  onValueChange,
+}) => {
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  const updateValueFromX = (x: number) => {
+    if (trackWidth <= 0) return;
+    const ratio = Math.max(0, Math.min(1, x / trackWidth));
+    const rawValue = min + ratio * (max - min);
+    const stepped = Math.round(rawValue / step) * step;
+    const clamped = Math.max(min, Math.min(max, Number(stepped.toFixed(1))));
+    onValueChange(clamped);
+  };
+
+  const panResponder = React.useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: (evt) => {
+        updateValueFromX(evt.nativeEvent.locationX);
+      },
+      onPanResponderMove: (evt) => {
+        updateValueFromX(evt.nativeEvent.locationX);
+      },
+    })
+  ).current;
+
+  const pct = Math.max(0, Math.min(100, ((value - min) / (max - min)) * 100));
+
+  return (
+    <View
+      style={styles.trackBackground}
+      onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
+      {...panResponder.panHandlers}
+    >
+      <View style={[styles.trackActive, { width: `${pct}%` }]} />
+      <View style={styles.startDot} />
+      <View style={[styles.thumb, { left: `${Math.min(Math.max(pct, 2), 96)}%` }]} />
+    </View>
+  );
+};
 
 export const PreferencesScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
@@ -37,7 +92,7 @@ export const PreferencesScreen = ({ navigation }: Props) => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color={colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Preferences</Text>
         <View style={{ width: 40 }} />
@@ -55,46 +110,54 @@ export const PreferencesScreen = ({ navigation }: Props) => {
           <View style={styles.genderRow}>
             {/* Everyone */}
             <TouchableOpacity
-              style={[
-                styles.genderCard,
-                genderPref === "everyone" && styles.genderCardActive,
-              ]}
+              style={styles.genderCard}
               onPress={() => setGenderPref("everyone")}
               activeOpacity={0.8}
             >
               <View
                 style={[
                   styles.checkbox,
-                  genderPref === "everyone" && styles.checkboxActive,
+                  genderPref === "everyone" ? styles.checkboxActive : styles.checkboxInactive,
                 ]}
               >
                 {genderPref === "everyone" && (
-                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
                 )}
               </View>
-              <Text style={styles.genderText}>Everyone</Text>
+              <Text
+                style={[
+                  styles.genderText,
+                  genderPref !== "everyone" && styles.genderTextInactive,
+                ]}
+              >
+                Everyone
+              </Text>
             </TouchableOpacity>
 
             {/* Female Only */}
             <TouchableOpacity
-              style={[
-                styles.genderCard,
-                genderPref === "female" && styles.genderCardActive,
-              ]}
+              style={styles.genderCard}
               onPress={() => setGenderPref("female")}
               activeOpacity={0.8}
             >
               <View
                 style={[
                   styles.checkbox,
-                  genderPref === "female" && styles.checkboxActive,
+                  genderPref === "female" ? styles.checkboxActive : styles.checkboxInactive,
                 ]}
               >
                 {genderPref === "female" && (
-                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
                 )}
               </View>
-              <Text style={styles.genderText}>Female Only</Text>
+              <Text
+                style={[
+                  styles.genderText,
+                  genderPref !== "female" && styles.genderTextInactive,
+                ]}
+              >
+                Female Only
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -109,25 +172,17 @@ export const PreferencesScreen = ({ navigation }: Props) => {
           <View style={styles.sliderContainer}>
             <View style={styles.sliderScaleRow}>
               <Text style={styles.scaleText}>0km</Text>
-              <Text style={styles.scaleValueText}>{pickupRadius.toFixed(1)} km</Text>
+              {/* <Text style={styles.scaleValueText}>{pickupRadius.toFixed(1)} km</Text> */}
               <Text style={styles.scaleText}>5km</Text>
             </View>
-            <View style={styles.trackBackground}>
-              <View
-                style={[
-                  styles.trackActive,
-                  { width: `${(pickupRadius / 5) * 100}%` },
-                ]}
-              />
-              <TouchableOpacity
-                style={[
-                  styles.thumb,
-                  { left: `${Math.min(Math.max((pickupRadius / 5) * 100, 2), 96)}%` },
-                ]}
-                activeOpacity={0.9}
-              />
-            </View>
-            {/* Touch Adjust Buttons */}
+            <InteractiveSlider
+              value={pickupRadius}
+              min={0}
+              max={5}
+              step={0.1}
+              onValueChange={setPickupRadius}
+            />
+            {/* Quick Chips */}
             <View style={styles.adjustRow}>
               {[1.0, 1.5, 2.5, 3.5, 5.0].map((val) => (
                 <TouchableOpacity
@@ -162,24 +217,16 @@ export const PreferencesScreen = ({ navigation }: Props) => {
           <View style={styles.sliderContainer}>
             <View style={styles.sliderScaleRow}>
               <Text style={styles.scaleText}>0km</Text>
-              <Text style={styles.scaleValueText}>{distanceThreshold.toFixed(1)} km</Text>
+              {/* <Text style={styles.scaleValueText}>{distanceThreshold.toFixed(1)} km</Text> */}
               <Text style={styles.scaleText}>5km</Text>
             </View>
-            <View style={styles.trackBackground}>
-              <View
-                style={[
-                  styles.trackActive,
-                  { width: `${(distanceThreshold / 5) * 100}%` },
-                ]}
-              />
-              <TouchableOpacity
-                style={[
-                  styles.thumb,
-                  { left: `${Math.min(Math.max((distanceThreshold / 5) * 100, 2), 96)}%` },
-                ]}
-                activeOpacity={0.9}
-              />
-            </View>
+            <InteractiveSlider
+              value={distanceThreshold}
+              min={0}
+              max={5}
+              step={0.1}
+              onValueChange={setDistanceThreshold}
+            />
 
             <View style={styles.adjustRow}>
               {[1.0, 2.0, 3.0, 4.0, 5.0].map((val) => (
@@ -215,24 +262,16 @@ export const PreferencesScreen = ({ navigation }: Props) => {
           <View style={styles.sliderContainer}>
             <View style={styles.sliderScaleRow}>
               <Text style={styles.scaleText}>0km</Text>
-              <Text style={styles.scaleValueText}>{deviationRadius.toFixed(1)} km</Text>
+              {/* <Text style={styles.scaleValueText}>{deviationRadius.toFixed(1)} km</Text> */}
               <Text style={styles.scaleText}>5km</Text>
             </View>
-            <View style={styles.trackBackground}>
-              <View
-                style={[
-                  styles.trackActive,
-                  { width: `${(deviationRadius / 5) * 100}%` },
-                ]}
-              />
-              <TouchableOpacity
-                style={[
-                  styles.thumb,
-                  { left: `${Math.min(Math.max((deviationRadius / 5) * 100, 2), 96)}%` },
-                ]}
-                activeOpacity={0.9}
-              />
-            </View>
+            <InteractiveSlider
+              value={deviationRadius}
+              min={0}
+              max={5}
+              step={0.1}
+              onValueChange={setDeviationRadius}
+            />
 
             <View style={styles.adjustRow}>
               {[0.5, 1.0, 1.5, 2.0, 3.0].map((val) => (
@@ -285,17 +324,17 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   backButton: { width: 40, height: 40, justifyContent: "center" },
-  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 20, fontWeight: "700", color: colors.dark },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, paddingBottom: spacing.xl * 2 },
   introText: {
     fontFamily: "DM Sans",
-    fontSize: 14,
+    fontSize: 15,
     color: "#475569",
-    lineHeight: 20,
+    lineHeight: 22,
     marginBottom: spacing.lg,
   },
   sectionGroup: { marginBottom: spacing.xl },
-  sectionHeader: { fontFamily: "DM Sans", fontSize: 12, color: "#94A3B8", marginBottom: spacing.sm },
+  sectionHeader: { fontFamily: "DM Sans", fontSize: 13, color: "#868C98", marginBottom: 10 },
 
   genderRow: { flexDirection: "row", gap: 12 },
   genderCard: {
@@ -303,38 +342,39 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#F8FAFC",
-    borderRadius: 12,
+    borderRadius: 14,
     padding: spacing.md,
   },
-  genderCardActive: { backgroundColor: "#F8FAFC" },
   checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: "#CBD5E1",
+    width: 22,
+    height: 22,
+    borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
-    backgroundColor: "#FFFFFF",
+    shadowColor: "rgba(15, 23, 42, 0.12)",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  checkboxActive: { backgroundColor: "#375DFB", borderColor: "#375DFB" },
-  genderText: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "600", color: "#0F172A" },
+  checkboxActive: { backgroundColor: "#375DFB" },
+  checkboxInactive: { borderWidth: 1.5, borderColor: "#CBD5E1", backgroundColor: "#FFFFFF" },
+  genderText: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "600", color: colors.dark },
+  genderTextInactive: { fontFamily: "DM Sans", fontWeight: "400", color: "#868C98" },
 
-  explanationText: { fontFamily: "DM Sans", fontSize: 14, color: "#0F172A", marginBottom: 6 },
-  labelHeader: { fontFamily: "DM Sans", fontSize: 12, color: "#94A3B8", marginBottom: spacing.sm },
+  explanationText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: colors.dark, marginBottom: 4 },
+  labelHeader: { fontFamily: "DM Sans", fontSize: 13, color: "#868C98", marginBottom: 12 },
 
   sliderContainer: { marginTop: 4 },
-  sliderScaleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
-  scaleText: { fontFamily: "DM Sans", fontSize: 12, color: "#94A3B8" },
+  sliderScaleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
+  scaleText: { fontFamily: "DM Sans", fontSize: 13, color: "#868C98" },
   scaleValueText: { fontFamily: "DM Sans Bold", fontSize: 13, color: "#375DFB", fontWeight: "700" },
 
   trackBackground: {
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#F1F5F9",
-    position: "relative",
+    height: 24,
     justifyContent: "center",
+    position: "relative",
   },
   trackActive: {
     height: 6,
@@ -343,20 +383,32 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
   },
+  startDot: {
+    width: 15,
+    height: 15,
+    borderRadius: 7.5,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 4,
+    borderColor: "#375DFB",
+    position: "absolute",
+    left: 0,
+    zIndex: 2,
+  },
   thumb: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#375DFB",
-    borderWidth: 3,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#1C398E",
+    borderWidth: 1,
     borderColor: "#FFFFFF",
     position: "absolute",
-    marginLeft: -10,
-    elevation: 4,
+    marginLeft: -9,
+    zIndex: 3,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
   },
 
   adjustRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 12 },
@@ -384,11 +436,11 @@ const styles = StyleSheet.create({
   toastText: { fontFamily: "DM Sans Bold", fontSize: 13, color: "#166534" },
 
   saveButton: {
-    backgroundColor: "#EBF0FF",
-    borderRadius: 10,
-    paddingVertical: 14,
+    backgroundColor: "#EBF1FF",
+    borderRadius: 14,
+    paddingVertical: 16,
     alignItems: "center",
     marginTop: spacing.md,
   },
-  saveButtonText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#375DFB" },
+  saveButtonText: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: "#375DFB" },
 });

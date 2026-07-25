@@ -6,14 +6,14 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
+import { ToggleIconItem } from "../../components/ProfileIcons";
 import { MainStackParamList } from "../../navigation/types";
 import { colors, spacing } from "../../theme/colors";
 
@@ -145,11 +145,9 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
         {/* Toggle Switch Card */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>{is2FAEnabled ? "Turn off" : "Turn on"}</Text>
-          <Switch
+          <ToggleIconItem
             value={is2FAEnabled}
             onValueChange={handleToggle2FA}
-            trackColor={{ false: "#E2E8F0", true: "#0F172A" }}
-            thumbColor="#FFFFFF"
           />
         </View>
 
@@ -172,69 +170,75 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
         )}
       </ScrollView>
 
-      {/* 1. PIN Setup / Confirmation Modal */}
-      <Modal visible={showPinModal} animationType="slide">
-        <View style={[styles.pinModalContainer, { paddingTop: insets.top }]}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowPinModal(false)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalHeaderTitle}>Two-Factor Authentication</Text>
-            <View style={{ width: 40 }} />
-          </View>
-
-          <View style={styles.pinModalBody}>
-            <Text style={styles.pinSubtitle}>
-              {pinStep === "create" ? "Create a six digit PIN" : "Confirm PIN"}
-            </Text>
-
-            <View style={styles.pinRow}>
-              {(pinStep === "create" ? createPin : confirmPin).map((digit, idx) => (
-                <TextInput
-                  key={idx}
-                  ref={(ref) => {
-                    pinInputs.current[idx] = ref;
-                  }}
-                  style={[styles.pinBox, focusedIdx === idx && styles.pinBoxFocused]}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  secureTextEntry
-                  value={digit}
-                  onChangeText={(t) => handlePinChange(t, idx)}
-                  onFocus={() => setFocusedIdx(idx)}
-                  selectTextOnFocus
-                />
-              ))}
+      {/* 1. PIN Setup / Confirmation Bottom Sheet Modal */}
+      <Modal visible={showPinModal} transparent animationType="slide">
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            onPress={() => setShowPinModal(false)}
+          />
+          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.sheetHeader}>
+              <TouchableOpacity onPress={() => setShowPinModal(false)}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.sheetTitle}>Two-Factor Authentication</Text>
+              <View style={{ width: 40 }} />
             </View>
 
-            <TouchableOpacity
-              style={[
-                styles.continueBtn,
-                !isCurrentPinComplete && styles.continueBtnDisabled,
-                isEnabledSuccess && styles.continueBtnSuccess,
-              ]}
-              disabled={!isCurrentPinComplete || isSubmitting}
-              onPress={handleContinuePin}
-              activeOpacity={0.85}
-            >
-              {isSubmitting ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : isEnabledSuccess ? (
-                <View style={styles.successRow}>
-                  <Text style={styles.continueBtnText}>Enabled</Text>
-                  <Ionicons name="checkmark-circle" size={18} color="#22C55E" style={{ marginLeft: 6 }} />
-                </View>
-              ) : (
-                <Text
-                  style={[
-                    styles.continueBtnText,
-                    !isCurrentPinComplete && styles.continueBtnTextDisabled,
-                  ]}
-                >
-                  Continue
-                </Text>
-              )}
-            </TouchableOpacity>
+            <View style={styles.pinModalBody}>
+              <Text style={styles.pinSubtitle}>
+                {pinStep === "create" ? "Create a six digit PIN" : "Confirm PIN"}
+              </Text>
+
+              <View style={styles.pinRow}>
+                {(pinStep === "create" ? createPin : confirmPin).map((digit, idx) => (
+                  <TextInput
+                    key={idx}
+                    ref={(ref) => {
+                      pinInputs.current[idx] = ref;
+                    }}
+                    style={[styles.pinBox, focusedIdx === idx && styles.pinBoxFocused]}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    secureTextEntry
+                    value={digit}
+                    onChangeText={(t) => handlePinChange(t, idx)}
+                    onFocus={() => setFocusedIdx(idx)}
+                    selectTextOnFocus
+                  />
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.continueBtn,
+                  !isCurrentPinComplete && styles.continueBtnDisabled,
+                  isEnabledSuccess && styles.continueBtnSuccess,
+                ]}
+                disabled={!isCurrentPinComplete || isSubmitting}
+                onPress={handleContinuePin}
+                activeOpacity={0.85}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : isEnabledSuccess ? (
+                  <View style={styles.successRow}>
+                    <Text style={styles.continueBtnText}>Enabled</Text>
+                    <Ionicons name="checkmark-circle" size={18} color="#22C55E" style={{ marginLeft: 6 }} />
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      styles.continueBtnText,
+                      !isCurrentPinComplete && styles.continueBtnTextDisabled,
+                    ]}
+                  >
+                    Continue
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -246,7 +250,7 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
             style={styles.sheetBackdrop}
             onPress={() => setShowTurnOffModal(false)}
           />
-          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+          <View style={[styles.turnOffSheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Turn Off Two-Factor Authentication?</Text>
               <TouchableOpacity onPress={() => setShowTurnOffModal(false)}>
@@ -329,7 +333,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     borderRadius: 10,
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
@@ -420,10 +424,17 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: spacing.lg,
-    paddingBottom: spacing.xl * 1.5,
+    minHeight: "55%",
+  },
+  turnOffSheetContainer: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: spacing.lg,
+    minHeight: "30%",
   },
   sheetHeader: {
     flexDirection: "row",
@@ -434,7 +445,7 @@ const styles = StyleSheet.create({
   sheetTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
   sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.lg, lineHeight: 20 },
   redBtn: {
-    backgroundColor: "#EF4444",
+    backgroundColor: "#DF1C41",
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",

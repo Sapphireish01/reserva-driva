@@ -12,8 +12,9 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CopyIconItem } from "../../components/ProfileIcons";
 import { MainStackParamList } from "../../navigation/types";
-import { spacing } from "../../theme/colors";
+import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "EmergencyContacts">;
 
@@ -141,7 +142,9 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
                 onPress={() => handleCopyPhone(contact.phone)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Ionicons name="copy-outline" size={16} color="#94A3B8" style={{ marginLeft: 6 }} />
+                <View style={{ marginLeft: 6 }}>
+                  <CopyIconItem color="#94A3B8" size={16} />
+                </View>
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
@@ -411,8 +414,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: 12,
   },
-  countryPrefix: { fontFamily: "DM Sans Bold", fontSize: 14, marginRight: 8, color: "#0F172A" },
-  inputField: { flex: 1, fontFamily: "DM Sans", fontSize: 15, color: "#0F172A" },
+  countryPrefix: { fontFamily: "DM Sans Bold", fontSize: 16, marginRight: 8, color: colors.dark },
+  inputField: { flex: 1, fontFamily: "DM Sans", fontSize: 16, color: colors.dark, fontWeight: "700" },
 
   sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.lg, lineHeight: 20 },
   deleteBtn: {
