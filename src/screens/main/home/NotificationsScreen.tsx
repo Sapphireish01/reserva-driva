@@ -3,9 +3,9 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { NotificationIconItem, ToggleIconItem } from "../../components/ProfileIcons";
-import { MainStackParamList } from "../../navigation/types";
-import { colors, spacing } from "../../theme/colors";
+import { NotificationIconItem, ToggleIconItem } from "../../../components/ProfileIcons";
+import { MainStackParamList } from "../../../navigation/types";
+import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Notifications">;
 

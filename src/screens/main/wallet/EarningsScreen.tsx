@@ -12,8 +12,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
-import { colors, spacing, typography } from "../../theme/colors";
-import { tripsService } from "../../api/services/trips";
+import { colors, spacing, typography } from "../../../theme/colors";
+import { tripsService } from "../../../api/services/trips";
 
 type Props = any;
 

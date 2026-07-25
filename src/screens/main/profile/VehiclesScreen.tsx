@@ -12,9 +12,9 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FileFormatIconItem, UploadIconItem, UsersIconItem } from "../../components/ProfileIcons";
-import { MainStackParamList } from "../../navigation/types";
-import { colors, spacing } from "../../theme/colors";
+import { FileFormatIconItem, UploadIconItem, UsersIconItem } from "../../../components/ProfileIcons";
+import { MainStackParamList } from "../../../navigation/types";
+import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Vehicles">;
 

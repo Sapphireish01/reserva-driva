@@ -13,9 +13,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
-import { ToggleIconItem } from "../../components/ProfileIcons";
-import { MainStackParamList } from "../../navigation/types";
-import { colors, spacing } from "../../theme/colors";
+import { ToggleIconItem } from "../../../components/ProfileIcons";
+import { MainStackParamList } from "../../../navigation/types";
+import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "TwoFactorAuth">;
 

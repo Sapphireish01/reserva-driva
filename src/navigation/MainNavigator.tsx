@@ -2,23 +2,24 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { BookingsIcon, HomeIcon, ProfileIcon, TripsIcon, WalletIcon } from "../components/NavIcons";
-import { BankDetailsScreen } from "../screens/main/BankDetailsScreen";
-import { ChatWithSupportScreen } from "../screens/main/ChatWithSupportScreen";
-import { ContactUsScreen } from "../screens/main/ContactUsScreen";
-import { CreateTripScreen } from "../screens/main/CreateTripScreen";
-import { EarningsScreen } from "../screens/main/EarningsScreen";
-import { EmergencyContactsScreen } from "../screens/main/EmergencyContactsScreen";
-import { FAQsScreen } from "../screens/main/FAQsScreen";
-import { HomeScreen } from "../screens/main/HomeScreen";
-import { NotificationsScreen } from "../screens/main/NotificationsScreen";
-import { PassengerRequestsScreen } from "../screens/main/PassengerRequestsScreen";
-import { PreferencesScreen } from "../screens/main/PreferencesScreen";
-import { ProfileDetailsScreen } from "../screens/main/ProfileDetailsScreen";
-import { ReferralsScreen } from "../screens/main/ReferralsScreen";
-import { ReportProblemScreen } from "../screens/main/ReportProblemScreen";
-import { SettingsScreen } from "../screens/main/SettingsScreen";
-import { TwoFactorAuthScreen } from "../screens/main/TwoFactorAuthScreen";
-import { VehiclesScreen } from "../screens/main/VehiclesScreen";
+import { PassengerRequestsScreen } from "../screens/main/bookings";
+import { HomeScreen, NotificationsScreen } from "../screens/main/home";
+import {
+  BankDetailsScreen,
+  ChatWithSupportScreen,
+  ContactUsScreen,
+  EmergencyContactsScreen,
+  FAQsScreen,
+  PreferencesScreen,
+  ProfileDetailsScreen,
+  ReferralsScreen,
+  ReportProblemScreen,
+  SettingsScreen,
+  TwoFactorAuthScreen,
+  VehiclesScreen,
+} from "../screens/main/profile";
+import { CreateTripScreen } from "../screens/main/trips";
+import { EarningsScreen } from "../screens/main/wallet";
 import { colors } from "../theme/colors";
 import { MainStackParamList, MainTabParamList } from "./types";
 

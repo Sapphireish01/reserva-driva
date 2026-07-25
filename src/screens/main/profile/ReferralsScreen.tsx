@@ -10,9 +10,9 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CopyIconItem } from "../../components/ProfileIcons";
-import { MainStackParamList } from "../../navigation/types";
-import { colors, spacing } from "../../theme/colors";
+import { CopyIconItem } from "../../../components/ProfileIcons";
+import { MainStackParamList } from "../../../navigation/types";
+import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Referrals">;
 

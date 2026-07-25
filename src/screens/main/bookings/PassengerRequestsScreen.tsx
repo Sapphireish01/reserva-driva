@@ -13,9 +13,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MainStackParamList } from "../../navigation/types";
-import { colors, spacing, typography } from "../../theme/colors";
-import { tripsService, PassengerRequest } from "../../api/services/trips";
+import { MainStackParamList } from "../../../navigation/types";
+import { colors, spacing, typography } from "../../../theme/colors";
+import { tripsService, PassengerRequest } from "../../../api/services/trips";
 
 type Props = any;
 

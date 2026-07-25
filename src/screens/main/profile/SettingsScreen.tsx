@@ -18,9 +18,9 @@ import {
   ReportProblemIconItem,
   TwoFAIconItem,
   VehiclesIconItem,
-} from "../../components/ProfileIcons";
-import { useAuthStore } from "../../state/authStore";
-import { colors, spacing } from "../../theme/colors";
+} from "../../../components/ProfileIcons";
+import { useAuthStore } from "../../../state/authStore";
+import { colors, spacing } from "../../../theme/colors";
 
 type Props = any;
 

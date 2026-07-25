@@ -11,8 +11,8 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { MainStackParamList } from "../../navigation/types";
-import { spacing } from "../../theme/colors";
+import { MainStackParamList } from "../../../navigation/types";
+import { spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "FAQs">;
 
