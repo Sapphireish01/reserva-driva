@@ -7,42 +7,15 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
+import { AppButton, AppTextInput } from "../../components/ui";
 import { AuthStackParamList } from "../../navigation/types";
 import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
-
-const EyeIcon = ({ visible }: { visible: boolean }) => (
-  <Svg width={20} height={20} viewBox="0 0 20 20" fill="none">
-    <Path
-      d="M12.9842 10C12.9842 11.65 11.6509 12.9833 10.0009 12.9833C8.35091 12.9833 7.01758 11.65 7.01758 10C7.01758 8.35 8.35091 7.01666 10.0009 7.01666C11.6509 8.35 12.9842 8.35 12.9842 10Z"
-      stroke="#868C98"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M9.99987 16.8916C12.9415 16.8916 15.6832 15.1583 17.5915 12.1583C18.3415 10.9833 18.3415 9.00831 17.5915 7.83331C15.6832 4.83331 12.9415 3.09998 9.99987 3.09998C7.0582 3.09998 4.31654 4.83331 2.4082 7.83331C1.6582 9.00831 1.6582 10.9833 2.4082 12.1583C4.31654 15.1583 7.0582 16.8916 9.99987 16.8916Z"
-      stroke="#868C98"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    {!visible && (
-      <Path
-        d="M3 3L17 17"
-        stroke="#868C98"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    )}
-  </Svg>
-);
 
 const FingerprintIcon = () => (
   <Ionicons name="finger-print-outline" size={24} color="#868C98" />
@@ -78,16 +51,11 @@ const AppleIcon = () => (
 export const LoginScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
-  const [showBiometric, setShowBiometric] = useState(true);
 
   const isFormValid = email.trim().length > 0 && password.length >= 6;
 
   const handleLogin = () => {
     if (!isFormValid) return;
-    // Perform authentication logic or navigate to MainTabs
     navigation.reset({
       index: 0,
       routes: [{ name: "AccountCreated" }],
@@ -109,271 +77,115 @@ export const LoginScreen = ({ navigation }: Props) => {
         <Text style={styles.title}>Welcome back</Text>
         <Text style={styles.subtitle}>Ride Together. Save More</Text>
 
-        {/* Email Field */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Email Address</Text>
-          <TextInput
-            underlineColorAndroid="transparent"
-            style={[styles.input, emailFocused && styles.inputFocused]}
-            placeholder="e.g JDoe@gmail.com"
-            placeholderTextColor="#868C98"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-            onFocus={() => setEmailFocused(true)}
-            onBlur={() => setEmailFocused(false)}
+        {/* Email Field with autoFocus */}
+        <AppTextInput
+          label="Email Address"
+          placeholder="e.g JDoe@gmail.com"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoFocus={true}
+        />
+
+        {/* Password Field */}
+        <View style={styles.passwordRow}>
+          <AppTextInput
+            label="Password"
+            placeholder="••••••••"
+            value={password}
+            onChangeText={setPassword}
+            isPassword
+            containerStyle={{ flex: 1, marginBottom: 0 }}
           />
-        </View>
-
-        {/* Password Field with Biometric Button */}
-        <View style={styles.field}>
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.passwordRow}>
-            <View style={[styles.passwordInputContainer, passwordFocused && styles.inputFocused]}>
-              <TextInput
-                underlineColorAndroid="transparent"
-                style={styles.passwordInputField}
-                placeholder="........."
-                placeholderTextColor="#868C98"
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={setPassword}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-              />
-              <TouchableOpacity
-                style={styles.eyeButton}
-                onPress={() => setShowPassword((prev) => !prev)}
-                activeOpacity={0.7}
-              >
-                <EyeIcon visible={showPassword} />
-              </TouchableOpacity>
-            </View>
-
-            {showBiometric && (
-              <TouchableOpacity
-                style={styles.biometricButton}
-                onPress={() => {
-                  // Biometric authentication trigger
-                }}
-                activeOpacity={0.7}
-              >
-                <FingerprintIcon />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Forgot Password Link */}
-          <TouchableOpacity
-            style={styles.forgotPasswordContainer}
-            onPress={() => navigation.navigate("ForgotPassword")}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          <TouchableOpacity style={styles.biometricBtn} activeOpacity={0.7}>
+            <FingerprintIcon />
           </TouchableOpacity>
         </View>
 
-        {/* Log in Button */}
+        {/* Forgot Password Link */}
         <TouchableOpacity
-          style={[styles.button, !isFormValid && styles.buttonDisabled]}
-          disabled={!isFormValid}
-          onPress={handleLogin}
-          activeOpacity={0.8}
+          style={styles.forgotPasswordContainer}
+          onPress={() => navigation.navigate("ForgotPassword")}
         >
-          <Text style={[styles.buttonText, !isFormValid && styles.buttonTextDisabled]}>
-            Log in
-          </Text>
+          <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
         </TouchableOpacity>
 
-        {/* Sign Up Link */}
-        <TouchableOpacity
-          style={styles.signUpRow}
-          onPress={() => navigation.navigate("SignUp")}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.signUpText}>
-            Don't have an account? <Text style={styles.signUpBold}>Sign Up</Text>
-          </Text>
-        </TouchableOpacity>
+        {/* Login Button */}
+        <AppButton
+          title="Sign In"
+          onPress={handleLogin}
+          disabled={!isFormValid}
+          size="lg"
+          style={{ marginTop: 24 }}
+        />
 
         {/* Divider */}
-        <View style={styles.dividerContainer}>
+        <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
+          <Text style={styles.dividerText}>or continue with</Text>
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Social Logins */}
-        <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-          <GoogleIcon />
-          <Text style={styles.socialButtonText}>Continue with google</Text>
-        </TouchableOpacity>
+        {/* Social Login Buttons */}
+        <View style={styles.socialRow}>
+          <AppButton
+            title="Google"
+            onPress={() => {}}
+            variant="outline"
+            leftIcon={<GoogleIcon />}
+            style={styles.socialBtn}
+            textStyle={styles.socialBtnText}
+          />
+          <AppButton
+            title="Apple"
+            onPress={() => {}}
+            variant="outline"
+            leftIcon={<AppleIcon />}
+            style={styles.socialBtn}
+            textStyle={styles.socialBtnText}
+          />
+        </View>
 
-        <TouchableOpacity style={styles.socialButton} activeOpacity={0.7}>
-          <AppleIcon />
-          <Text style={styles.socialButtonText}>Continue with apple</Text>
-        </TouchableOpacity>
+        {/* Footer Link */}
+        <View style={styles.footerRow}>
+          <Text style={styles.footerText}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+            <Text style={styles.signUpLink}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  keyboardContainer: { flex: 1, backgroundColor: colors.background },
+  keyboardContainer: { flex: 1 },
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: spacing.xl * 2, flexGrow: 1 },
-  title: {
-    fontFamily: "DM Sans",
-    fontWeight: "900",
-    fontSize: 24,
-    lineHeight: 30,
-    letterSpacing: -0.8,
-    color: "#0F172A",
-  },
-  subtitle: {
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    color: "#868C98",
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  field: {
-    marginBottom: spacing.md,
-  },
-  label: {
-    fontFamily: "DM Sans",
-    fontWeight: "700",
-    fontSize: 14,
-    lineHeight: 20,
-    letterSpacing: -0.1,
-    marginBottom: spacing.xs,
-    color: "#0F172A",
-  },
-  input: {
-    fontFamily: "DM Sans",
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    color: colors.text,
-    backgroundColor: "#FFFFFF",
-  },
-  inputFocused: {
-    borderColor: colors.primary,
-  },
-  passwordRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  passwordInputContainer: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    backgroundColor: "#FFFFFF",
-  },
-  passwordInputField: {
-    flex: 1,
-    fontFamily: "DM Sans",
-    fontSize: 15,
-    paddingVertical: 12,
-    color: colors.text,
-  },
-  eyeButton: {
-    padding: 6,
-  },
-  biometricButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-  },
-  forgotPasswordContainer: {
-    alignSelf: "flex-start",
-    marginTop: 8,
-  },
-  forgotPasswordText: {
-    fontFamily: "DM Sans",
-    fontSize: 13,
-    color: "#868C98",
-  },
-  button: {
-    backgroundColor: "#375DFB",
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: spacing.md,
-  },
-  buttonDisabled: {
-    backgroundColor: "#F6F8FA",
-  },
-  buttonText: {
-    fontFamily: "DM Sans Bold",
-    fontWeight: "700",
-    fontSize: 15,
-    color: "#FFFFFF",
-  },
-  buttonTextDisabled: {
-    color: "#868C98",
-  },
-  signUpRow: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
-    alignItems: "center",
-  },
-  signUpText: {
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    color: "#868C98",
-  },
-  signUpBold: {
-    fontFamily: "DM Sans Bold",
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  dividerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E2E8F0",
-  },
-  dividerText: {
-    fontFamily: "DM Sans",
-    fontSize: 12,
-    color: "#868C98",
-    paddingHorizontal: 12,
-  },
-  socialButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+  content: { padding: spacing.lg, paddingTop: spacing.xl * 1.5 },
+  title: { fontFamily: "DM Sans Bold", fontSize: 26, fontWeight: "700", color: "#0F172A" },
+  subtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: 32 },
+  passwordRow: { flexDirection: "row", alignItems: "flex-end", gap: 12 },
+  biometricBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingVertical: 12,
-    marginBottom: spacing.sm,
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: "#FFFFFF",
-    gap: 10,
+    marginBottom: 16,
   },
-  socialButtonText: {
-    fontFamily: "DM Sans Bold",
-    fontWeight: "600",
-    fontSize: 14,
-    color: "#0F172A",
-  },
+  forgotPasswordContainer: { alignSelf: "flex-end", marginTop: 4 },
+  forgotPasswordText: { fontFamily: "DM Sans Bold", fontSize: 13, fontWeight: "700", color: "#375DFB" },
+  dividerRow: { flexDirection: "row", alignItems: "center", marginVertical: 28 },
+  dividerLine: { flex: 1, height: 1, backgroundColor: "#E2E8F0" },
+  dividerText: { fontFamily: "DM Sans", fontSize: 13, color: "#94A3B8", marginHorizontal: 12 },
+  socialRow: { flexDirection: "row", gap: 12 },
+  socialBtn: { flex: 1, borderColor: "#E2E8F0" },
+  socialBtnText: { color: "#0F172A", fontWeight: "600" },
+  footerRow: { flexDirection: "row", justifyContent: "center", marginTop: 32, marginBottom: 24 },
+  footerText: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B" },
+  signUpLink: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "700", color: "#375DFB" },
 });

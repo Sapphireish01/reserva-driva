@@ -3,16 +3,20 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
   Clipboard,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CopyIconItem } from "../../../components/ProfileIcons";
+import {
+  AppBottomSheet,
+  AppButton,
+  AppFullScreenModal,
+  AppTextInput,
+} from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
 
@@ -102,7 +106,7 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Copied Tooltip Toast */}
+      {/* Toast */}
       {showCopiedToast && (
         <View style={styles.toastContainer}>
           <Text style={styles.toastText}>Copied!</Text>
@@ -151,248 +155,99 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
         ))}
       </ScrollView>
 
-      {/* 1. Contact Details Bottom Sheet Modal */}
-      <Modal visible={showDetailsSheet} transparent animationType="slide">
-        <View style={styles.sheetOverlay}>
-          <TouchableOpacity
-            style={styles.sheetBackdrop}
-            onPress={() => setShowDetailsSheet(false)}
+      {/* Contact Details Bottom Sheet */}
+      <AppBottomSheet
+        visible={showDetailsSheet}
+        onClose={() => setShowDetailsSheet(false)}
+        title="Contact Details"
+      >
+        <TouchableOpacity style={styles.sheetOption} onPress={openEditContact} activeOpacity={0.7}>
+          <View style={styles.optionLeft}>
+            <Ionicons name="create-outline" size={20} color="#475569" style={{ marginRight: 12 }} />
+            <Text style={styles.optionText}>Edit contact</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.sheetOption}
+          onPress={() => setShowDeleteModal(true)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.optionLeft}>
+            <Ionicons name="trash-outline" size={20} color="#475569" style={{ marginRight: 12 }} />
+            <Text style={styles.optionText}>Delete contact</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        </TouchableOpacity>
+      </AppBottomSheet>
+
+      {/* Add / Edit Contact Full Modal */}
+      <AppFullScreenModal
+        visible={showAddEditModal}
+        onClose={() => setShowAddEditModal(false)}
+        title={isEditing ? "Edit Contact" : "Add Contact"}
+        rightActionText="Save"
+        onRightAction={handleSaveContact}
+      >
+        <View style={styles.modalBody}>
+          <AppTextInput
+            label="Contact Name *"
+            placeholder="e.g Sapphire Simi"
+            value={contactName}
+            onChangeText={setContactName}
+            autoCapitalize="words"
+            autoFocus={true}
           />
-          <View style={styles.sheetContainer}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Contact Details</Text>
-              <TouchableOpacity onPress={() => setShowDetailsSheet(false)}>
-                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
-              </TouchableOpacity>
-            </View>
 
-            <TouchableOpacity style={styles.sheetOption} onPress={openEditContact} activeOpacity={0.7}>
-              <View style={styles.optionLeft}>
-                <Ionicons name="create-outline" size={20} color="#475569" style={{ marginRight: 12 }} />
-                <Text style={styles.optionText}>Edit contact</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            </TouchableOpacity>
+          <AppTextInput
+            label="Phone Number *"
+            placeholder="(000) 000-0000"
+            value={contactPhone}
+            onChangeText={setContactPhone}
+            keyboardType="phone-pad"
+          />
 
-            <TouchableOpacity
-              style={styles.sheetOption}
-              onPress={() => setShowDeleteModal(true)}
-              activeOpacity={0.7}
-            >
-              <View style={styles.optionLeft}>
-                <Ionicons name="trash-outline" size={20} color="#475569" style={{ marginRight: 12 }} />
-                <Text style={styles.optionText}>Delete contact</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            </TouchableOpacity>
-          </View>
+          <AppButton
+            title="Save Contact"
+            onPress={handleSaveContact}
+            size="lg"
+            style={{ marginTop: 24 }}
+          />
         </View>
-      </Modal>
+      </AppFullScreenModal>
 
-      {/* 2. Add / Edit Contact Modal */}
-      <Modal visible={showAddEditModal} animationType="slide">
-        <View style={[styles.modalContainer, { paddingTop: insets.top }]}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setShowAddEditModal(false)}>
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalHeaderTitle}>
-              {isEditing ? "Edit Contact" : "Add Contact"}
-            </Text>
-            <TouchableOpacity onPress={handleSaveContact}>
-              <Text style={styles.modalSaveText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modalBody}>
-            <View style={styles.inputCard}>
-              <TextInput
-                style={styles.inputField}
-                placeholder="e.g Sapphire Simi"
-                placeholderTextColor="#94A3B8"
-                value={contactName}
-                onChangeText={setContactName}
-                autoCapitalize="words"
-              />
-            </View>
-
-            <View style={[styles.inputCard, { marginTop: spacing.md }]}>
-              <Text style={styles.countryPrefix}>🇳🇬 +234</Text>
-              <TextInput
-                style={styles.inputField}
-                placeholder="(000) 000-0000"
-                placeholderTextColor="#94A3B8"
-                value={contactPhone}
-                onChangeText={setContactPhone}
-                keyboardType="phone-pad"
-              />
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* 3. Delete Contact Confirmation Bottom Sheet Modal */}
-      <Modal visible={showDeleteModal} transparent animationType="slide">
-        <View style={styles.sheetOverlay}>
-          <TouchableOpacity
-            style={styles.sheetBackdrop}
+      {/* Delete Confirmation Bottom Sheet */}
+      <AppBottomSheet
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Delete Contact?"
+      >
+        <Text style={styles.sheetSubtitle}>
+          Are you sure you want to delete this contact?
+        </Text>
+        <View style={styles.deleteActionRow}>
+          <AppButton
+            title="Cancel"
             onPress={() => setShowDeleteModal(false)}
+            variant="secondary"
+            style={{ flex: 1 }}
           />
-          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Delete Contact?</Text>
-              <TouchableOpacity onPress={() => setShowDeleteModal(false)}>
-                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.sheetSubtitle}>
-              Are you sure you want to delete this contact?
-            </Text>
-
-            <TouchableOpacity style={styles.deleteBtn} onPress={handleDeleteContact} activeOpacity={0.8}>
-              <Text style={styles.deleteBtnText}>Delete Contact</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.cancelBtn}
-              onPress={() => setShowDeleteModal(false)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
+          <AppButton
+            title="Delete"
+            onPress={handleDeleteContact}
+            variant="destructive"
+            style={{ flex: 1 }}
+          />
         </View>
-      </Modal>
+      </AppBottomSheet>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  toastContainer: {
-    position: "absolute",
-    top: 60,
-    right: 20,
-    backgroundColor: "#0F172A",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    zIndex: 999,
-  },
-  toastText: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 12,
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
+  container: { flex: 1, backgroundColor: "#FFFFFF" },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    alignItems: "flex-end",
-    justifyContent: "center",
-  },
-  headerTitle: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-  },
-  contactCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    marginBottom: spacing.sm,
-  },
-  contactName: {
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    color: "#475569",
-  },
-  phoneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  contactPhone: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-
-  /* Bottom Sheet Styles */
-  sheetOverlay: {
-    flex: 1,
-    justifyContent: "flex-end",
-  },
-  sheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
-  },
-  sheetContainer: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: spacing.lg,
-    paddingBottom: spacing.xl * 1.5,
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.lg,
-  },
-  sheetTitle: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  sheetOption: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  optionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  optionText: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
-
-  /* Add/Edit Modal Styles */
-  modalContainer: { flex: 1, backgroundColor: "#FFFFFF" },
-  modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -401,37 +256,43 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
   },
-  modalHeaderTitle: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: "#0F172A" },
-  modalCancelText: { fontFamily: "DM Sans", fontSize: 15, color: "#94A3B8" },
-  modalSaveText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#0F172A" },
-  modalBody: { padding: spacing.lg },
-  inputCard: {
+  backButton: { width: 40, height: 40, justifyContent: "center" },
+  addButton: { width: 40, height: 40, justifyContent: "center", alignItems: "flex-end" },
+  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  contactCard: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+  },
+  contactName: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: "#0F172A" },
+  phoneRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
+  contactPhone: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B" },
+  sheetOption: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
+    justifyContent: "space-between",
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
-  countryPrefix: { fontFamily: "DM Sans Bold", fontSize: 16, marginRight: 8, color: colors.dark },
-  inputField: { flex: 1, fontFamily: "DM Sans", fontSize: 16, color: colors.dark, fontWeight: "700" },
-
-  sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.lg, lineHeight: 20 },
-  deleteBtn: {
-    backgroundColor: "#EF4444",
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginBottom: spacing.sm,
+  optionLeft: { flexDirection: "row", alignItems: "center" },
+  optionText: { fontFamily: "DM Sans", fontSize: 15, color: "#0F172A" },
+  modalBody: { padding: 20 },
+  sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: 20 },
+  deleteActionRow: { flexDirection: "row", gap: 12, marginTop: 8 },
+  toastContainer: {
+    position: "absolute",
+    top: 60,
+    alignSelf: "center",
+    backgroundColor: "#0F172A",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 999,
   },
-  deleteBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
-  cancelBtn: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  cancelBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: "#475569" },
+  toastText: { fontFamily: "DM Sans Bold", fontSize: 13, color: "#FFFFFF" },
 });

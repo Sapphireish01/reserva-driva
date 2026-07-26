@@ -1,25 +1,39 @@
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImagePicker from "expo-image-picker";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Image,
-  Modal,
+  Animated,
+  Easing,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 import { FileFormatIconItem } from "../../../components/ProfileIcons";
+import {
+  AppBottomSheet,
+  AppButton,
+  AppCameraModal,
+  AppDropdown,
+  AppTextEditor,
+} from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
-import { colors, spacing } from "../../../theme/colors";
+import { colors } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "ReportProblem">;
+
+const UploadingStatusIcon = ({ size = 16 }: { size?: number }) => (
+  <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <Path
+      d="M8 4C8.15913 4 8.31174 4.06321 8.42426 4.17574C8.53679 4.28826 8.6 4.44087 8.6 4.6V6.4C8.6 6.55913 8.53679 6.71174 8.42426 6.82426C8.31174 6.93679 8.15913 7 8 7C7.84087 7 7.68826 6.93679 7.57574 6.82426C7.46321 6.71174 7.4 6.55913 7.4 6.4V4.6C7.4 4.44087 7.46321 4.28826 7.57574 4.17574C7.68826 4.06321 7.84087 4 8 4ZM8 13C8.15913 13 8.31174 13.0632 8.42426 13.1757C8.53679 13.2883 8.6 13.4409 8.6 13.6V15.4C8.6 15.5591 8.53679 15.7117 8.42426 15.8243C8.31174 15.9368 8.15913 16 8 16C7.84087 16 7.68826 15.9368 7.57574 15.8243C7.46321 15.7117 7.4 15.5591 7.4 15.4V13.6C7.4 13.4409 7.46321 13.2883 7.57574 13.1757C7.68826 13.0632 7.84087 13 8 13ZM14 10C14 10.1591 13.9368 10.3117 13.8243 10.4243C13.7117 10.5368 13.5591 10.6 11.6 10.6H11.6C11.4409 10.6 11.2883 10.5368 11.1757 10.4243C11.0632 10.3117 11 10.1591 11 10C11 9.84087 11.0632 9.68826 11.1757 9.57574C11.2883 9.46321 11.4409 9.4 11.6 9.4H13.4C13.5591 9.4 13.7117 9.46321 13.8243 9.57574C13.9368 9.68826 14 9.84087 14 10ZM5 10C5 10.1591 4.93679 10.3117 4.82426 10.4243C4.71174 10.5368 4.55913 10.6 4.4 10.6H2.6C2.44087 10.6 2.28826 10.5368 2.17574 10.4243C2.06321 10.3117 2 10.1591 2 10C2 9.84087 2.06321 9.68826 2.17574 9.57574C2.28826 9.46321 2.44087 9.4 2.6 9.4H4.4C4.55913 9.4 4.71174 9.46321 4.82426 9.57574C4.93679 9.68826 5 9.84087 5 10ZM12.2426 14.2426C12.1301 14.3551 11.9775 14.4183 11.8184 14.4183C11.6593 14.4183 11.5067 14.3551 11.3942 14.2426L10.1216 12.97C10.0123 12.8568 9.95183 12.7053 9.9532 12.548C9.95456 12.3906 10.0177 12.2402 10.1289 12.1289C10.2402 12.0177 10.3906 11.9546 10.548 11.9532C10.7053 11.9518 10.8568 12.0123 10.97 12.1216L12.2426 13.3936C12.2984 13.4493 12.3426 13.5155 12.3728 13.5883C12.403 13.6612 12.4186 13.7393 12.4186 13.8181C12.4186 13.8969 12.403 13.975 12.3728 14.0479C12.3426 14.1207 12.2984 14.1869 12.2426 14.2426ZM5.8784 7.8784C5.76588 7.99088 5.6133 8.05407 5.4542 8.05407C5.2951 8.05407 5.14252 7.99088 5.03 7.8784L3.758 6.6064C3.64542 6.4939 3.58213 6.34127 3.58208 6.18211C3.58202 6.02295 3.6452 5.87028 3.7577 5.7577C3.8702 5.64512 4.02283 5.58183 4.18199 5.58178C4.34115 5.58172 4.49382 5.6449 4.6064 5.7574L5.8784 7.03C5.99088 7.14252 6.05407 7.2951 6.05407 7.4542C6.05407 7.6133 5.99088 7.76588 5.8784 7.8784ZM3.758 14.2426C3.64552 14.1301 3.58233 13.9775 3.58233 13.8184C3.58233 13.6593 3.64552 13.5067 3.758 13.3942L5.0306 12.1216C5.08595 12.0643 5.15216 12.0186 5.22536 11.9871C5.29856 11.9557 5.37729 11.9391 5.45696 11.9384C5.53663 11.9378 5.61563 11.9529 5.68937 11.9831C5.76311 12.0133 5.8301 12.0578 5.88644 12.1142C5.94277 12.1705 5.98732 12.2375 6.01749 12.3112C6.04766 12.385 6.06284 12.464 6.06215 12.5436C6.06146 12.6233 6.04491 12.702 6.01346 12.7752C5.98202 12.8484 5.93631 12.9147 5.879 12.97L4.607 14.2426C4.55128 14.2984 4.4851 14.3426 4.41226 14.3728C4.33943 14.403 4.26135 14.4186 4.1825 14.4186C4.10365 14.4186 4.02557 14.403 3.95274 14.3728C3.8799 14.3426 3.81372 14.2984 3.758 14.2426ZM10.1216 7.8784C10.0091 7.76588 9.94593 7.6133 9.94593 7.4542C9.94593 7.2951 10.0091 7.14252 10.1216 7.03L11.3936 5.7574C11.5061 5.64482 11.6587 5.58153 11.8179 5.58148C11.977 5.58142 12.1297 5.6446 12.2423 5.7571C12.3549 5.86961 12.4182 6.02223 12.4182 6.18139C12.4183 6.34055 12.3551 6.49322 12.2426 6.6058L10.97 7.8784C10.8575 7.99088 10.7049 8.05407 10.5458 8.05407C10.3867 8.05407 10.2341 7.99088 10.1216 7.8784Z"
+      fill="#375DFB"
+    />
+  </Svg>
+);
 
 const CATEGORIES = [
   "Passenger",
@@ -31,7 +45,8 @@ const CATEGORIES = [
 
 interface AttachmentFile {
   name: string;
-  size: string;
+  sizeKb: number;
+  progress: number;
   status: "uploading" | "completed";
 }
 
@@ -43,14 +58,68 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
   const [attachment, setAttachment] = useState<AttachmentFile | null>(null);
 
   // Modals state
-  const [showCategorySheet, setShowCategorySheet] = useState(false);
   const [showAttachmentSheet, setShowAttachmentSheet] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
 
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
   const isFormValid = category.trim().length > 0 && description.trim().length > 0;
+
+  // Spin animation for uploading status icon
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (attachment?.status === "uploading") {
+      Animated.loop(
+        Animated.timing(spinAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinAnim.setValue(0);
+    }
+  }, [attachment?.status]);
+
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  const startUploadProgress = (filename: string, sizeKb: number) => {
+    setAttachment({
+      name: filename,
+      sizeKb,
+      progress: 15,
+      status: "uploading",
+    });
+
+    const interval = setInterval(() => {
+      setAttachment((prev) => {
+        if (!prev || prev.status === "completed") {
+          clearInterval(interval);
+          return prev;
+        }
+        const nextProgress = prev.progress + 25;
+        if (nextProgress >= 100) {
+          clearInterval(interval);
+          return {
+            ...prev,
+            progress: 100,
+            status: "completed",
+          };
+        }
+        return {
+          ...prev,
+          progress: nextProgress,
+        };
+      });
+    }, 350);
+  };
 
   const handlePickFromGallery = async () => {
     setShowAttachmentSheet(false);
@@ -60,73 +129,22 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: false, // NO cutout section
+      mediaTypes: ["images"],
+      allowsEditing: false,
       quality: 0.8,
     });
     if (!result.canceled && result.assets && result.assets.length > 0) {
       const asset = result.assets[0];
       const filename = asset.fileName || "Issue.png";
       const sizeKb = asset.fileSize ? Math.round(asset.fileSize / 1024) : 120;
-      setAttachment({ name: filename, size: `0 KB of ${sizeKb} KB`, status: "uploading" });
-
-      setTimeout(() => {
-        setAttachment({ name: filename, size: `0 KB of ${sizeKb} KB`, status: "completed" });
-      }, 1000);
+      startUploadProgress(filename, sizeKb);
     }
   };
 
-  // Camera state & permissions
-  const [showCamera, setShowCamera] = useState(false);
-  const [cameraPhoto, setCameraPhoto] = useState<string | null>(null);
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [facing, setFacing] = useState<"front" | "back">("back");
-  const cameraRef = useRef<CameraView>(null);
-
-  const handlePickFromCamera = async () => {
-    setShowAttachmentSheet(false);
-    if (!cameraPermission?.granted) {
-      const res = await requestCameraPermission();
-      if (!res.granted) {
-        alert("Permission to access camera is required!");
-        return;
-      }
-    }
-    setCameraPhoto(null);
-    setShowCamera(true);
-  };
-
-  const toggleFacing = () => {
-    setFacing((prev) => (prev === "back" ? "front" : "back"));
-  };
-
-  const handleShutter = async () => {
-    try {
-      if (cameraRef.current) {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.85,
-          shutterSound: false,
-        });
-        if (photo?.uri) {
-          setCameraPhoto(photo.uri);
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn("Error taking picture:", e);
-    }
-  };
-
-  const handleUseCameraPhoto = () => {
-    if (cameraPhoto) {
-      const filename = "ScannedDoc.png";
-      setAttachment({ name: filename, size: "0 KB of 120 KB", status: "uploading" });
-      setTimeout(() => {
-        setAttachment({ name: filename, size: "0 KB of 120 KB", status: "completed" });
-      }, 1000);
-    }
+  const handlePhotoCaptured = (uri: string) => {
     setShowCamera(false);
-    setCameraPhoto(null);
+    const filename = "ScannedDoc.png";
+    startUploadProgress(filename, 120);
   };
 
   const handleSubmit = () => {
@@ -157,480 +175,294 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
       </View>
 
       <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: Math.max(insets.bottom, spacing.lg) },
-        ]}
+        style={styles.content}
+        contentContainerStyle={{
+          paddingBottom: 24,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.mainContent}>
-          {/* Category Field */}
-          <View style={styles.fieldGroup}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Category</Text>
-              <Text style={styles.asterisk}> *</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.inputCard}
-              onPress={() => setShowCategorySheet(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.inputField, !category && styles.placeholderText]}>
-                {category || "e.g Payment Issue"}
-              </Text>
-              <Ionicons name="chevron-down" size={18} color="#94A3B8" />
-            </TouchableOpacity>
-          </View>
+          {/* Category Dropdown */}
+          <AppDropdown
+            label="Category *"
+            placeholder="Select category e.g Payment Issue"
+            options={CATEGORIES}
+            value={category}
+            onSelect={(val) => setCategory(val)}
+            enableSearch={false}
+          />
 
-          {/* Description Field */}
-          <View style={styles.fieldGroup}>
-            <View style={styles.labelRow}>
-              <Text style={styles.label}>Description</Text>
-              <Text style={styles.asterisk}> *</Text>
-            </View>
-            <View style={styles.editorCard}>
-              {/* Formatting Toolbar Header */}
-              <View style={styles.toolbarHeader}>
-                <TouchableOpacity style={styles.toolbarBtn}>
-                  <Text style={styles.toolbarBold}>B</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.toolbarBtn}>
-                  <Text style={styles.toolbarItalic}>I</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.toolbarBtn}>
-                  <Text style={styles.toolbarUnderline}>U</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.toolbarBtn}>
-                  <Ionicons name="options-outline" size={16} color="#64748B" />
-                </TouchableOpacity>
-                <View style={styles.toolbarDivider} />
-                <TouchableOpacity style={styles.toolbarBtn}>
-                  <Ionicons name="list" size={16} color="#64748B" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.toolbarBtn}>
-                  <Ionicons name="menu" size={16} color="#64748B" />
-                </TouchableOpacity>
-                <View style={styles.toolbarDivider} />
-                <TouchableOpacity style={styles.toolbarBtn}>
-                  <Ionicons name="link-outline" size={16} color="#64748B" />
-                </TouchableOpacity>
+          {/* Description Text Editor - autoFocus on mount */}
+          <AppTextEditor
+            label="Description *"
+            placeholder="Type your message here..."
+            value={description}
+            onChangeText={setDescription}
+            maxLength={200}
+            autoFocus={true}
+            onInsertImage={() => setShowAttachmentSheet(true)}
+          />
 
-                {/* Image / Attachment Icon */}
-                <TouchableOpacity
-                  style={styles.toolbarBtn}
-                  onPress={() => setShowAttachmentSheet(true)}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="image-outline" size={16} color="#375DFB" />
-                </TouchableOpacity>
-              </View>
-
-              {/* Multiline Description Input */}
-              <TextInput
-                style={styles.editorInput}
-                placeholder="Placeholder text..."
-                placeholderTextColor="#94A3B8"
-                multiline
-                textAlignVertical="top"
-                maxLength={200}
-                value={description}
-                onChangeText={setDescription}
-              />
-
-              {/* Character Counter Footer */}
-              <View style={styles.editorFooter}>
-                <Text style={styles.charCount}>{description.length}/200</Text>
-                <Ionicons name="pencil" size={12} color="#94A3B8" style={{ marginLeft: 4 }} />
-              </View>
-            </View>
-          </View>
-
-          {/* Attachment Upload / Completed Card */}
+          {/* Attachment Card */}
           {attachment && (
             <View style={styles.attachmentCard}>
-              <View style={styles.attachmentLeft}>
-                <View style={{ marginRight: 12 }}>
-                  <FileFormatIconItem filename={attachment.name} size={36} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.attachmentName}>{attachment.name}</Text>
-                  <View style={styles.attachmentStatusRow}>
-                    <Text style={styles.attachmentSizeText}>{attachment.size} • </Text>
-                    {attachment.status === "uploading" ? (
-                      <Text style={styles.uploadingText}>Uploading...</Text>
-                    ) : (
-                      <>
-                        <Ionicons name="checkmark-circle" size={12} color="#22C55E" style={{ marginRight: 2 }} />
-                        <Text style={styles.completedText}>Completed</Text>
-                      </>
-                    )}
+              <View style={styles.attachmentTopRow}>
+                <View style={styles.attachmentLeft}>
+                  <View style={{ marginRight: 12 }}>
+                    <FileFormatIconItem filename={attachment.name} size={40} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.attachmentName} numberOfLines={1}>
+                      {attachment.name}
+                    </Text>
+                    <View style={styles.attachmentStatusRow}>
+                      <Text style={styles.attachmentSizeText}>
+                        {`${Math.round((attachment.progress / 100) * attachment.sizeKb)} KB of ${attachment.sizeKb} KB`}
+                      </Text>
+                      {attachment.status === "uploading" ? (
+                        <View style={styles.uploadingContainer}>
+                          <Text style={styles.dotSeparator}> • </Text>
+                          <Animated.View
+                            style={{
+                              transform: [{ rotate: spin }],
+                              marginRight: 4,
+                            }}
+                          >
+                            <UploadingStatusIcon size={16} />
+                          </Animated.View>
+                          <Text style={styles.uploadingText}>Uploading...</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.uploadingContainer}>
+                          <Text style={styles.dotSeparator}> • </Text>
+                          <Ionicons
+                            name="checkmark-circle"
+                            size={13}
+                            color="#22C55E"
+                            style={{ marginRight: 2 }}
+                          />
+                          <Text style={styles.completedText}>Completed</Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 </View>
+
+                <TouchableOpacity
+                  onPress={() => setAttachment(null)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="close" size={20} color="#0F172A" />
+                </TouchableOpacity>
               </View>
 
-              {attachment.status === "uploading" ? (
-                <TouchableOpacity onPress={() => setAttachment(null)}>
-                  <Ionicons name="close" size={18} color="#94A3B8" />
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity onPress={() => setAttachment(null)}>
-                  <Ionicons name="trash-outline" size={18} color="#94A3B8" />
-                </TouchableOpacity>
+              {/* Progress Bar Track */}
+              {attachment.status === "uploading" && (
+                <View style={styles.progressBarTrack}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      { width: `${attachment.progress}%` },
+                    ]}
+                  />
+                </View>
               )}
             </View>
           )}
         </View>
-
-        {/* Submit Report Button */}
-        <TouchableOpacity
-          style={[
-            styles.submitButton,
-            !isFormValid && styles.submitButtonDisabled,
-            isSent && styles.submitButtonSuccess,
-          ]}
-          disabled={!isFormValid || isSubmitting}
-          onPress={handleSubmit}
-          activeOpacity={0.85}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : isSent ? (
-            <View style={styles.successRow}>
-              <Text style={styles.submitBtnText}>Sent</Text>
-              <Ionicons name="checkmark-circle" size={18} color="#22C55E" style={{ marginLeft: 6 }} />
-            </View>
-          ) : (
-            <Text
-              style={[
-                styles.submitBtnText,
-                !isFormValid && styles.submitBtnTextDisabled,
-              ]}
-            >
-              Submit Report
-            </Text>
-          )}
-        </TouchableOpacity>
       </ScrollView>
 
-      {/* Category Bottom Sheet Modal */}
-      <Modal visible={showCategorySheet} transparent animationType="slide">
-        <View style={styles.sheetOverlay}>
-          <TouchableOpacity
-            style={styles.sheetBackdrop}
-            onPress={() => setShowCategorySheet(false)}
-          />
-          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Choose Category</Text>
-              <TouchableOpacity onPress={() => setShowCategorySheet(false)}>
-                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
-              </TouchableOpacity>
-            </View>
-
-            {CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={styles.categoryItem}
-                onPress={() => {
-                  setCategory(cat);
-                  setShowCategorySheet(false);
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.categoryItemText}>{cat}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </Modal>
+      {/* Fixed Bottom Submit Button Footer */}
+      <View
+        style={[
+          styles.footer,
+          { paddingBottom: Math.max(insets.bottom, 16) },
+        ]}
+      >
+        <AppButton
+          title={isSent ? "Sent" : "Submit Report"}
+          onPress={handleSubmit}
+          disabled={!isFormValid}
+          loading={isSubmitting}
+          variant={isSent ? "secondary" : "primary"}
+          size="lg"
+          rightIcon={
+            isSent ? (
+              <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
+            ) : undefined
+          }
+        />
+      </View>
 
       {/* Attachment Options Bottom Sheet Modal */}
-      <Modal visible={showAttachmentSheet} transparent animationType="slide">
-        <View style={styles.sheetOverlay}>
-          <TouchableOpacity
-            style={styles.sheetBackdrop}
-            onPress={() => setShowAttachmentSheet(false)}
-          />
-          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Choose Attachment</Text>
-              <TouchableOpacity onPress={() => setShowAttachmentSheet(false)}>
-                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
-              </TouchableOpacity>
-            </View>
+      <AppBottomSheet
+        visible={showAttachmentSheet}
+        onClose={() => setShowAttachmentSheet(false)}
+        title="Choose Attachment"
+      >
+        <TouchableOpacity
+          style={styles.optionRow}
+          onPress={handlePickFromGallery}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.optionRowText}>Choose from files</Text>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.optionRow}
-              onPress={handlePickFromGallery}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.optionRowText}>Choose from files</Text>
-              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.optionRow}
-              onPress={handlePickFromCamera}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.optionRowText}>Scan document</Text>
-              <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+        <TouchableOpacity
+          style={styles.optionRow}
+          onPress={() => {
+            setShowAttachmentSheet(false);
+            setShowCamera(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.optionRowText}>Scan document</Text>
+          <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+        </TouchableOpacity>
+      </AppBottomSheet>
 
       {/* Camera Viewfinder Modal */}
-      <Modal visible={showCamera} animationType="slide">
-        <View style={styles.cameraScreenContainer}>
-          {cameraPhoto ? (
-            <Image source={{ uri: cameraPhoto }} style={styles.fullCameraPreview} />
-          ) : (
-            <CameraView
-              ref={cameraRef}
-              style={styles.fullCameraPreview}
-              facing={facing}
-            />
-          )}
-
-          {/* Camera Bottom Bar */}
-          <View style={[styles.cameraBottomBar, { paddingBottom: Math.max(insets.bottom + 12, 24) }]}>
-            {cameraPhoto ? (
-              <View style={styles.cameraActionRow}>
-                <TouchableOpacity onPress={() => setCameraPhoto(null)}>
-                  <Text style={styles.cameraActionText}>Retake Photo</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleUseCameraPhoto}>
-                  <Text style={styles.cameraActionText}>Use Photo</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={styles.cameraShutterRow}>
-                <TouchableOpacity style={styles.shutterSideColLeft} onPress={() => setShowCamera(false)}>
-                  <Text style={styles.cameraCancelText}>Cancel</Text>
-                </TouchableOpacity>
-
-                <View style={styles.shutterCenterCol}>
-                  <TouchableOpacity
-                    style={styles.shutterRing}
-                    onPress={handleShutter}
-                    activeOpacity={0.8}
-                  >
-                    <View style={styles.shutterDot} />
-                  </TouchableOpacity>
-                </View>
-
-                <TouchableOpacity style={styles.shutterSideColRight} onPress={toggleFacing}>
-                  <View style={styles.cameraFlipBtn}>
-                    <Ionicons name="camera-reverse-outline" size={24} color="#FFFFFF" />
-                  </View>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
+      <AppCameraModal
+        visible={showCamera}
+        onClose={() => setShowCamera(false)}
+        onPhotoCaptured={handlePhotoCaptured}
+        initialFacing="back"
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFFFFF" },
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
   header: {
+    height: 56,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  backButton: { width: 40, height: 40, justifyContent: "center" },
-  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: colors.dark },
-
-  content: { flexGrow: 1, paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  mainContent: { flex: 1 },
-  fieldGroup: { marginBottom: spacing.lg },
-  labelRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
-  label: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: colors.dark },
-  asterisk: { fontFamily: "DM Sans Bold", fontSize: 14, color: "#EF4444", fontWeight: "700" },
-
-  inputCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    backgroundColor: "#FFFFFF",
-  },
-  inputField: { flex: 1, fontFamily: "DM Sans", fontSize: 14, color: colors.dark, fontWeight: "700" },
-  placeholderText: { color: "#94A3B8" },
-
-  editorCard: {
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    overflow: "hidden",
-  },
-  toolbarHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#F1F5F9",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 8,
-    gap: 12,
   },
-  toolbarBtn: { padding: 4, justifyContent: "center", alignItems: "center" },
-  toolbarBold: { fontFamily: "DM Sans Bold", fontWeight: "900", fontSize: 14, color: "#475569" },
-  toolbarItalic: { fontFamily: "DM Sans", fontStyle: "italic", fontSize: 14, color: "#475569" },
-  toolbarUnderline: { fontFamily: "DM Sans", textDecorationLine: "underline", fontSize: 14, color: "#475569" },
-  toolbarDivider: { width: 1, height: 16, backgroundColor: "#E2E8F0" },
-
-  editorInput: {
-    height: 120,
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
+  },
+  headerTitle: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 18,
+    fontWeight: "700",
     color: colors.dark,
   },
-  editorFooter: {
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  mainContent: {
+    flex: 1,
+  },
+  attachTriggerBtn: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
-    paddingHorizontal: spacing.md,
-    paddingBottom: 10,
+    paddingVertical: 10,
   },
-  charCount: { fontFamily: "DM Sans", fontSize: 11, color: "#94A3B8" },
-
-  /* Attachment Card */
+  attachTriggerText: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 14,
+    fontWeight: "700",
+    // color: "#375DFB",
+    marginLeft: 6,
+  },
   attachmentCard: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 12,
+  },
+  attachmentTopRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    backgroundColor: "#FFFFFF",
   },
-  attachmentLeft: { flexDirection: "row", alignItems: "center", flex: 1, marginRight: 10 },
-  pngBadge: { backgroundColor: "#3B82F6", borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4, marginRight: 10 },
-  pngBadgeText: { fontFamily: "DM Sans Bold", fontSize: 10, color: "#FFFFFF", fontWeight: "800" },
-  attachmentName: { fontFamily: "DM Sans Bold", fontSize: 13, fontWeight: "700", color: colors.dark },
-  attachmentStatusRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
-  attachmentSizeText: { fontFamily: "DM Sans", fontSize: 11, color: "#94A3B8" },
-  uploadingText: { fontFamily: "DM Sans", fontSize: 11, color: colors.dark, fontWeight: "600" },
-  completedText: { fontFamily: "DM Sans", fontSize: 11, color: colors.dark, fontWeight: "600" },
-
-  submitButton: {
-    backgroundColor: "#375DFB",
-    borderRadius: 10,
-    paddingVertical: 14,
+  attachmentLeft: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    marginTop: spacing.md,
+    flex: 1,
+    marginRight: 8,
   },
-  submitButtonDisabled: { backgroundColor: "#F8FAFC" },
-  submitButtonSuccess: { backgroundColor: "#375DFB" },
-  successRow: { flexDirection: "row", alignItems: "center" },
-  submitBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
-  submitBtnTextDisabled: { color: "#CBD5E1" },
-
-  /* Bottom Sheets */
-  sheetOverlay: { flex: 1, justifyContent: "flex-end" },
-  sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(15, 23, 42, 0.4)" },
-  sheetContainer: {
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: spacing.lg,
+  attachmentName: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginBottom: 2,
   },
-  sheetHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg },
-  sheetTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: colors.dark },
-  categoryItem: { backgroundColor: "#F8FAFC", borderRadius: 12, padding: spacing.md, marginBottom: spacing.sm },
-  categoryItemText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: colors.dark },
+  attachmentStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 2,
+  },
+  attachmentSizeText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: "#868C98",
+  },
+  dotSeparator: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: "#868C98",
+  },
+  uploadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  uploadingText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: "#0F172A",
+  },
+  completedText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: colors.dark,
+  },
+  progressBarTrack: {
+    height: 6,
+    backgroundColor: "#F6F8FA",
+    borderRadius: 3,
+    marginTop: 14,
+    width: "100%",
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    backgroundColor: "#0A0D14",
+    borderRadius: 3,
+  },
   optionRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
-  optionRowText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: colors.dark },
-
-  /* Camera Modal Styles */
-  cameraScreenContainer: { flex: 1, backgroundColor: "#000000" },
-  fullCameraPreview: { flex: 1, width: "100%", resizeMode: "cover" },
-  cameraBottomBar: {
-    backgroundColor: "#868C98",
-    paddingHorizontal: spacing.lg,
-    justifyContent: "center",
-    height: 150,
-  },
-  cameraActionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  cameraShutterRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  shutterSideColLeft: {
-    width: 90,
-    alignItems: "flex-start",
-  },
-  shutterCenterCol: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  shutterSideColRight: {
-    width: 90,
-    alignItems: "flex-end",
-  },
-  cameraCancelText: {
+  optionRowText: {
     fontFamily: "DM Sans",
-    fontSize: 16,
-    color: "#FFFFFF",
-    fontWeight: "700",
+    fontSize: 15,
+    color: "#0F172A",
   },
-  cameraActionText: {
-    fontFamily: "DM Sans",
-    fontSize: 16,
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
-  shutterRing: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "transparent",
-  },
-  shutterDot: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  footer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    // borderTopWidth: 1,
+    // borderTopColor: "#F1F5F9",
     backgroundColor: "#FFFFFF",
-  },
-  cameraFlipBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.25)",
-    justifyContent: "center",
-    alignItems: "center",
   },
 });
