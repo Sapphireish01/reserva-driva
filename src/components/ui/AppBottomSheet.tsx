@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
   KeyboardAvoidingView,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { modalTokens } from "../../theme/tokens";
+import { CloseIconItem } from "../ProfileIcons";
 
 export interface AppBottomSheetProps {
   visible: boolean;
@@ -73,7 +73,7 @@ export const AppBottomSheet: React.FC<AppBottomSheetProps> = ({
                     onPress={onClose}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    <Ionicons name="close" size={22} color="#64748B" />
+                    <CloseIconItem color="#94A3B8" size={22} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -129,8 +129,8 @@ const styles = StyleSheet.create({
   closeBtn: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: "#F1F5F9",
+    // borderRadius: 16,
+    // backgroundColor: "#F1F5F9",
     justifyContent: "center",
     alignItems: "center",
   },

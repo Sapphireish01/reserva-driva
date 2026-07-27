@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CopyIconItem } from "../../../components/ProfileIcons";
+import { CopyIconItem, EditIconItem } from "../../../components/ProfileIcons";
 import {
   AppBottomSheet,
   AppButton,
@@ -29,8 +29,8 @@ interface Contact {
 }
 
 const INITIAL_CONTACTS: Contact[] = [
-  { id: "1", name: "Sapphire Simi", phone: "+23428495069" },
-  { id: "2", name: "Edward Sapphire", phone: "+23428495069" },
+  { id: "1", name: "Prosper Edward", phone: "+23428495069" },
+  { id: "2", name: "Edward Prosper", phone: "+23428495069" },
 ];
 
 export const EmergencyContactsScreen = ({ navigation }: Props) => {
@@ -139,15 +139,17 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
             }}
             activeOpacity={0.7}
           >
-            <Text style={styles.contactName}>{contact.name}</Text>
+            <Text style={styles.contactName} numberOfLines={1}>
+              {contact.name}
+            </Text>
             <View style={styles.phoneRow}>
               <Text style={styles.contactPhone}>{contact.phone}</Text>
               <TouchableOpacity
                 onPress={() => handleCopyPhone(contact.phone)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <View style={{ marginLeft: 6 }}>
-                  <CopyIconItem color="#94A3B8" size={16} />
+                <View style={{ marginLeft: 8 }}>
+                  <CopyIconItem color="#94A3B8" size={18} />
                 </View>
               </TouchableOpacity>
             </View>
@@ -163,7 +165,9 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
       >
         <TouchableOpacity style={styles.sheetOption} onPress={openEditContact} activeOpacity={0.7}>
           <View style={styles.optionLeft}>
-            <Ionicons name="create-outline" size={20} color="#475569" style={{ marginRight: 12 }} />
+            <View style={{ marginRight: 12 }}>
+              <EditIconItem color="#475569" size={20} />
+            </View>
             <Text style={styles.optionText}>Edit contact</Text>
           </View>
           <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
@@ -193,7 +197,7 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
         <View style={styles.modalBody}>
           <AppTextInput
             label="Contact Name *"
-            placeholder="e.g Sapphire Simi"
+            placeholder="e.g Prosper Edward"
             value={contactName}
             onChangeText={setContactName}
             autoCapitalize="words"
@@ -226,18 +230,20 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
         <Text style={styles.sheetSubtitle}>
           Are you sure you want to delete this contact?
         </Text>
-        <View style={styles.deleteActionRow}>
+        <View style={styles.deleteActionColumn}>
+          <AppButton
+            title="Delete Contact"
+            onPress={handleDeleteContact}
+            variant="destructive"
+            size="lg"
+            style={{ borderRadius: 14 }}
+          />
           <AppButton
             title="Cancel"
             onPress={() => setShowDeleteModal(false)}
-            variant="secondary"
-            style={{ flex: 1 }}
-          />
-          <AppButton
-            title="Delete"
-            onPress={handleDeleteContact}
-            variant="destructive"
-            style={{ flex: 1 }}
+            size="lg"
+            style={styles.cancelButton}
+            textStyle={styles.cancelButtonText}
           />
         </View>
       </AppBottomSheet>
@@ -261,16 +267,32 @@ const styles = StyleSheet.create({
   headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
   contactCard: {
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
+    backgroundColor: "#F6F8FA",
     borderRadius: 14,
-    padding: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  contactName: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: "#0F172A" },
-  phoneRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  contactPhone: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B" },
+  contactName: {
+    fontFamily: "DM Sans",
+    fontSize: 15,
+    color: colors.grey,
+    flex: 1,
+    marginRight: 8,
+  },
+  phoneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  contactPhone: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
   sheetOption: {
     flexDirection: "row",
     alignItems: "center",
@@ -282,8 +304,18 @@ const styles = StyleSheet.create({
   optionLeft: { flexDirection: "row", alignItems: "center" },
   optionText: { fontFamily: "DM Sans", fontSize: 15, color: "#0F172A" },
   modalBody: { padding: 20 },
-  sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: 20 },
-  deleteActionRow: { flexDirection: "row", gap: 12, marginTop: 8 },
+  sheetSubtitle: { fontFamily: "DM Sans", fontSize: 15, color: colors.grey, marginBottom: 20 },
+  deleteActionColumn: { flexDirection: "column", gap: 12, marginTop: 4 },
+  cancelButton: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+  },
+  cancelButtonText: {
+    color: colors.grey,
+    fontFamily: "DM Sans Bold",
+  },
   toastContainer: {
     position: "absolute",
     top: 60,

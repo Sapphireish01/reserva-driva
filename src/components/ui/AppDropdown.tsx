@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: "DM Sans",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     color: colors.dark,
     marginBottom: 6,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   focusedCard: {
-    borderColor: inputTokens.focusedBorderColor,
+    // borderColor: inputTokens.focusedBorderColor,
   },
   errorCard: {
     borderColor: inputTokens.errorBorderColor,

@@ -18,6 +18,7 @@ export interface AppFullScreenModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  leftActionText?: string;
   rightActionText?: string;
   onRightAction?: () => void;
   rightActionDisabled?: boolean;
@@ -30,10 +31,11 @@ export const AppFullScreenModal: React.FC<AppFullScreenModalProps> = ({
   onClose,
   title,
   children,
+  leftActionText,
   rightActionText,
   onRightAction,
   rightActionDisabled = false,
-  height = "65%",
+  height = "85%",
   containerStyle,
 }) => {
   const insets = useSafeAreaInsets();
@@ -68,8 +70,16 @@ export const AppFullScreenModal: React.FC<AppFullScreenModalProps> = ({
             <View style={styles.dragPill} />
             {/* Header */}
             <View style={styles.header}>
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                <Ionicons name="close" size={22} color="#0F172A" />
+              <TouchableOpacity
+                style={leftActionText ? styles.leftActionBtn : styles.closeBtn}
+                onPress={onClose}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                {leftActionText ? (
+                  <Text style={styles.leftActionText}>{leftActionText}</Text>
+                ) : (
+                  <Ionicons name="close" size={22} color="#0F172A" />
+                )}
               </TouchableOpacity>
               <Text style={styles.headerTitle}>{title}</Text>
               {rightActionText && onRightAction ? (
@@ -87,7 +97,7 @@ export const AppFullScreenModal: React.FC<AppFullScreenModalProps> = ({
                   </Text>
                 </TouchableOpacity>
               ) : (
-                <View style={{ width: 36 }} />
+                <View style={{ minWidth: 36 }} />
               )}
             </View>
 
@@ -150,6 +160,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  leftActionBtn: {
+    justifyContent: "center",
+    alignItems: "flex-start",
+    paddingVertical: 6,
+    paddingRight: 8,
+  },
   rightActionText: {
     fontFamily: "DM Sans Bold",
     fontSize: 15,
@@ -158,6 +174,11 @@ const styles = StyleSheet.create({
   },
   rightActionDisabled: {
     color: "#CAD5E2",
+  },
+  leftActionText: {
+    fontFamily: "DM Sans",
+    fontSize: 15,
+    color: "#94A3B8",
   },
   content: {
     flex: 1,

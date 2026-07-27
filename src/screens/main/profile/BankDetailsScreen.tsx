@@ -2,20 +2,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditIconItem } from "../../../components/ProfileIcons";
 import {
-  AppButton,
   AppDropdown,
   AppFullScreenModal,
-  AppTextInput,
+  AppTextInput
 } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
@@ -112,8 +110,8 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Info Card */}
-        <View style={styles.infoCard}>
+        {/* Info Details */}
+        <View style={styles.infoContainer}>
           <View style={styles.infoRow}>
             <View style={styles.infoCol}>
               <Text style={styles.infoLabel}>Bank Name</Text>
@@ -130,13 +128,6 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
             <Text style={styles.infoValue}>{accountName}</Text>
           </View>
         </View>
-
-        <AppButton
-          title="Edit Bank Details"
-          onPress={handleOpenEdit}
-          variant="outline"
-          style={{ marginTop: 24 }}
-        />
       </ScrollView>
 
       {/* Edit Bank Details Full-Screen Modal */}
@@ -169,30 +160,23 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
             keyboardType="number-pad"
             maxLength={10}
             autoFocus={true}
-            rightIcon={
-              isResolving ? (
-                <ActivityIndicator size="small" color="#375DFB" />
-              ) : resolvedAccountName.length > 0 ? (
-                <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
-              ) : undefined
-            }
           />
 
           {/* Resolved Account Name */}
           {resolvedAccountName.length > 0 && (
             <View style={styles.resolvedNameCard}>
-              <Text style={styles.resolvedLabel}>Account Name</Text>
+              {/* <Text style={styles.resolvedLabel}>Account Name</Text> */}
               <Text style={styles.resolvedValue}>{resolvedAccountName}</Text>
             </View>
           )}
 
-          <AppButton
+          {/* <AppButton
             title="Save Details"
             onPress={handleSave}
             disabled={!isFormValid}
             size="lg"
             style={{ marginTop: 24 }}
-          />
+          /> */}
         </View>
       </AppFullScreenModal>
     </View>
@@ -211,30 +195,21 @@ const styles = StyleSheet.create({
     borderBottomColor: "#F1F5F9",
   },
   backButton: { width: 40, height: 40, justifyContent: "center" },
-  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
+  headerTitle: { fontFamily: "DM Sans Bold", fontSize: 20, fontWeight: "700", color: "#0F172A" },
   editIconButton: { width: 40, height: 40, justifyContent: "center", alignItems: "flex-end" },
   content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  infoCard: {
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 16,
-    padding: 20,
-    gap: 16,
+  infoContainer: {
+    gap: 24,
+    paddingTop: 12,
   },
   infoRow: { flexDirection: "row", justifyContent: "space-between" },
-  infoCol: { gap: 4 },
-  infoLabel: { fontFamily: "DM Sans", fontSize: 13, color: "#64748B" },
-  infoValue: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "700", color: "#0F172A" },
+  infoCol: { gap: 6 },
+  infoLabel: { fontFamily: "DM Sans", fontSize: 14, color: "#868C98" },
+  infoValue: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
   modalBody: { padding: 20 },
   resolvedNameCard: {
-    backgroundColor: "#F0FDF4",
-    borderWidth: 1,
-    borderColor: "#BBF7D0",
-    borderRadius: 12,
-    padding: 12,
     marginTop: 4,
   },
   resolvedLabel: { fontFamily: "DM Sans", fontSize: 12, color: "#166534" },
-  resolvedValue: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#15803D" },
+  resolvedValue: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: colors.dark },
 });

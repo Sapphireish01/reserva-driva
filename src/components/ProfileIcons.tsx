@@ -549,6 +549,58 @@ export const UsersIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 1
   </Svg>
 );
 
+export const CloseIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <Path
+      d="M10 18.3333C14.6024 18.3333 18.3333 14.6024 18.3333 10C18.3333 5.39763 14.6024 1.66667 10 1.66667C5.39763 1.66667 1.66667 5.39763 1.66667 10C1.66667 14.6024 5.39763 18.3333 10 18.3333Z"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M7.5 7.5L12.5 12.5"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M12.5 7.5L7.5 12.5"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
+export const WarningIconItem: React.FC<IconProps> = ({ color = "#9F2D00", size = 16 }) => (
+  <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
+    <Path
+      d="M8 5.16699V8.66699"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M14.0528 5.7197V10.2797C14.0528 11.0263 13.6528 11.7197 13.0061 12.0997L9.04614 14.3864C8.39948 14.7597 7.59946 14.7597 6.94613 14.3864L2.98612 12.0997C2.33946 11.7264 1.93945 11.033 1.93945 10.2797V5.7197C1.93945 4.97303 2.33946 4.27967 2.98612 3.89967L6.94613 1.61301C7.59279 1.23967 8.39281 1.23967 9.04614 1.61301L13.0061 3.89967C13.6528 4.27967 14.0528 4.96636 14.0528 5.7197Z"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M8 10.7998V10.8665"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 
 
 

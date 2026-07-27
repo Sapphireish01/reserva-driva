@@ -18,6 +18,7 @@ import {
   ReportProblemIconItem,
   TwoFAIconItem,
   VehiclesIconItem,
+  WarningIconItem,
 } from "../../../components/ProfileIcons";
 import { useAuthStore } from "../../../state/authStore";
 import { colors, spacing } from "../../../theme/colors";
@@ -208,12 +209,14 @@ export const SettingsScreen = ({ navigation }: Props) => {
             </View>
 
             <Text style={styles.sheetSubtitle}>
-              Are you sure you want to deactivate this account, you will no longer have access to Drifully
+              Are you sure you want to <Text style={styles.boldText}>deactivate</Text> this account, you will no longer have access to Rezarva
             </Text>
 
             {/* Alert Banner */}
             <View style={styles.alertBanner}>
-              <Ionicons name="information-circle-outline" size={18} color="#D97706" style={{ marginRight: 8 }} />
+              <View style={{ marginRight: 8 }}>
+                <WarningIconItem color="#9F2D00" size={18} />
+              </View>
               <Text style={styles.alertText}>
                 {hasActiveBookings
                   ? "We cannot deactivate your account at the moment, you still have active bookings. Please complete bookings to proceed."
@@ -422,18 +425,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sheetTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
-  sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: spacing.md, lineHeight: 20 },
+  sheetSubtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#475569", marginBottom: spacing.md, lineHeight: 20 },
+  boldText: { fontFamily: "DM Sans Bold", fontWeight: "700", color: "#0F172A" },
   alertBanner: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FFFBEB",
-    borderWidth: 1,
-    borderColor: "#FDE68A",
+    // borderWidth: 1,
+    // borderColor: "#FDE68A",
     borderRadius: 10,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
-  alertText: { flex: 1, fontFamily: "DM Sans", fontSize: 13, color: "#92400E", lineHeight: 18 },
+  alertText: { flex: 1, fontFamily: "DM Sans", fontSize: 12, color: "#9F2D00", lineHeight: 17 },
   blueBtn: {
     backgroundColor: "#375DFB",
     borderRadius: 10,
@@ -452,10 +456,10 @@ const styles = StyleSheet.create({
   redBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
   outlineBtn: {
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
   },
-  outlineBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: "#475569" },
+  outlineBtnText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "600", color: colors.dark },
 });

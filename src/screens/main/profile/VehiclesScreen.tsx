@@ -48,6 +48,21 @@ const BRANDS: Record<string, string[]> = {
 };
 const YEARS = ["2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "2009"];
 
+const formatFileName = (name?: string, maxLength = 20) => {
+  if (!name) return "";
+  if (name.length <= maxLength) return name;
+  const lastDot = name.lastIndexOf(".");
+  if (lastDot > 0) {
+    const ext = name.substring(lastDot);
+    const base = name.substring(0, lastDot);
+    const avail = maxLength - ext.length - 3;
+    if (avail > 2) {
+      return `${base.substring(0, avail)}...${ext}`;
+    }
+  }
+  return `${name.substring(0, maxLength - 3)}...`;
+};
+
 export const VehiclesScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
@@ -67,7 +82,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
   const [plateNumber, setPlateNumber] = useState("");
   const [color, setColor] = useState("");
   const [seats, setSeats] = useState("");
-  const [docName, setDocName] = useState<string | undefined>("vehicle_docs.pdf");
+  const [docName, setDocName] = useState<string | undefined>(undefined);
 
   const handlePickDocument = async () => {
     try {
@@ -92,7 +107,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
     setPlateNumber("");
     setColor("");
     setSeats("");
-    setDocName("vehicle_docs.pdf");
+    setDocName(undefined);
     setShowAddEditModal(true);
   };
 
@@ -104,7 +119,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
     setPlateNumber(v.plateNumber);
     setColor(v.color);
     setSeats(v.seats);
-    setDocName(v.docName || "vehicle_docs.pdf");
+    setDocName(v.docName);
     setShowActionSheet(false);
     setShowAddEditModal(true);
   };
@@ -117,15 +132,15 @@ export const VehiclesScreen = ({ navigation }: Props) => {
         prev.map((item) =>
           item.id === editingVehicleId
             ? {
-                ...item,
-                make,
-                brand,
-                year,
-                plateNumber,
-                color,
-                seats,
-                docName,
-              }
+              ...item,
+              make,
+              brand,
+              year,
+              plateNumber,
+              color,
+              seats,
+              docName,
+            }
             : item
         )
       );
@@ -199,7 +214,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
             title="Add Vehicle"
             onPress={handleOpenAdd}
             size="lg"
-            style={{ width: "80%", marginTop: 16 }}
+            style={{ width: "100%", marginTop: 16 }}
           />
         </View>
       ) : (
@@ -310,23 +325,39 @@ export const VehiclesScreen = ({ navigation }: Props) => {
           {/* Document Upload Area */}
           <Text style={styles.inputLabel}>Vehicle Documents</Text>
           <TouchableOpacity
-            style={styles.uploadCard}
+            style={[styles.uploadCard, docName ? styles.uploadCardSolid : null]}
             onPress={handlePickDocument}
             activeOpacity={0.7}
           >
             {docName ? (
               <View style={styles.uploadedRow}>
-                <FileFormatIconItem filename={docName} size={32} />
+                <FileFormatIconItem filename={docName} size={40} />
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.docNameText} numberOfLines={1}>{docName}</Text>
-                  <Text style={styles.uploadedBadge}>Document Attached</Text>
+                  <Text style={styles.docNameText} numberOfLines={1}>{formatFileName(docName)}</Text>
+                  <View style={styles.completedRow}>
+                    <Text style={styles.docMetaText}>120 KB of 120 KB • </Text>
+                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                    <Text style={styles.completedText}>Completed</Text>
+                  </View>
                 </View>
-                <Ionicons name="create-outline" size={20} color="#375DFB" />
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setDocName(undefined);
+                  }}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="trash-outline" size={20} color="#94A3B8" />
+                </TouchableOpacity>
               </View>
             ) : (
               <View style={styles.uploadPlaceholder}>
-                <UploadIconItem color="#375DFB" size={24} />
-                <Text style={styles.uploadTitle}>Tap to upload vehicle documents</Text>
+                <UploadIconItem color="#64748B" size={32} />
+                <Text style={styles.uploadMainTitle}>Choose a file or drag & drop it here.</Text>
+                <Text style={styles.uploadSubtitle}>JPEG, PNG, PDF, and MP4 formats, up to 50 MB.</Text>
+                <View style={styles.browseButton}>
+                  <Text style={styles.browseButtonText}>Browse File</Text>
+                </View>
               </View>
             )}
           </TouchableOpacity>
@@ -436,20 +467,60 @@ const styles = StyleSheet.create({
   seatsRow: { flexDirection: "row", alignItems: "center" },
   seatsText: { fontFamily: "DM Sans", fontSize: 13, color: "#64748B" },
   modalBody: { padding: 20 },
-  inputLabel: { fontFamily: "DM Sans", fontSize: 14, fontWeight: "500", color: "#334155", marginBottom: 6 },
+  inputLabel: { fontFamily: "DM Sans", fontSize: 14, fontWeight: "700", color: colors.dark, marginBottom: 6 },
   uploadCard: {
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderWidth: 1.5,
+    borderColor: colors.border,
     borderStyle: "dashed",
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: "#F8FAFC",
+    borderRadius: 16,
+    padding: 20,
+    backgroundColor: "#FFFFFF",
   },
-  uploadPlaceholder: { alignItems: "center", paddingVertical: 12 },
-  uploadTitle: { fontFamily: "DM Sans", fontSize: 14, color: "#375DFB", marginTop: 8 },
+  uploadCardSolid: {
+    borderStyle: "solid",
+    borderWidth: 1,
+    padding: 16,
+  },
+  uploadPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+  },
+  uploadMainTitle: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#0F172A",
+    marginTop: 12,
+    textAlign: "center",
+  },
+  uploadSubtitle: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: colors.grey,
+    marginTop: 4,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  browseButton: {
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    backgroundColor: "#FFFFFF",
+  },
+  browseButtonText: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748B",
+  },
   uploadedRow: { flexDirection: "row", alignItems: "center" },
-  docNameText: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "700", color: "#0F172A" },
-  uploadedBadge: { fontFamily: "DM Sans", fontSize: 12, color: "#22C55E", marginTop: 2 },
+  docNameText: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: "#0F172A" },
+  completedRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
+  docMetaText: { fontFamily: "DM Sans", fontSize: 13, color: "#94A3B8" },
+  completedText: { fontFamily: "DM Sans Bold", fontSize: 13, fontWeight: "600", color: "#0F172A", marginLeft: 4 },
   sheetOption: {
     flexDirection: "row",
     alignItems: "center",

@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: "DM Sans",
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "700",
     color: inputTokens.labelColor,
     marginBottom: 6,
   },
