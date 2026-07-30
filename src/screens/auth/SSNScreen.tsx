@@ -1,7 +1,8 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { driversService } from "../../api/services/drivers";
+import { AppButton } from "../../components/ui";
 import { AuthStackParamList } from "../../navigation/types";
 import { ssnSchema } from "../../schemas/signup";
 import { colors, spacing, typography } from "../../theme/colors";
@@ -51,42 +52,33 @@ export const SSNScreen = ({ route, navigation }: Props) => {
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.button, !isValid && styles.buttonDisabled]}
-        disabled={!isValid || submitting}
+      <AppButton
+        title="Create Account"
+        loadingTitle="Creating Account..."
         onPress={handleSubmit}
-      >
-        <Text style={styles.buttonText}>
-          {submitting ? "Creating Account..." : "Create Account"}
-        </Text>
-      </TouchableOpacity>
+        disabled={!isValid || submitting}
+        loading={submitting}
+        size="lg"
+        style={{ marginTop: "auto" }}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background, padding: spacing.lg },
+  container: { flex: 1, backgroundColor: colors.background, paddingTop: 0, padding: spacing.lg },
   title: { ...typography.h1 },
-  subtitle: { ...typography.body, color: colors.dark, fontWeight: 700, fontSize: 14, marginVertical: spacing.md, lineHeight: 27, letterSpacing: -0.3 },
-  label: { ...typography.caption, fontWeight: "700", marginBottom: spacing.xs },
+  subtitle: { ...typography.body, color: colors.dark, fontWeight: 400, fontSize: 14, marginVertical: spacing.md, lineHeight: 23.8, letterSpacing: -0.3 },
+  label: { ...typography.caption, fontWeight: "500", marginBottom: spacing.xs },
   input: {
-    fontWeight: "700",
-    lineHeight: 17,
+    fontWeight: "400",
+    lineHeight: 23.8,
     letterSpacing: -0.3,
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    borderRadius: 10,
+    padding: spacing.sm2,
+    paddingLeft: spacing.smlg,
   },
   error: { ...typography.caption, color: colors.error, marginTop: spacing.xs },
-  button: {
-    marginTop: "auto",
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: "center",
-  },
-  buttonDisabled: { backgroundColor: colors.primaryDisabled },
-  buttonText: { color: "#fff", fontWeight: "600" },
 });

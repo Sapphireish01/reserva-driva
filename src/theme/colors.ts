@@ -92,18 +92,20 @@ export const colors = {
   textMuted: "#868C98",
   border: "#CDD0D5",
   error: palette.error[600],
-  success: palette.success[600],
+  success: "#21C650",
   warning: palette.warning[500],
   grey: "#868C98",
   inputTextColor: palette.slate[950],
   dark: palette.slate[950],
   transparent: "transparent",
+  border2: "#E2E4E9",
   palette,
 };
 
 export const spacing = {
   xs: 4,
   sm: 8,
+  sm2: 10,
   smlg: 12,
   md: 16,
   lg: 24,
@@ -111,9 +113,9 @@ export const spacing = {
 };
 
 export const typography = {
-  h1: { fontFamily: "DM Sans", fontSize: 24, fontWeight: "700" as const, letterSpacing: 0.03, lineHeight: 30 },
+  h1: { fontFamily: "DM Sans", fontSize: 24, fontWeight: "600" as const, letterSpacing: 0.03, lineHeight: 30 },
   h2: { fontFamily: "DM Sans", fontSize: 18, fontWeight: "600" as const, letterSpacing: 0.03 },
-  body: { fontFamily: "DM Sans", fontSize: 14, fontWeight: "400" as const, letterSpacing: 0.03 },
+  body: { fontFamily: "DM Sans", fontSize: 14, fontWeight: "400" as const, letterSpacing: 0.03, lineHeight: 23.8 },
   caption: { fontFamily: "DM Sans", fontSize: 14, fontWeight: "500" as const, letterSpacing: 0.03 },
 };
 

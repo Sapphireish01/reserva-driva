@@ -1,10 +1,13 @@
+import { colors } from "@/theme/colors";
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { OTPCodeInput } from "../OTPCodeInput";
+import { AppLoader, CheckIcon } from "./AppLoader";
 
 export interface OTPFormProps {
   onComplete: (code: string) => void;
-  onResend?: () => void;
+  onChange?: (code: string) => void;
+  onResend?: () => void | Promise<void>;
   resendCountdownSeconds?: number;
   cellCount?: number;
   loading?: boolean;
@@ -14,6 +17,7 @@ export interface OTPFormProps {
 
 export const OTPForm: React.FC<OTPFormProps> = ({
   onComplete,
+  onChange,
   onResend,
   resendCountdownSeconds = 30,
   cellCount = 6,
@@ -22,6 +26,8 @@ export const OTPForm: React.FC<OTPFormProps> = ({
 }) => {
   const [code, setCode] = useState("");
   const [timer, setTimer] = useState(resendCountdownSeconds);
+  const [isResending, setIsResending] = useState(false);
+  const [isResent, setIsResent] = useState(false);
 
   useEffect(() => {
     if (timer <= 0) return;
@@ -31,15 +37,30 @@ export const OTPForm: React.FC<OTPFormProps> = ({
     return () => clearInterval(interval);
   }, [timer]);
 
-  const handleResend = () => {
-    if (timer > 0 || loading) return;
-    setTimer(resendCountdownSeconds);
-    setCode("");
-    onResend?.();
+  const handleResend = async () => {
+    if (timer > 0 || loading || isResending) return;
+    setIsResending(true);
+    setIsResent(false);
+    try {
+      await Promise.all([
+        onResend?.(),
+        new Promise((resolve) => setTimeout(resolve, 600)),
+      ]);
+      setIsResent(true);
+      setTimer(resendCountdownSeconds);
+      setCode("");
+      onChange?.("");
+      setTimeout(() => {
+        setIsResent(false);
+      }, 3000);
+    } finally {
+      setIsResending(false);
+    }
   };
 
   const handleCodeChange = (val: string) => {
     setCode(val);
+    onChange?.(val);
     if (val.length === cellCount) {
       onComplete(val);
     }
@@ -53,18 +74,36 @@ export const OTPForm: React.FC<OTPFormProps> = ({
 
       {loading ? (
         <View style={styles.loadingRow}>
-          <ActivityIndicator size="small" color="#375DFB" />
+          <AppLoader size={20} color="#375DFB" />
           <Text style={styles.loadingText}>Verifying code...</Text>
         </View>
       ) : (
         <View style={styles.resendRow}>
-          <Text style={styles.resendPrompt}>Didn't receive the code? </Text>
-          {timer > 0 ? (
-            <Text style={styles.timerText}>Resend in {timer}s</Text>
+          {isResending ? (
+            <>
+              <Text style={styles.resendPrompt}>Didn't receive a code? </Text>
+              <View style={styles.actionRow}>
+                <Text style={styles.resendAction}>Resend </Text>
+                <AppLoader size={16} color="#828282" />
+              </View>
+            </>
+          ) : isResent ? (
+            <>
+              <Text style={styles.resendPrompt}>Didn't receive a code? </Text>
+              <View style={styles.actionRow}>
+                <Text style={styles.sentAction}>Sent </Text>
+                <CheckIcon size={10} color={colors.success} />
+              </View>
+            </>
+          ) : timer > 0 ? (
+            <Text style={styles.resendPrompt}>Code expires in {timer}s</Text>
           ) : (
-            <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
-              <Text style={styles.resendAction}>Resend Code</Text>
-            </TouchableOpacity>
+            <>
+              <Text style={styles.resendPrompt}>Didn't receive a code? </Text>
+              <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
+                <Text style={styles.resendAction}>Resend</Text>
+              </TouchableOpacity>
+            </>
           )}
         </View>
       )}
@@ -76,7 +115,6 @@ const styles = StyleSheet.create({
   container: {
     width: "100%",
     alignItems: "center",
-    marginVertical: 16,
   },
   errorText: {
     fontFamily: "DM Sans",
@@ -99,7 +137,7 @@ const styles = StyleSheet.create({
   resendRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 24,
+    marginTop: 52,
   },
   resendPrompt: {
     fontFamily: "DM Sans",
@@ -109,13 +147,22 @@ const styles = StyleSheet.create({
   timerText: {
     fontFamily: "DM Sans Bold",
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#94A3B8",
   },
   resendAction: {
     fontFamily: "DM Sans Bold",
     fontSize: 14,
-    fontWeight: "700",
-    color: "#375DFB",
+    fontWeight: "500",
+    color: colors.dark,
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  sentAction: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 14,
+    fontWeight: "500",
   },
 });

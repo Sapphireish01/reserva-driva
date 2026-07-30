@@ -6,8 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
+  TouchableOpacity
 } from "react-native";
 import { AppButton, OTPForm } from "../../components/ui";
 import { AuthStackParamList } from "../../navigation/types";
@@ -55,7 +54,7 @@ export const ForgotPasswordOTPScreen = ({ route, navigation }: Props) => {
 
         <AppButton
           title={isVerifying ? "Verifying..." : isVerified ? "Verified" : "Verify Code"}
-          onPress={() => {}}
+          onPress={() => { }}
           disabled={isVerifying}
           loading={isVerifying}
           size="lg"
@@ -79,7 +78,7 @@ export const ForgotPasswordOTPScreen = ({ route, navigation }: Props) => {
 const styles = StyleSheet.create({
   keyboardContainer: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingTop: spacing.xl * 1.5, flexGrow: 1 },
+  content: { padding: spacing.lg, paddingTop: 0, flexGrow: 1 },
   title: { fontFamily: "DM Sans Bold", fontSize: 26, fontWeight: "700", color: "#0F172A" },
   subtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: 24 },
   loginRow: { marginTop: 32, alignItems: "center" },

@@ -102,7 +102,7 @@ export const LicenseCaptureView = ({ step, instruction, onCapture, onCancel }: P
         <Svg height={SCREEN_HEIGHT} width={SCREEN_WIDTH} style={StyleSheet.absoluteFill}>
           <Defs>
             <Mask id="cutoutMask">
-              <Rect x="0" y="0" width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fill="#FFFFFF" />
+              <Rect x="0" y="0" width={SCREEN_WIDTH} height={SCREEN_HEIGHT} fill="#8a5a5aff" />
               <Rect
                 x={CUTOUT_X}
                 y={CUTOUT_Y}
@@ -132,7 +132,7 @@ export const LicenseCaptureView = ({ step, instruction, onCapture, onCancel }: P
             rx={CORNER_RADIUS}
             ry={CORNER_RADIUS}
             fill="none"
-            stroke="rgba(255, 255, 255, 0.85)"
+            stroke="#F6F8FA"
             strokeWidth={2}
           />
         </Svg>
@@ -152,7 +152,7 @@ export const LicenseCaptureView = ({ step, instruction, onCapture, onCancel }: P
 
       {/* 4. Frame Hint Text */}
       {!photoUri && (
-        <View style={[styles.hintContainer, { top: CUTOUT_Y + CUTOUT_HEIGHT + 18 }]} pointerEvents="none">
+        <View style={styles.hintContainer} pointerEvents="none">
           <Text style={styles.frameHint}>Align license within frame</Text>
         </View>
       )}
@@ -252,8 +252,8 @@ const styles = StyleSheet.create({
   },
   cancelLinkText: {
     fontFamily: "DM Sans",
-    fontSize: 15,
-    color: "#94A3B8",
+    fontSize: 16,
+    color: colors.grey,
   },
 
   /* Header Bar */
@@ -281,14 +281,14 @@ const styles = StyleSheet.create({
   },
   stepText: {
     fontFamily: "DM Sans Bold",
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "400",
     color: "#FFFFFF",
   },
   instruction: {
     fontFamily: "DM Sans Bold",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "400",
     color: "#FFFFFF",
     textAlign: "center",
     textShadowColor: "rgba(0,0,0,0.5)",
@@ -299,6 +299,7 @@ const styles = StyleSheet.create({
   /* Hint Text */
   hintContainer: {
     position: "absolute",
+    bottom: SCREEN_HEIGHT * 0.2 + 24,
     left: 0,
     right: 0,
     alignItems: "center",
@@ -347,9 +348,9 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontFamily: "DM Sans Bold",
-    fontSize: 18,
+    fontSize: 16,
     color: "#FFFFFF",
-    fontWeight: "700",
+    fontWeight: "600",
   },
   shutterOuterRing: {
     width: 72,
@@ -397,16 +398,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   secondaryText: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 17,
-    fontWeight: "700",
+    fontFamily: "DM Sans",
+    fontSize: 15,
+    fontWeight: "600",
     color: "#FFFFFF",
-  },
-  primaryText: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#38BDF8",
   },
 });
 

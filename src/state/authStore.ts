@@ -8,7 +8,7 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  isAuthenticated: true,
+  isAuthenticated: false,
   login: async (token) => {
     await setStoredToken(token);
     set({ isAuthenticated: true });

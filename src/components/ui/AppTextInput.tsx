@@ -1,3 +1,4 @@
+import { colors } from "@/theme/colors";
 import { Ionicons } from "@expo/vector-icons";
 import React, { forwardRef, useState } from "react";
 import {
@@ -19,6 +20,7 @@ export interface AppTextInputProps extends TextInputProps {
   rightIcon?: React.ReactNode;
   isPassword?: boolean;
   containerStyle?: ViewStyle;
+  inputCardStyle?: ViewStyle;
 }
 
 export const AppTextInput = forwardRef<TextInput, AppTextInputProps>(
@@ -31,6 +33,7 @@ export const AppTextInput = forwardRef<TextInput, AppTextInputProps>(
       rightIcon,
       isPassword = false,
       containerStyle,
+      inputCardStyle,
       onFocus,
       onBlur,
       secureTextEntry,
@@ -60,10 +63,24 @@ export const AppTextInput = forwardRef<TextInput, AppTextInputProps>(
         <View
           style={[
             styles.inputCard,
+            inputCardStyle,
             isFocused && styles.focusedCard,
             !!error && styles.errorCard,
           ]}
         >
+          {isFocused && (
+            <View
+              style={[
+                styles.innerFocusedBorder,
+                {
+                  borderRadius:
+                    ((StyleSheet.flatten(inputCardStyle)?.borderRadius as number) ||
+                      inputTokens.borderRadius) - 1,
+                },
+              ]}
+              pointerEvents="none"
+            />
+          )}
           {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
           <TextInput
             ref={ref}
@@ -111,8 +128,8 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: "DM Sans",
     fontSize: 14,
-    fontWeight: "700",
-    color: inputTokens.labelColor,
+    fontWeight: "500",
+    color: colors.text,
     marginBottom: 6,
   },
   inputCard: {
@@ -127,6 +144,15 @@ const styles = StyleSheet.create({
   },
   focusedCard: {
     // borderColor: inputTokens.focusedBorderColor,
+  },
+  innerFocusedBorder: {
+    position: "absolute",
+    top: 1,
+    left: 1,
+    right: 1,
+    bottom: 1,
+    borderWidth: 1.5,
+    borderColor: "#000000",
   },
   errorCard: {
     borderColor: inputTokens.errorBorderColor,

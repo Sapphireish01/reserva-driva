@@ -3,7 +3,7 @@ import React from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { AuthStackParamList } from "../../navigation/types";
-import { colors, spacing } from "../../theme/colors";
+import { colors, spacing, typography } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "LicenseIntro">;
 
@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: 0,
     paddingBottom: spacing.lg,
   },
   backButton: {
@@ -98,18 +98,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.md,
   },
   title: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#0F172A",
+    ...typography.h1,
     marginBottom: 8,
-    lineHeight: 32,
   },
   subtitle: {
     fontFamily: "DM Sans",
-    fontSize: 15,
-    color: "#475569",
-    lineHeight: 22,
+    fontSize: 14,
+    color: colors.grey,
+    lineHeight: 23.8,
     marginBottom: spacing.lg,
   },
   illustrationContainer: {
@@ -128,9 +124,9 @@ const styles = StyleSheet.create({
   guidelinesTitle: {
     fontFamily: "DM Sans",
     fontSize: 14,
-    fontWeight: "700",
-    color: "#64748B",
-    marginBottom: 16,
+    fontWeight: "600",
+    color: colors.grey,
+    marginBottom: 12,
   },
   guidelineRow: {
     flexDirection: "row",
@@ -139,14 +135,14 @@ const styles = StyleSheet.create({
   },
   bullet: {
     fontSize: 14,
-    color: "#1E293B",
+    color: colors.dark,
     marginRight: 10,
     lineHeight: 20,
   },
   guidelineText: {
     fontFamily: "DM Sans",
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "400",
     color: colors.dark,
     lineHeight: 20,
     flex: 1,

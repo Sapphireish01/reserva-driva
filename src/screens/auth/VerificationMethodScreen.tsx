@@ -2,6 +2,7 @@ import { Feather } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { MailIconItem } from "../../components/ProfileIcons";
 import { AuthStackParamList } from "../../navigation/types";
 import { colors, spacing } from "../../theme/colors";
 
@@ -71,29 +72,41 @@ const Option = ({
 }: {
   label: string;
   description: string;
-  icon: keyof typeof Feather.glyphMap;
+  icon: "phone" | "mail";
   selected: boolean;
   onPress: () => void;
-}) => (
-  <View style={styles.optionContainer}>
-    <Text style={styles.optionLabel}>{label}</Text>
-    <TouchableOpacity
-      style={[styles.optionCard, selected && styles.optionCardSelected]}
-      onPress={onPress}
-      activeOpacity={0.85}
-    >
-      <Feather
-        name={icon}
-        size={20}
-        color={selected ? "#000000" : colors.text}
-        style={styles.optionIcon}
-      />
-      <Text style={[styles.optionDescription, selected && styles.optionDescriptionSelected]}>
-        {description}
-      </Text>
-    </TouchableOpacity>
-  </View>
-);
+}) => {
+  const iconColor = selected ? "#000000" : colors.text;
+
+  return (
+    <View style={styles.optionContainer}>
+      <Text style={styles.optionLabel}>{label}</Text>
+      <View style={[styles.outerBorderWrapper, selected && styles.outerBorderSelected]}>
+        <TouchableOpacity
+          style={[styles.optionCard, selected && styles.optionCardSelected]}
+          onPress={onPress}
+          activeOpacity={0.85}
+        >
+          {icon === "mail" ? (
+            <View style={styles.optionIcon}>
+              <MailIconItem size={20} color={iconColor} />
+            </View>
+          ) : (
+            <Feather
+              name={icon}
+              size={20}
+              color={iconColor}
+              style={styles.optionIcon}
+            />
+          )}
+          <Text style={[styles.optionDescription, selected && styles.optionDescriptionSelected]}>
+            {description}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -105,7 +118,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: "DM Sans",
-    fontWeight: "900",
+    fontWeight: "600",
     fontSize: 24,
     lineHeight: 30,
     letterSpacing: -0.8,
@@ -115,7 +128,7 @@ const styles = StyleSheet.create({
   subtitle: {
     fontFamily: "DM Sans",
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 23.8,
     color: colors.textMuted,
     marginBottom: spacing.xl,
   },
@@ -129,14 +142,25 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.sm,
   },
+  outerBorderWrapper: {
+    borderRadius: 10,
+    padding: 2,
+    backgroundColor: "transparent",
+  },
+  outerBorderSelected: {
+    borderColor: colors.border2,
+    borderWidth: 1,
+    borderRadius: 10,
+  },
   optionCard: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1,
     borderColor: colors.border,
-    borderRadius: 16,
-    paddingHorizontal: spacing.md,
-    height: 58,
+    borderRadius: 10,
+    paddingHorizontal: spacing.sm2,
+    height: 44,
     backgroundColor: "#FFFFFF",
   },
   optionCardSelected: {
@@ -144,17 +168,16 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   optionIcon: {
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   optionDescription: {
     fontFamily: "DM Sans",
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "500",
     color: colors.text,
-    flex: 1,
   },
   optionDescriptionSelected: {
-    fontWeight: "700",
+    fontWeight: "600",
   },
   button: {
     backgroundColor: colors.primary,

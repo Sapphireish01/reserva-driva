@@ -17,6 +17,7 @@ import {
   AppDropdown,
   AppFullScreenModal,
   AppTextInput,
+  CheckIcon,
 } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
@@ -336,7 +337,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
                   <Text style={styles.docNameText} numberOfLines={1}>{formatFileName(docName)}</Text>
                   <View style={styles.completedRow}>
                     <Text style={styles.docMetaText}>120 KB of 120 KB • </Text>
-                    <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+                    <CheckIcon size={16} />
                     <Text style={styles.completedText}>Completed</Text>
                   </View>
                 </View>

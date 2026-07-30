@@ -12,6 +12,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { CheckIcon } from "../../../components/ui";
 
 type Props = any;
 
@@ -284,7 +285,7 @@ export const HomeScreen = ({ navigation }: Props) => {
               <View style={styles.passengerInfo}>
                 <View style={styles.nameRow}>
                   <Text style={styles.passengerName}>Edward Sapphire</Text>
-                  <Ionicons name="checkmark-circle" size={16} color="#2563EB" style={{ marginLeft: 4 }} />
+                  <CheckIcon size={16} style={{ marginLeft: 4 }} />
                   <View style={styles.ratingRow}>
                     <Ionicons name="star" size={13} color="#F59E0B" />
                     <Text style={styles.ratingText}>4.9</Text>

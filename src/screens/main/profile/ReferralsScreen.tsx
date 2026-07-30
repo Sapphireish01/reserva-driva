@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CopyIconItem } from "../../../components/ProfileIcons";
+import { CheckIcon } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
 
@@ -89,7 +90,7 @@ export const ReferralsScreen = ({ navigation }: Props) => {
           {/* Toast Popup */}
           {copiedToast && (
             <View style={styles.toastCard}>
-              <Ionicons name="checkmark-circle" size={16} color="#22C55E" style={{ marginRight: 6 }} />
+              <CheckIcon size={16} style={{ marginRight: 6 }} />
               <Text style={styles.toastText}>Referral code copied!</Text>
             </View>
           )}

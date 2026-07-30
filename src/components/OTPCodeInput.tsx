@@ -42,6 +42,9 @@ export const OTPCodeInput = ({ value, onChange, onComplete }: Props) => {
           onLayout={getCellOnLayoutHandler(index)}
           style={[styles.cell, isFocused && styles.cellFocused]}
         >
+          {isFocused && (
+            <View style={styles.innerFocusedBorder} pointerEvents="none" />
+          )}
           <Text style={styles.cellText}>{symbol || (isFocused ? <Cursor /> : null)}</Text>
         </View>
       )}
@@ -63,6 +66,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  cellFocused: { borderColor: colors.dark },
+  cellFocused: {
+    borderColor: colors.border,
+  },
+  innerFocusedBorder: {
+    position: "absolute",
+    top: 1,
+    left: 1,
+    right: 1,
+    bottom: 1,
+    borderWidth: 1.5,
+    borderColor: "#000000",
+    borderRadius: 7,
+  },
   cellText: { ...typography.h2, fontWeight: "700", color: colors.text },
 });

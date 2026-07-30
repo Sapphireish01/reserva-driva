@@ -16,7 +16,7 @@ import { PassengerRequest, tripsService } from "../../../api/services/trips";
 import { PassengerDetailsModal } from "../../../components/bookings/PassengerDetailsModal";
 import { RoutePassengersModal } from "../../../components/bookings/RoutePassengersModal";
 import { VerifiedBadgeIcon } from "../../../components/ProfileIcons";
-import { AppButton } from "../../../components/ui";
+import { AppButton, AppLoader } from "../../../components/ui";
 import { colors, spacing } from "../../../theme/colors";
 
 type Props = any;
@@ -173,7 +173,7 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
       </View>
 
       {isLoading ? (
-        <ActivityIndicator size="large" color="#375DFB" style={{ marginTop: 40 }} />
+        <AppLoader size={36} color="#375DFB" style={{ marginTop: 40, alignSelf: "center" }} />
       ) : activeTab === "accepted" ? (
         /* Accepted Tab View (Mockup 1) */
         groupedAcceptedRoutes.length === 0 ? (

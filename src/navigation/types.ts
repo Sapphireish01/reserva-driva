@@ -23,12 +23,26 @@ export type MainTabParamList = {
   ProfileTab: undefined;
 };
 
+export interface TransactionItem {
+  id: string;
+  pickup: string;
+  destination: string;
+  seatsBooked: number;
+  amount: string;
+  status: "Pending" | "Completed" | "Failed";
+  dateTime: string;
+  bookingDate: string;
+  transactionId: string;
+  customerName: string;
+}
+
 export type MainStackParamList = {
   MainTabs: undefined;
   Home: undefined;
   CreateTrip: undefined;
   PassengerRequests: { tripId?: string } | undefined;
   Earnings: undefined;
+  TransactionDetails: { transaction: TransactionItem };
   Settings: undefined;
   ProfileDetails: undefined;
   Notifications: undefined;

@@ -10,6 +10,7 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CheckIcon } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
 
@@ -121,7 +122,7 @@ export const PreferencesScreen = ({ navigation }: Props) => {
                 ]}
               >
                 {genderPref === "everyone" && (
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  <CheckIcon size={12} color="#FFFFFF" />
                 )}
               </View>
               <Text
@@ -147,7 +148,7 @@ export const PreferencesScreen = ({ navigation }: Props) => {
                 ]}
               >
                 {genderPref === "female" && (
-                  <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+                  <CheckIcon size={12} color="#FFFFFF" />
                 )}
               </View>
               <Text
@@ -300,7 +301,7 @@ export const PreferencesScreen = ({ navigation }: Props) => {
         {/* Success Toast */}
         {savedSuccess && (
           <View style={styles.toastCard}>
-            <Ionicons name="checkmark-circle" size={18} color="#22C55E" style={{ marginRight: 6 }} />
+            <CheckIcon size={18} style={{ marginRight: 6 }} />
             <Text style={styles.toastText}>Preferences saved successfully!</Text>
           </View>
         )}

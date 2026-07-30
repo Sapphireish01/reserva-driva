@@ -14,6 +14,7 @@ import {
   AppDropdown,
   AppTextEditor,
   AppTextInput,
+  CheckIcon,
 } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
 import { spacing } from "../../../theme/colors";
@@ -107,7 +108,7 @@ export const ContactUsScreen = ({ navigation }: Props) => {
           loading={isSubmitting}
           variant={isSubmitted ? "secondary" : "primary"}
           size="lg"
-          rightIcon={isSubmitted ? <Ionicons name="checkmark-circle" size={18} color="#22C55E" /> : undefined}
+          rightIcon={isSubmitted ? <CheckIcon size={18} /> : undefined}
           style={{ marginTop: 24 }}
         />
       </ScrollView>

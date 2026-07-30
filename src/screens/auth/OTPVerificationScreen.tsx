@@ -11,42 +11,49 @@ type Props = NativeStackScreenProps<AuthStackParamList, "OTPVerification">;
 export const OTPVerificationScreen = ({ route, navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const { driverId } = route.params;
+  const [code, setCode] = useState("");
   const [status, setStatus] = useState<"idle" | "verifying" | "verified" | "error">("idle");
+  const isCodeComplete = code.length === 6;
 
-  const handleVerify = async (code: string) => {
-    setStatus("verifying");
-    setTimeout(() => {
-      setStatus("verified");
-      navigation.navigate("LicenseIntro", { driverId });
-    }, 1200);
-  };
+  const handleVerify = React.useCallback(
+    async (codeToVerify: string) => {
+      if (codeToVerify.length !== 6) return;
+      setStatus("verifying");
+      setTimeout(() => {
+        setStatus("verified");
+        navigation.navigate("LicenseIntro", { driverId });
+      }, 1200);
+    },
+    [driverId, navigation]
+  );
 
-  const handleResend = () => {
+  const handleResend = React.useCallback(() => {
     // Resend trigger mock
-  };
+  }, []);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.lg }]}>
+    <View style={[styles.container]}>
       <Text style={styles.title}>OTP Verification</Text>
       <Text style={styles.subtitle}>
         We sent a six digit code to your email address and phone number
       </Text>
 
       <OTPForm
+        onChange={setCode}
         onComplete={handleVerify}
         onResend={handleResend}
-        loading={status === "verifying"}
+        // loading={status === "verifying"}
         error={status === "error" ? "Invalid verification code. Please try again." : undefined}
         autoFocus={true}
       />
 
       <AppButton
-        title={status === "verifying" ? "Verifying..." : status === "verified" ? "Verified" : "Verify Code"}
-        onPress={() => {}}
-        disabled={status === "verifying"}
+        title={status === "verifying" ? "Verifying Code" : status === "verified" ? "Verified" : "Verify Code"}
+        onPress={() => handleVerify(code)}
+        disabled={!isCodeComplete || status === "verifying"}
         loading={status === "verifying"}
         size="lg"
-        style={{ marginTop: 24 }}
+        style={{ marginTop: 16 }}
       />
 
       <Text style={styles.footerText}>For your security, we verify every account.</Text>
@@ -75,6 +82,6 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     textAlign: "center",
     marginTop: "auto",
-    marginBottom: 24,
+    marginBottom: 69,
   },
 });

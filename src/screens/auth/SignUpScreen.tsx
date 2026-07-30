@@ -9,98 +9,18 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import PhoneInput from "react-native-phone-number-input";
-import Svg, { Path } from "react-native-svg";
-// import { authService } from "../../api/services/auth";
 import { PasswordRuleChecklist } from "../../components/PasswordRuleChecklist";
+import { AppButton, AppTextInput } from "../../components/ui";
+import { useCountryCodes } from "../../hooks/useCountryCodes";
 import { AuthStackParamList } from "../../navigation/types";
 import { SignupFormValues, signupSchema } from "../../schemas/signup";
 import { colors, spacing, typography } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
-
-const EyeIcon = ({ visible }: { visible: boolean }) => (
-  <Svg width={20} height={20} viewBox="0 0 20 20" fill="none">
-    <Path
-      d="M12.9842 10C12.9842 11.65 11.6509 12.9833 10.0009 12.9833C8.35091 12.9833 7.01758 11.65 7.01758 10C7.01758 8.35 8.35091 7.01666 10.0009 7.01666C11.6509 7.01666 12.9842 8.35 12.9842 10Z"
-      stroke="#868C98"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <Path
-      d="M9.99987 16.8916C12.9415 16.8916 15.6832 15.1583 17.5915 12.1583C18.3415 10.9833 18.3415 9.00831 17.5915 7.83331C15.6832 4.83331 12.9415 3.09998 9.99987 3.09998C7.0582 3.09998 4.31654 4.83331 2.4082 7.83331C1.6582 9.00831 1.6582 10.9833 2.4082 12.1583C4.31654 15.1583 7.0582 16.8916 9.99987 16.8916Z"
-      stroke="#868C98"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    {!visible && (
-      <Path
-        d="M3 3L17 17"
-        stroke="#868C98"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    )}
-  </Svg>
-);
-
-const StyledTextInput = (
-  props: React.ComponentProps<typeof TextInput> & { isPassword?: boolean }
-) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const { isPassword, secureTextEntry, style, ...restProps } = props;
-
-  if (isPassword || secureTextEntry) {
-    return (
-      <View style={[styles.passwordInputContainer, isFocused && styles.inputFocused]}>
-        <TextInput
-          underlineColorAndroid="transparent"
-          {...restProps}
-          secureTextEntry={!showPassword}
-          style={[styles.passwordInputField, style]}
-          onFocus={(e) => {
-            setIsFocused(true);
-            props.onFocus?.(e);
-          }}
-          onBlur={(e) => {
-            setIsFocused(false);
-            props.onBlur?.(e);
-          }}
-        />
-        <TouchableOpacity
-          style={styles.eyeButton}
-          onPress={() => setShowPassword((prev) => !prev)}
-          activeOpacity={0.7}
-        >
-          <EyeIcon visible={showPassword} />
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  return (
-    <TextInput
-      underlineColorAndroid="transparent"
-      {...props}
-      style={[styles.input, isFocused && styles.inputFocused, style]}
-      onFocus={(e) => {
-        setIsFocused(true);
-        props.onFocus?.(e);
-      }}
-      onBlur={(e) => {
-        setIsFocused(false);
-        props.onBlur?.(e);
-      }}
-    />
-  );
-};
 
 const StyledPhoneInput = ({
   value,
@@ -111,12 +31,14 @@ const StyledPhoneInput = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const phoneInputRef = React.useRef<PhoneInput>(null);
+  const { countryCodesList, defaultCountryCode } = useCountryCodes();
 
   return (
     <View style={[styles.phoneContainer, isFocused && styles.inputFocused]}>
       <PhoneInput
         ref={phoneInputRef}
-        defaultCode="US"
+        defaultCode={defaultCountryCode}
+        countryPickerProps={{ countryCodes: countryCodesList }}
         layout="first"
         onChangeFormattedText={onChangeText}
         withShadow={false}
@@ -154,22 +76,23 @@ export const SignUpScreen = ({ navigation }: Props) => {
   });
 
   const password = watch("password") ?? "";
+  const agreedToTerms = watch("agreedToTerms");
 
-  const onSubmit = async (values: SignupFormValues) => {
-    try {
-      // Bypassing the real API call for local testing / mock flow
-      const mockDriverId = "mock-driver-123";
-      navigation.navigate("VerificationMethod", { driverId: mockDriverId });
+  const onSubmit = React.useCallback(
+    async (values: SignupFormValues) => {
+      try {
+        const mockDriverId = "mock-driver-123";
+        navigation.navigate("VerificationMethod", { driverId: mockDriverId });
+      } catch (err) {
+        console.warn(err);
+      }
+    },
+    [navigation]
+  );
 
-      /* Original API call:
-      const { data } = await authService.signUp(values);
-      navigation.navigate("VerificationMethod", { driverId: data.driverId });
-      */
-    } catch (err) {
-      // Surface via toast/snackbar in your app's error-handling convention.
-      console.warn(err);
-    }
-  };
+  const handleNavigateLogin = React.useCallback(() => {
+    navigation.navigate("Login");
+  }, [navigation]);
 
   return (
     <KeyboardAvoidingView
@@ -186,43 +109,47 @@ export const SignUpScreen = ({ navigation }: Props) => {
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>Make Every Mile Count</Text>
 
-        <Field label="Full Name" error={errors.fullName?.message}>
-          <Controller
-            control={control}
-            name="fullName"
-            render={({ field }) => (
-              <StyledTextInput
-                placeholder="e.g John Doe"
-                value={field.value}
-                onChangeText={field.onChange}
-              />
-            )}
-          />
-        </Field>
+        {/* Full Name */}
+        <Controller
+          control={control}
+          name="fullName"
+          render={({ field }) => (
+            <AppTextInput
+              label="Full Name"
+              placeholder="e.g John Doe"
+              value={field.value}
+              onChangeText={field.onChange}
+              error={errors.fullName?.message}
+            />
+          )}
+        />
 
-        <Field label="Email Address" error={errors.email?.message}>
-          <Controller
-            control={control}
-            name="email"
-            render={({ field }) => (
-              <StyledTextInput
-                placeholder="e.g JDoe@gmail.com"
-                autoCapitalize="none"
-                keyboardType="email-address"
-                value={field.value}
-                onChangeText={field.onChange}
-              />
-            )}
-          />
-        </Field>
+        {/* Email Address */}
+        <Controller
+          control={control}
+          name="email"
+          render={({ field }) => (
+            <AppTextInput
+              label="Email Address"
+              placeholder="e.g JDoe@gmail.com"
+              autoCapitalize="none"
+              keyboardType="email-address"
+              value={field.value}
+              onChangeText={field.onChange}
+              error={errors.email?.message}
+            />
+          )}
+        />
 
-        <Field label="Phone Number" error={errors.phone?.message}>
+        {/* Phone Number */}
+        <View style={{ marginBottom: 16 }}>
+          <Text style={styles.label}>Phone Number</Text>
           <Controller
             control={control}
             name="phone"
             render={({ field }) =>
               Platform.OS === "web" ? (
-                <StyledTextInput
+                <AppTextInput
                   placeholder="+1 (555) 000-0000"
                   keyboardType="phone-pad"
                   value={field.value}
@@ -236,67 +163,76 @@ export const SignUpScreen = ({ navigation }: Props) => {
               )
             }
           />
-        </Field>
+          {errors.phone?.message ? (
+            <Text style={styles.error}>{errors.phone.message}</Text>
+          ) : null}
+        </View>
 
-        <Field label="Gender" error={errors.gender?.message}>
-          <Controller
-            control={control}
-            name="gender"
-            render={({ field }) => (
-              // Swap for your app's Select/ActionSheet component.
-              <StyledTextInput
-                placeholder="e.g Female"
-                value={field.value}
-                onChangeText={field.onChange as any}
-              />
-            )}
-          />
-        </Field>
+        {/* Gender */}
+        <Controller
+          control={control}
+          name="gender"
+          render={({ field }) => (
+            <AppTextInput
+              label="Gender"
+              placeholder="e.g Female"
+              value={field.value}
+              onChangeText={field.onChange}
+              error={errors.gender?.message}
+            />
+          )}
+        />
 
-        <Field label="Password">
-          <Controller
-            control={control}
-            name="password"
-            render={({ field }) => (
-              <StyledTextInput
-                secureTextEntry
-                value={field.value}
-                onChangeText={field.onChange}
-              />
-            )}
-          />
-        </Field>
+        {/* Password */}
+        <Controller
+          control={control}
+          name="password"
+          render={({ field }) => (
+            <AppTextInput
+              label="Password"
+              placeholder="••••••••"
+              value={field.value}
+              onChangeText={field.onChange}
+              isPassword
+              error={errors.password?.message}
+            />
+          )}
+        />
         {password.length > 0 && <PasswordRuleChecklist password={password} />}
 
-        <Field label="Confirm Password" error={errors.confirmPassword?.message}>
-          <Controller
-            control={control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <StyledTextInput
-                secureTextEntry
-                value={field.value}
-                onChangeText={field.onChange}
-              />
-            )}
-          />
-        </Field>
+        {/* Confirm Password */}
+        <Controller
+          control={control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <AppTextInput
+              label="Confirm Password"
+              placeholder="••••••••"
+              value={field.value}
+              onChangeText={field.onChange}
+              isPassword
+              error={errors.confirmPassword?.message}
+            />
+          )}
+        />
 
-        <Field label="Referral Code (optional)" error={errors.referralCode?.message}>
-          <Controller
-            control={control}
-            name="referralCode"
-            render={({ field }) => (
-              <StyledTextInput
-                placeholder="e.g WERT283-EDD"
-                autoCapitalize="characters"
-                value={field.value}
-                onChangeText={field.onChange}
-              />
-            )}
-          />
-        </Field>
+        {/* Referral Code */}
+        <Controller
+          control={control}
+          name="referralCode"
+          render={({ field }) => (
+            <AppTextInput
+              label="Referral Code (optional)"
+              placeholder="e.g WERT283-EDD"
+              autoCapitalize="characters"
+              value={field.value}
+              onChangeText={field.onChange}
+              error={errors.referralCode?.message}
+            />
+          )}
+        />
 
+        {/* Terms Checkbox */}
         <Controller
           control={control}
           name="agreedToTerms"
@@ -307,7 +243,7 @@ export const SignUpScreen = ({ navigation }: Props) => {
                 onPress={() => field.onChange(!field.value)}
                 activeOpacity={0.8}
               >
-                {!!field.value && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                {!!field.value && <Ionicons name="checkmark" size={13} color="#FFFFFF" />}
               </TouchableOpacity>
               <Text style={styles.termsText}>
                 By creating an account, you agree to our{" "}
@@ -318,19 +254,20 @@ export const SignUpScreen = ({ navigation }: Props) => {
           )}
         />
 
-        <TouchableOpacity
-          style={[styles.button, (!isValid || isSubmitting) && styles.buttonDisabled]}
-          disabled={!isValid || isSubmitting}
+        <AppButton
+          title="Create Account"
+          loadingTitle="Creating..."
           onPress={handleSubmit(onSubmit)}
-        >
-          <Text style={[styles.buttonText, (!isValid || isSubmitting) && styles.buttonTextDisabled]}>
-            {isSubmitting ? "Creating..." : "Create Account"}
-          </Text>
-        </TouchableOpacity>
+          disabled={!isValid || !agreedToTerms || isSubmitting}
+          loading={isSubmitting}
+          size="lg"
+          style={styles.buttonOverride}
+          textStyle={styles.buttonTextOverride}
+        />
 
         <TouchableOpacity
           style={styles.loginRow}
-          onPress={() => navigation.navigate("Login")}
+          onPress={handleNavigateLogin}
           activeOpacity={0.7}
         >
           <Text style={styles.loginText}>
@@ -360,10 +297,10 @@ const Field = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: spacing.xl * 4, flexGrow: 1 },
+  content: { padding: spacing.lg, paddingTop: 0, paddingBottom: spacing.xl * 4, flexGrow: 1 },
   title: {
     fontFamily: "DM Sans",
-    fontWeight: "900",
+    fontWeight: "600",
     fontSize: 24,
     lineHeight: 30,
     letterSpacing: -0.8,
@@ -372,7 +309,7 @@ const styles = StyleSheet.create({
   field: { marginBottom: spacing.md },
   label: {
     fontFamily: "DM Sans",
-    fontWeight: "700",
+    fontWeight: "500",
     fontSize: 14,
     lineHeight: 23.8,
     letterSpacing: -0.1,
@@ -484,35 +421,25 @@ const styles = StyleSheet.create({
   },
   termsText: {
     fontFamily: "DM Sans",
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 20,
     color: colors.grey,
     flex: 1,
   },
   boldText: {
     fontFamily: "DM Sans",
-    fontWeight: "700",
+    fontWeight: "500",
     color: colors.inputTextColor,
   },
-  button: {
-    backgroundColor: colors.primary,
+  buttonOverride: {
     borderRadius: 16,
     height: 52,
-    justifyContent: "center",
-    alignItems: "center",
     marginTop: spacing.sm,
   },
-  buttonDisabled: {
-    backgroundColor: "#F1F5F9",
-  },
-  buttonText: {
+  buttonTextOverride: {
     fontFamily: "DM Sans",
     fontSize: 16,
     fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  buttonTextDisabled: {
-    color: "#CAD5E2",
   },
   loginRow: {
     alignItems: "center",

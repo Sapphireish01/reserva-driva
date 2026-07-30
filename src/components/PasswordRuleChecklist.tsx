@@ -3,6 +3,7 @@ import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { usePasswordRules } from "../hooks/usePasswordRules";
 import { colors, spacing } from "../theme/colors";
+import { CheckIcon } from "./ui";
 
 export const PasswordRuleChecklist = ({ password }: { password: string }) => {
   const rules = usePasswordRules(password);
@@ -22,11 +23,15 @@ export const PasswordRuleChecklist = ({ password }: { password: string }) => {
             <Text style={[styles.pillText, rule.passed && styles.pillTextPassed]}>
               {rule.label}
             </Text>
-            <Ionicons
-              name={rule.passed ? "checkmark-circle" : "checkmark-circle-outline"}
-              size={15}
-              color={rule.passed ? colors.success : colors.textMuted}
-            />
+            {rule.passed ? (
+              <CheckIcon size={15} color={colors.success} />
+            ) : (
+              <Ionicons
+                name="checkmark-circle-outline"
+                size={15}
+                color={colors.textMuted}
+              />
+            )}
           </View>
         ))}
       </View>

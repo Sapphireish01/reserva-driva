@@ -19,7 +19,9 @@ import {
   AppButton,
   AppCameraModal,
   AppDropdown,
+  AppLoader,
   AppTextEditor,
+  CheckIcon,
 } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors } from "../../../theme/colors";
@@ -222,23 +224,14 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
                       {attachment.status === "uploading" ? (
                         <View style={styles.uploadingContainer}>
                           <Text style={styles.dotSeparator}> • </Text>
-                          <Animated.View
-                            style={{
-                              transform: [{ rotate: spin }],
-                              marginRight: 4,
-                            }}
-                          >
-                            <UploadingStatusIcon size={16} />
-                          </Animated.View>
+                          <AppLoader size={16} color="#375DFB" />
                           <Text style={styles.uploadingText}>Uploading...</Text>
                         </View>
                       ) : (
                         <View style={styles.uploadingContainer}>
                           <Text style={styles.dotSeparator}> • </Text>
-                          <Ionicons
-                            name="checkmark-circle"
+                          <CheckIcon
                             size={13}
-                            color="#22C55E"
                             style={{ marginRight: 2 }}
                           />
                           <Text style={styles.completedText}>Completed</Text>
@@ -288,7 +281,7 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
           size="lg"
           rightIcon={
             isSent ? (
-              <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
+              <CheckIcon size={18} />
             ) : undefined
           }
         />

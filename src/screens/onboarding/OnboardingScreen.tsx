@@ -1,5 +1,5 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
@@ -7,10 +7,10 @@ import {
   Image,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppButton } from "../../components/ui";
 import { AuthStackParamList } from "../../navigation/types";
 import { colors, spacing } from "../../theme/colors";
 
@@ -76,10 +76,85 @@ const getImageSource = (img: any) => {
   return img;
 };
 
+interface SlideItemProps {
+  item: Slide;
+  index: number;
+  activeIndex: number;
+  insetsTop: number;
+  insetsBottom: number;
+  onGetStarted: () => void;
+}
+
+const OnboardingSlideItem = React.memo<SlideItemProps>(
+  ({ item, activeIndex, insetsTop, insetsBottom, onGetStarted }) => {
+    return (
+      <View
+        style={[
+          styles.slide,
+          {
+            paddingTop: Math.max(insetsTop, 16),
+            paddingBottom: Math.max(insetsBottom, 20),
+          },
+        ]}
+      >
+        {/* Header / SubLogo */}
+        <View style={styles.header}>
+          <Text style={styles.subLogo}>Rezarva</Text>
+        </View>
+
+        {/* Dynamic Image Container for Long Screens */}
+        <View style={styles.imageContainer}>
+          <Image
+            source={getImageSource(item.image)}
+            style={styles.image}
+            resizeMode="cover"
+          />
+        </View>
+
+        {/* Bottom Content Container */}
+        <View style={styles.content}>
+          <View style={styles.dots}>
+            {SLIDES.map((s, i) => (
+              <View
+                key={s.key}
+                style={[styles.dot, i === activeIndex && styles.dotActive]}
+              />
+            ))}
+          </View>
+
+          <View style={styles.textContainer}>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.body}>
+              {item.bodyParts.map((part: BodyPart, idx: number) => (
+                <Text
+                  key={idx}
+                  style={part.highlighted ? styles.textDark : styles.textMuted}
+                >
+                  {part.text}
+                </Text>
+              ))}
+            </Text>
+          </View>
+
+          <AppButton
+            title="Get Started"
+            onPress={onGetStarted}
+            size="lg"
+            style={styles.buttonOverride}
+            textStyle={styles.buttonTextOverride}
+          />
+        </View>
+      </View>
+    );
+  }
+);
+
+OnboardingSlideItem.displayName = "OnboardingSlideItem";
+
 type Props = NativeStackScreenProps<AuthStackParamList, "Onboarding">;
 
 export const OnboardingScreen = ({ navigation }: Props) => {
-  const [index, setIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [showWelcome, setShowWelcome] = useState(true);
   const listRef = useRef<FlatList<Slide>>(null);
   const insets = useSafeAreaInsets();
@@ -124,6 +199,43 @@ export const OnboardingScreen = ({ navigation }: Props) => {
     return () => clearTimeout(timer);
   }, [welcomeAnim]);
 
+  const handleGetStarted = useCallback(() => {
+    navigation.navigate("SignUp");
+  }, [navigation]);
+
+  const handleMomentumScrollEnd = useCallback(
+    (e: any) => {
+      const nextIndex = Math.round(e.nativeEvent.contentOffset.x / width);
+      setActiveIndex(nextIndex);
+    },
+    []
+  );
+
+  const keyExtractor = useCallback((item: Slide) => item.key, []);
+
+  const getItemLayout = useCallback(
+    (_: any, index: number) => ({
+      length: width,
+      offset: width * index,
+      index,
+    }),
+    []
+  );
+
+  const renderItem = useCallback(
+    ({ item, index }: { item: Slide; index: number }) => (
+      <OnboardingSlideItem
+        item={item}
+        index={index}
+        activeIndex={activeIndex}
+        insetsTop={insets.top}
+        insetsBottom={insets.bottom}
+        onGetStarted={handleGetStarted}
+      />
+    ),
+    [activeIndex, insets.top, insets.bottom, handleGetStarted]
+  );
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -132,77 +244,18 @@ export const OnboardingScreen = ({ navigation }: Props) => {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item) => item.key}
-        onMomentumScrollEnd={(e) => {
-          setIndex(Math.round(e.nativeEvent.contentOffset.x / width));
-        }}
-        renderItem={({ item }) => (
-          <View
-            style={[
-              styles.slide,
-              {
-                paddingTop: Math.max(insets.top, 16),
-                paddingBottom: Math.max(insets.bottom, 20),
-              },
-            ]}
-          >
-            {/* Header / SubLogo */}
-            <View style={styles.header}>
-              <Text style={styles.subLogo}>Rezarva</Text>
-            </View>
-
-            {/* Dynamic Image Container for Long Screens */}
-            <View style={styles.imageContainer}>
-              <Image source={getImageSource(item.image)} style={styles.image} resizeMode="cover" />
-            </View>
-
-            {/* Bottom Content Container */}
-            <View style={styles.content}>
-              <View style={styles.dots}>
-                {SLIDES.map((s, i) => (
-                  <View
-                    key={s.key}
-                    style={[styles.dot, i === index && styles.dotActive]}
-                  />
-                ))}
-              </View>
-
-              <View style={styles.textContainer}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.body}>
-                  {item.bodyParts ? (
-                    item.bodyParts.map((part: BodyPart, idx: number) => (
-                      <Text
-                        key={idx}
-                        style={part.highlighted ? styles.textDark : styles.textMuted}
-                      >
-                        {part.text}
-                      </Text>
-                    ))
-                  ) : (
-                    (item as any).body
-                  )}
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                style={styles.button}
-                activeOpacity={0.85}
-                onPress={() => navigation.navigate("SignUp")}
-              >
-                <Text style={styles.buttonText}>Get Started</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+        keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
+        onMomentumScrollEnd={handleMomentumScrollEnd}
+        renderItem={renderItem}
+        initialNumToRender={1}
+        maxToRenderPerBatch={2}
+        windowSize={3}
       />
 
       {showWelcome && (
         <Animated.View
-          style={[
-            styles.welcomeOverlay,
-            { opacity: overlayOpacity },
-          ]}
+          style={[styles.welcomeOverlay, { opacity: overlayOpacity }]}
           pointerEvents="none"
         >
           <Animated.View
@@ -227,12 +280,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
 
             {/* Target DM Sans SubLogo (header style) */}
             <Animated.Text
-              style={[
-                styles.subLogo,
-                {
-                  opacity: dmSansOpacity,
-                },
-              ]}
+              style={[styles.subLogo, { opacity: dmSansOpacity }]}
             >
               Rezarva
             </Animated.Text>
@@ -311,17 +359,17 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: "DM Sans",
-    fontWeight: "700",
-    fontSize: 22,
-    lineHeight: 28,
-    letterSpacing: -0.5,
+    fontWeight: "600",
+    fontSize: 20,
+    lineHeight: 25,
+    letterSpacing: -0.75,
     color: colors.text,
     textAlign: "left",
   },
   body: {
     fontFamily: "DM Sans",
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 23.8,
     textAlign: "left",
   },
   textDark: {
@@ -332,20 +380,17 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontWeight: "400",
   },
-  button: {
+  buttonOverride: {
     backgroundColor: colors.primary,
     borderRadius: 12,
     height: 52,
-    justifyContent: "center",
-    alignItems: "center",
-    width: "100%",
     marginTop: spacing.xs,
   },
-  buttonText: {
-    color: "#FFFFFF",
+  buttonTextOverride: {
     fontFamily: "DM Sans",
     fontWeight: "600",
     fontSize: 16,
+    color: "#FFFFFF",
   },
   welcomeOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -364,4 +409,5 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
 });
+
 

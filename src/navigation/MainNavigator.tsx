@@ -18,8 +18,8 @@ import {
   TwoFactorAuthScreen,
   VehiclesScreen,
 } from "../screens/main/profile";
-import { CreateTripScreen } from "../screens/main/trips";
-import { EarningsScreen } from "../screens/main/wallet";
+import { CreateTripScreen, TripsScreen } from "../screens/main/trips";
+import { EarningsScreen, TransactionDetailsScreen } from "../screens/main/wallet";
 import { colors } from "../theme/colors";
 import { MainStackParamList, MainTabParamList } from "./types";
 
@@ -66,7 +66,7 @@ const MainTabNavigator = () => (
     })}
   >
     <Tab.Screen name="HomeTab" component={HomeScreen} options={{ tabBarLabel: "Home" }} />
-    <Tab.Screen name="TripsTab" component={CreateTripScreen} options={{ tabBarLabel: "Trips" }} />
+    <Tab.Screen name="TripsTab" component={TripsScreen} options={{ tabBarLabel: "Trips" }} />
     <Tab.Screen name="BookingsTab" component={PassengerRequestsScreen} options={{ tabBarLabel: "Bookings" }} />
     <Tab.Screen name="WalletTab" component={EarningsScreen} options={{ tabBarLabel: "Wallet" }} />
     <Tab.Screen name="ProfileTab" component={SettingsScreen} options={{ tabBarLabel: "Profile" }} />
@@ -166,6 +166,11 @@ export const MainNavigator = () => (
       name="Earnings"
       component={EarningsScreen}
       options={{ title: "Earnings & Payouts" }}
+    />
+    <Stack.Screen
+      name="TransactionDetails"
+      component={TransactionDetailsScreen}
+      options={{ headerShown: false }}
     />
   </Stack.Navigator>
 );

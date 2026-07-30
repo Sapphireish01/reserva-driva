@@ -1,32 +1,60 @@
+import { useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
+import { TouchableOpacity } from "react-native";
+import { HeaderBackIconItem } from "../components/ProfileIcons";
 import { AccountCreatedScreen } from "../screens/auth/AccountCreatedScreen";
 import { ForgotPasswordOTPScreen } from "../screens/auth/ForgotPasswordOTPScreen";
 import { ForgotPasswordScreen } from "../screens/auth/ForgotPasswordScreen";
-import { LoginScreen } from "../screens/auth/LoginScreen";
-import { ResetPasswordScreen } from "../screens/auth/ResetPasswordScreen";
 import {
   LicenseBackCaptureScreen,
   LicenseFrontCaptureScreen,
 } from "../screens/auth/LicenseCaptureScreens";
 import { LicenseIntroScreen } from "../screens/auth/LicenseIntroScreen";
 import { LicenseVerifyingScreen } from "../screens/auth/LicenseVerifyingScreen";
+import { LoginScreen } from "../screens/auth/LoginScreen";
 import { OTPVerificationScreen } from "../screens/auth/OTPVerificationScreen";
+import { ResetPasswordScreen } from "../screens/auth/ResetPasswordScreen";
 import { SignUpScreen } from "../screens/auth/SignUpScreen";
 import { SSNScreen } from "../screens/auth/SSNScreen";
 import { VerificationMethodScreen } from "../screens/auth/VerificationMethodScreen";
 import { OnboardingScreen } from "../screens/onboarding/OnboardingScreen";
+import { colors, spacing } from "../theme/colors";
 import { AuthStackParamList } from "./types";
 
-import { colors } from "../theme/colors";
-
 const Stack = createNativeStackNavigator<AuthStackParamList>();
+
+const CustomHeaderBackButton = () => {
+  const navigation = useNavigation();
+  return (
+    <TouchableOpacity
+      onPress={() => {
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+        }
+      }}
+      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+      activeOpacity={0.7}
+      style={{
+        paddingLeft: spacing.sm,
+        paddingRight: spacing.sm,
+      }}
+    >
+      <HeaderBackIconItem size={20} color="#868C98" />
+    </TouchableOpacity>
+  );
+};
 
 export const AuthNavigator = () => (
   <Stack.Navigator
     screenOptions={{
       headerShown: false,
       headerTintColor: colors.textMuted,
+      headerShadowVisible: false,
+      headerStyle: {
+        backgroundColor: colors.background,
+      },
+      headerLeft: () => <CustomHeaderBackButton />,
     }}
   >
     <Stack.Screen name="Onboarding" component={OnboardingScreen} />

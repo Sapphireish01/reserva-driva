@@ -1,8 +1,5 @@
-import { Ionicons } from "@expo/vector-icons";
-import React, { useEffect, useRef } from "react";
+import React from "react";
 import {
-  Animated,
-  Easing,
   StyleSheet,
   Text,
   TextStyle,
@@ -10,10 +7,8 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import Svg, { Circle, Defs, LinearGradient, Stop } from "react-native-svg";
 import { buttonTokens } from "../../theme/tokens";
-
-const AnimatedSvg = Animated.createAnimatedComponent(Svg);
+import { AppLoader, CheckIcon } from "./AppLoader";
 
 interface TrailingTailSpinnerProps {
   size?: number;
@@ -23,59 +18,7 @@ interface TrailingTailSpinnerProps {
 export const TrailingTailSpinner: React.FC<TrailingTailSpinnerProps> = ({
   size = 18,
   color = "#FFFFFF",
-}) => {
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 750,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [rotateAnim]);
-
-  const spin = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  });
-
-  const strokeWidth = 2.2;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  return (
-    <AnimatedSvg
-      width={size}
-      height={size}
-      viewBox={`0 0 ${size} ${size}`}
-      style={{ transform: [{ rotate: spin }] }}
-    >
-      <Defs>
-        <LinearGradient id="tailGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <Stop offset="0%" stopColor={color} stopOpacity="1" />
-          <Stop offset="45%" stopColor={color} stopOpacity="0.6" />
-          <Stop offset="85%" stopColor={color} stopOpacity="0.15" />
-          <Stop offset="100%" stopColor={color} stopOpacity="0" />
-        </LinearGradient>
-      </Defs>
-      <Circle
-        cx={size / 2}
-        cy={size / 2}
-        r={radius}
-        stroke="url(#tailGradient)"
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        fill="none"
-        strokeDasharray={`${circumference * 0.78} ${circumference * 0.22}`}
-      />
-    </AnimatedSvg>
-  );
-};
+}) => <AppLoader size={size} color={color} />;
 
 export interface AppButtonProps {
   title: string;
@@ -133,9 +76,22 @@ export const AppButton: React.FC<AppButtonProps> = ({
   const labelStyle: TextStyle = {
     fontSize: sizeConfig.fontSize,
     fontFamily: "DM Sans Bold",
-    fontWeight: "700",
+    fontWeight: "500",
     color: isInteractiveDisabled ? variantConfig.disabledText : variantConfig.textColor,
   };
+
+  const disabledStyle: ViewStyle = isInteractiveDisabled
+    ? {
+        backgroundColor: variantConfig.disabledBg,
+        borderColor: variant === "outline" ? variantConfig.disabledText : "transparent",
+      }
+    : {};
+
+  const disabledTextStyle: TextStyle = isInteractiveDisabled
+    ? {
+        color: variantConfig.disabledText,
+      }
+    : {};
 
   let displayTitle = title;
   if (success) {
@@ -146,10 +102,10 @@ export const AppButton: React.FC<AppButtonProps> = ({
 
   let effectiveRightIcon = rightIcon;
   if (success) {
-    effectiveRightIcon = <Ionicons name="checkmark-circle" size={18} color="#22C55E" />;
+    effectiveRightIcon = <CheckIcon size={18} />;
   } else if (loading) {
     effectiveRightIcon = (
-      <TrailingTailSpinner
+      <AppLoader
         size={18}
         color={isInteractiveDisabled ? variantConfig.disabledText : variantConfig.textColor}
       />
@@ -158,14 +114,14 @@ export const AppButton: React.FC<AppButtonProps> = ({
 
   return (
     <TouchableOpacity
-      style={[styles.baseButton, buttonStyle, style]}
+      style={[styles.baseButton, buttonStyle, style, disabledStyle]}
       onPress={onPress}
       disabled={isButtonDisabled}
       activeOpacity={activeOpacity}
     >
       <View style={styles.contentRow}>
         {leftIcon && <View style={styles.iconLeft}>{leftIcon}</View>}
-        <Text style={[labelStyle, textStyle]}>{displayTitle}</Text>
+        <Text style={[labelStyle, textStyle, disabledTextStyle]}>{displayTitle}</Text>
         {effectiveRightIcon && <View style={styles.iconRight}>{effectiveRightIcon}</View>}
       </View>
     </TouchableOpacity>

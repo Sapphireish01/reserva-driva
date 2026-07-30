@@ -17,7 +17,7 @@ export const buttonTokens = {
     lg: {
       height: 54,
       paddingHorizontal: 24,
-      borderRadius: 12,
+      borderRadius: 10,
       fontSize: 16,
     },
   },

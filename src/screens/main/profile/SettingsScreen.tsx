@@ -95,43 +95,36 @@ export const SettingsScreen = ({ navigation }: Props) => {
             label="Profile"
             onPress={() => navigation.navigate("ProfileDetails")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<NotificationIconItem color="#868C98" size={20} />}
             label="Notifications"
             onPress={() => navigation.navigate("Notifications")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<EmergencyContactIconItem color="#868C98" size={20} />}
             label="Emergency Contact"
             onPress={() => navigation.navigate("EmergencyContacts")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<VehiclesIconItem color="#868C98" size={20} />}
             label="Vehicles"
             onPress={() => navigation.navigate("Vehicles")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<CommunitiesIconItem color="#868C98" size={20} />}
             label="Communities"
             badge="Coming Soon"
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<BankDetailsIconItem color="#868C98" size={20} />}
             label="Bank Details"
             onPress={() => navigation.navigate("BankDetails")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<PreferencesIconItem color="#868C98" size={20} />}
             label="Preferences"
             onPress={() => navigation.navigate("Preferences")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<ReferralsIconItem color="#868C98" size={20} />}
             label="Referrals"
@@ -147,13 +140,11 @@ export const SettingsScreen = ({ navigation }: Props) => {
             label="Two-factor Authentication"
             onPress={() => navigation.navigate("TwoFactorAuth")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<ReportProblemIconItem color="#868C98" size={20} />}
             label="Report a Problem"
             onPress={() => navigation.navigate("ReportProblem")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<DeactivateIconItem color="#868C98" size={20} />}
             label="De-activate Account"
@@ -172,19 +163,16 @@ export const SettingsScreen = ({ navigation }: Props) => {
             label="Chat with support"
             onPress={() => navigation.navigate("ChatWithSupport")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<FAQIconItem color="#868C98" size={20} />}
             label="FAQs"
             onPress={() => navigation.navigate("FAQs")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<ContactUsIconItem color="#868C98" size={20} />}
             label="Contact Us"
             onPress={() => navigation.navigate("ContactUs")}
           />
-          <View style={styles.divider} />
           <SettingItem
             icon={<LogoutIconItem color="#868C98" size={20} />}
             label="Logout"
@@ -298,16 +286,16 @@ export const SettingsScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#FFFFFF",
   },
   scrollContent: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingBottom: spacing.xl * 2,
   },
   headerTitle: {
     fontFamily: "DM Sans Bold",
     fontSize: 26,
-    fontWeight: "800",
+    fontWeight: "600",
     color: "#0F172A",
     marginTop: spacing.md,
     marginBottom: spacing.md,
@@ -320,9 +308,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   userAvatar: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: "#E2E8F0",
   },
   userInfo: {
@@ -332,38 +320,38 @@ const styles = StyleSheet.create({
   userName: {
     fontFamily: "DM Sans Bold",
     fontSize: 17,
-    fontWeight: "700",
+    fontWeight: "500",
     color: "#0F172A",
     marginBottom: 2,
   },
   userEmail: {
     fontFamily: "DM Sans",
-    fontSize: 13,
-    color: "#64748B",
+    fontSize: 12,
+    color: colors.grey,
   },
   sectionHeader: {
     fontFamily: "DM Sans Bold",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "600",
-    color: "#94A3B8",
-    marginBottom: 8,
-    marginLeft: 4,
+    color: colors.grey,
+    paddingVertical: 4,
+    paddingHorizontal: spacing.md,
+    marginHorizontal: -spacing.md,
     textTransform: "capitalize",
+    backgroundColor: "#F6F8FA",
   },
+
   sectionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: spacing.lg,
+    gap: spacing.md,
+    paddingVertical: spacing.md,
     overflow: "hidden",
   },
   itemRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 14,
-    paddingHorizontal: spacing.md,
+    // paddingVertical: spacing.sm,
+    // paddingHorizontal: spacing.md,
   },
   itemLeft: {
     flexDirection: "row",
@@ -372,21 +360,23 @@ const styles = StyleSheet.create({
   },
   itemIconContainer: {
     marginRight: 14,
-    width: 22,
+    width: 20,
     alignItems: "center",
     justifyContent: "center",
   },
   itemLabel: {
     fontFamily: "DM Sans Bold",
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "400",
+    color: colors.dark,
   },
   itemLabelDestructive: {
     color: colors.error,
   },
   badgeContainer: {
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#F6F8FA",
+    borderWidth: 1,
+    borderColor: "#E2E4E9",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 12,
@@ -395,7 +385,7 @@ const styles = StyleSheet.create({
   badgeText: {
     fontFamily: "DM Sans",
     fontSize: 11,
-    color: "#64748B",
+    color: colors.grey,
     fontWeight: "600",
   },
   divider: {
