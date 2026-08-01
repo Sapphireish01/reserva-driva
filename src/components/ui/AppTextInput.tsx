@@ -101,7 +101,7 @@ export const AppTextInput = forwardRef<TextInput, AppTextInputProps>(
               <Ionicons
                 name={showPassword ? "eye-off-outline" : "eye-outline"}
                 size={20}
-                color="#64748B"
+                color={colors.grey}
               />
             </TouchableOpacity>
           ) : (
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
     backgroundColor: inputTokens.backgroundColor,
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
+    paddingHorizontal: 10,
   },
   focusedCard: {
     // borderColor: inputTokens.focusedBorderColor,
@@ -160,10 +160,10 @@ const styles = StyleSheet.create({
   inputField: {
     flex: 1,
     fontFamily: "DM Sans",
-    fontSize: 15,
+    fontSize: 14,
     color: inputTokens.textColor,
     height: "100%",
-    fontWeight: "700",
+    fontWeight: "400",
   },
   iconContainer: {
     justifyContent: "center",

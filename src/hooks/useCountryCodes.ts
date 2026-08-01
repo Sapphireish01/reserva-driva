@@ -28,7 +28,10 @@ export const useCountryCodes = () => {
     const fetchCountries = async () => {
       try {
         setLoading(true);
+        console.log("🌐 [API Call] GET /accounts/countries/");
         const res = await countriesService.getCountryCodes();
+        console.log("📡 [API Response] /accounts/countries/ payload:", res.data);
+
         const rawData = Array.isArray(res.data)
           ? res.data
           : (res.data as any)?.results ?? (res.data as any)?.data ?? [];
@@ -42,6 +45,7 @@ export const useCountryCodes = () => {
             flag: item.flag,
           }));
 
+          console.log(`✅ [Parsed Countries] Found ${parsedCountries.length} countries:`, parsedCountries);
           setCountries(parsedCountries);
           const validCodes = parsedCountries
             .map((c) => c.code as CountryCode)
@@ -53,10 +57,12 @@ export const useCountryCodes = () => {
           }
         }
       } catch (err: any) {
+        console.error("❌ [API Error] /accounts/countries/ failed:", err?.message);
         if (mounted) {
           setError(err?.message ?? "Failed to load country codes");
         }
       } finally {
+
         if (mounted) setLoading(false);
       }
     };

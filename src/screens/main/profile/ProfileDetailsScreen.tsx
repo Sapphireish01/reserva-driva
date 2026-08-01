@@ -126,7 +126,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color={colors.grey} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Profile</Text>
         <View style={{ width: 40 }} />
@@ -343,9 +343,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: "DM Sans Bold",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 20,
+    fontWeight: "600",
+    letterSpacing: -0.75,
+    color: colors.dark,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -386,16 +387,15 @@ const styles = StyleSheet.create({
     fontFamily: "DM Sans",
     fontSize: 14,
     color: colors.dark,
-    fontWeight: "700",
+    fontWeight: "500",
     marginBottom: 6,
     marginTop: 14,
   },
   fieldCard: {
     height: 50,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: colors.border2,
     borderRadius: 12,
-    backgroundColor: "#F8FAFC",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   fieldValue: {
     fontFamily: "DM Sans Bold",
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "400",
     color: "#0F172A",
     letterSpacing: -0.3,
   },

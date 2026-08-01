@@ -78,7 +78,7 @@ export const AppFullScreenModal: React.FC<AppFullScreenModalProps> = ({
                 {leftActionText ? (
                   <Text style={styles.leftActionText}>{leftActionText}</Text>
                 ) : (
-                  <Ionicons name="close" size={22} color="#0F172A" />
+                  <Ionicons name="close" size={22} color={colors.grey} />
                 )}
               </TouchableOpacity>
               <Text style={styles.headerTitle}>{title}</Text>
@@ -148,9 +148,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: "DM Sans Bold",
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.dark,
   },
   closeBtn: {
     width: 32,
@@ -168,8 +168,8 @@ const styles = StyleSheet.create({
   },
   rightActionText: {
     fontFamily: "DM Sans Bold",
-    fontSize: 15,
-    fontWeight: "700",
+    fontSize: 16,
+    fontWeight: "600",
     color: colors.dark,
   },
   rightActionDisabled: {

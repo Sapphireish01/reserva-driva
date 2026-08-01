@@ -24,7 +24,7 @@ export const NotificationsScreen = ({ navigation }: Props) => {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color={colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
         <View style={{ width: 40 }} />
@@ -83,9 +83,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: "DM Sans Bold",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 20,
+    fontWeight: "600",
+    color: colors.dark,
   },
   content: {
     paddingHorizontal: spacing.lg,
@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   itemLabel: {
     fontFamily: "DM Sans",
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "400",
     color: colors.dark,
   },
 });

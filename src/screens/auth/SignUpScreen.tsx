@@ -12,56 +12,13 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import PhoneInput from "react-native-phone-number-input";
 import { PasswordRuleChecklist } from "../../components/PasswordRuleChecklist";
-import { AppButton, AppTextInput } from "../../components/ui";
-import { useCountryCodes } from "../../hooks/useCountryCodes";
+import { AppButton, AppPhoneInput, AppTextInput } from "../../components/ui";
 import { AuthStackParamList } from "../../navigation/types";
 import { SignupFormValues, signupSchema } from "../../schemas/signup";
 import { colors, spacing, typography } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
-
-const StyledPhoneInput = ({
-  value,
-  onChangeText,
-}: {
-  value?: string;
-  onChangeText: (text: string) => void;
-}) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const phoneInputRef = React.useRef<PhoneInput>(null);
-  const { countryCodesList, defaultCountryCode } = useCountryCodes();
-
-  return (
-    <View style={[styles.phoneContainer, isFocused && styles.inputFocused]}>
-      <PhoneInput
-        ref={phoneInputRef}
-        defaultCode={defaultCountryCode}
-        countryPickerProps={{ countryCodes: countryCodesList }}
-        layout="first"
-        onChangeFormattedText={onChangeText}
-        withShadow={false}
-        withDarkTheme={false}
-        containerStyle={styles.phoneInnerContainer}
-        textContainerStyle={styles.phoneTextContainer}
-        textInputStyle={styles.phoneTextInput}
-        codeTextStyle={styles.phoneCodeText}
-        flagButtonStyle={styles.phoneFlagButton}
-        renderDropdownImage={
-          <Ionicons name="chevron-down" size={14} color={colors.text} style={{ marginLeft: 4 }} />
-        }
-        textInputProps={{
-          placeholder: "(555) 000-0000",
-          placeholderTextColor: colors.textMuted,
-          underlineColorAndroid: "transparent",
-          onFocus: () => setIsFocused(true),
-          onBlur: () => setIsFocused(false),
-        }}
-      />
-    </View>
-  );
-};
 
 export const SignUpScreen = ({ navigation }: Props) => {
   const {
@@ -142,31 +99,19 @@ export const SignUpScreen = ({ navigation }: Props) => {
         />
 
         {/* Phone Number */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={styles.label}>Phone Number</Text>
-          <Controller
-            control={control}
-            name="phone"
-            render={({ field }) =>
-              Platform.OS === "web" ? (
-                <AppTextInput
-                  placeholder="+1 (555) 000-0000"
-                  keyboardType="phone-pad"
-                  value={field.value}
-                  onChangeText={field.onChange}
-                />
-              ) : (
-                <StyledPhoneInput
-                  value={field.value}
-                  onChangeText={field.onChange}
-                />
-              )
-            }
-          />
-          {errors.phone?.message ? (
-            <Text style={styles.error}>{errors.phone.message}</Text>
-          ) : null}
-        </View>
+        <Controller
+          control={control}
+          name="phone"
+          render={({ field }) => (
+            <AppPhoneInput
+              label="Phone Number"
+              value={field.value}
+              onChangeText={field.onChange}
+              error={errors.phone?.message}
+            />
+          )}
+        />
+
 
         {/* Gender */}
         <Controller
@@ -357,52 +302,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  phoneContainer: {
-    width: "100%",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "#FFFFFF",
-    overflow: "hidden",
-  },
-  phoneInnerContainer: {
-    width: "100%",
-    height: 48,
-    backgroundColor: "transparent",
-    borderRadius: 8,
-  },
-  phoneFlagButton: {
-    width: 90,
-    height: 48,
-    backgroundColor: "transparent",
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
-    paddingHorizontal: 8,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  phoneCodeText: {
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.text,
-    marginLeft: -4,
-  },
-  phoneTextContainer: {
-    height: 48,
-    backgroundColor: "transparent",
-    paddingVertical: 0,
-    paddingHorizontal: spacing.sm,
-  },
-  phoneTextInput: {
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    fontWeight: "500",
-    color: colors.text,
-    height: 48,
-    paddingVertical: 0,
-  },
   error: { ...typography.caption, color: colors.error, marginTop: spacing.xs },
+
   termsRow: { flexDirection: "row", alignItems: "flex-start", marginVertical: spacing.md, gap: spacing.sm },
   checkbox: {
     width: 20,
