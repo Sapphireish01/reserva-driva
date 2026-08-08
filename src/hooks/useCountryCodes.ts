@@ -26,43 +26,60 @@ export const useCountryCodes = () => {
   useEffect(() => {
     let mounted = true;
     const fetchCountries = async () => {
+      const MAX_RETRIES = 2; // 1 initial call + 2 silent retries = 3 attempts total
+      let lastError: any = null;
+
       try {
         setLoading(true);
-        console.log("🌐 [API Call] GET /accounts/countries/");
-        const res = await countriesService.getCountryCodes();
-        console.log("📡 [API Response] /accounts/countries/ payload:", res.data);
 
-        const rawData = Array.isArray(res.data)
-          ? res.data
-          : (res.data as any)?.results ?? (res.data as any)?.data ?? [];
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+          if (!mounted) return;
+          try {
+            console.log(`🌐 [API Call] GET /accounts/countries/ (attempt ${attempt + 1}/${MAX_RETRIES + 1})`);
+            const res = await countriesService.getCountryCodes();
+            console.log("📡 [API Response] /accounts/countries/ payload:", res.data);
 
-        if (mounted && Array.isArray(rawData) && rawData.length > 0) {
-          const parsedCountries: CountryCodeItem[] = rawData.map((item: any) => ({
-            id: item.id,
-            name: item.name ?? item.country ?? "",
-            code: String(item.code ?? item.iso2 ?? item.country_code ?? "US").toUpperCase(),
-            dialCode: item.dialCode ?? item.dial_code ?? item.phone_code ?? "",
-            flag: item.flag,
-          }));
+            const rawData = Array.isArray(res.data)
+              ? res.data
+              : (res.data as any)?.results ?? (res.data as any)?.data ?? [];
 
-          console.log(`✅ [Parsed Countries] Found ${parsedCountries.length} countries:`, parsedCountries);
-          setCountries(parsedCountries);
-          const validCodes = parsedCountries
-            .map((c) => c.code as CountryCode)
-            .filter(Boolean);
+            if (mounted && Array.isArray(rawData) && rawData.length > 0) {
+              const parsedCountries: CountryCodeItem[] = rawData.map((item: any) => ({
+                id: item.id,
+                name: item.name ?? item.country ?? "",
+                code: String(item.code ?? item.iso_code ?? item.iso2 ?? item.country_code ?? "US").toUpperCase(),
+                dialCode: item.dialCode ?? item.dial_code ?? item.phone_code ?? "",
+                flag: item.flag,
+              }));
 
-          if (validCodes.length > 0) {
-            setCountryCodesList(validCodes);
-            setDefaultCountryCode(validCodes[0]);
+              console.log(`✅ [Parsed Countries] Found ${parsedCountries.length} countries:`, parsedCountries);
+              setCountries(parsedCountries);
+              const validCodes = parsedCountries
+                .map((c) => c.code as CountryCode)
+                .filter(Boolean);
+
+              if (validCodes.length > 0) {
+                setCountryCodesList(validCodes);
+                setDefaultCountryCode(validCodes[0]);
+              }
+            }
+
+            if (mounted) setError(null);
+            return;
+          } catch (err: any) {
+            lastError = err;
+            console.warn(`⚠️ [API Retry] /accounts/countries/ attempt ${attempt + 1} failed: ${err?.message}`);
+            if (attempt < MAX_RETRIES) {
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+            }
           }
         }
-      } catch (err: any) {
-        console.error("❌ [API Error] /accounts/countries/ failed:", err?.message);
-        if (mounted) {
-          setError(err?.message ?? "Failed to load country codes");
+
+        if (mounted && lastError) {
+          console.error("❌ [API Error] All /accounts/countries/ retry attempts failed:", lastError?.message);
+          setError(lastError?.message ?? "Failed to load country codes");
         }
       } finally {
-
         if (mounted) setLoading(false);
       }
     };

@@ -13,7 +13,9 @@ import {
   View,
 } from "react-native";
 import { PasswordRuleChecklist } from "../../components/PasswordRuleChecklist";
-import { AppButton, AppPhoneInput, AppTextInput } from "../../components/ui";
+import { AppButton, AppPhoneInput, AppPhoneInputRef, AppTextInput } from "../../components/ui";
+import { SignupPayload } from "../../api/services/auth";
+import { useSignUpMutation } from "../../hooks/useAuth";
 import { AuthStackParamList } from "../../navigation/types";
 import { SignupFormValues, signupSchema } from "../../schemas/signup";
 import { colors, spacing, typography } from "../../theme/colors";
@@ -21,6 +23,11 @@ import { colors, spacing, typography } from "../../theme/colors";
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 
 export const SignUpScreen = ({ navigation }: Props) => {
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("1");
+  const phoneInputRef = React.useRef<AppPhoneInputRef>(null);
+  const { mutateAsync: signUp, isPending: isSigningUp } = useSignUpMutation();
+
   const {
     control,
     handleSubmit,
@@ -38,13 +45,49 @@ export const SignUpScreen = ({ navigation }: Props) => {
   const onSubmit = React.useCallback(
     async (values: SignupFormValues) => {
       try {
-        const mockDriverId = "mock-driver-123";
-        navigation.navigate("VerificationMethod", { driverId: mockDriverId });
-      } catch (err) {
-        console.warn(err);
+        setApiError(null);
+        console.log("🌐 [API Call] POST /accounts/register/ via useSignUpMutation", values);
+
+        const callingCode = phoneInputRef.current?.getCallingCode() || selectedCountryCode || "1";
+
+        const payload: SignupPayload = {
+          fullName: values.fullName,
+          email: values.email,
+          phoneNumber: values.phone.replace(/[^0-9]/g, ""),
+          countryCode: callingCode,
+          gender: values.gender,
+          password: values.password,
+          referralCode: values.referralCode || undefined,
+        };
+
+        const data = await signUp(payload);
+        console.log("📡 [API Response] POST /auth/signup payload:", data);
+
+        const driverId = (data as any)?.driverId ?? (data as any)?.id ?? "mock-driver-123";
+        navigation.navigate("VerificationMethod", { driverId });
+      } catch (err: any) {
+        console.error("❌ [API Error] useSignUpMutation failed:", err?.response?.data || err?.message);
+        const backendData = err?.response?.data;
+        let errorMessage = "Failed to create account. Please try again.";
+        if (typeof backendData === "string") {
+          errorMessage = backendData;
+        } else if (backendData && typeof backendData === "object") {
+          const firstKey = Object.keys(backendData)[0];
+          const firstVal = backendData[firstKey];
+          if (Array.isArray(firstVal)) {
+            errorMessage = `${firstKey}: ${firstVal.join(", ")}`;
+          } else if (typeof firstVal === "string") {
+            errorMessage = `${firstKey}: ${firstVal}`;
+          } else {
+            errorMessage = backendData.message || backendData.detail || backendData.error || JSON.stringify(backendData);
+          }
+        } else if (err?.message) {
+          errorMessage = err.message;
+        }
+        setApiError(errorMessage);
       }
     },
-    [navigation]
+    [signUp, navigation]
   );
 
   const handleNavigateLogin = React.useCallback(() => {
@@ -104,9 +147,11 @@ export const SignUpScreen = ({ navigation }: Props) => {
           name="phone"
           render={({ field }) => (
             <AppPhoneInput
+              ref={phoneInputRef}
               label="Phone Number"
               value={field.value}
               onChangeText={field.onChange}
+              onCountryCodeChange={setSelectedCountryCode}
               error={errors.phone?.message}
             />
           )}
@@ -199,12 +244,14 @@ export const SignUpScreen = ({ navigation }: Props) => {
           )}
         />
 
+        {apiError ? <Text style={styles.apiErrorText}>{apiError}</Text> : null}
+
         <AppButton
           title="Create Account"
           loadingTitle="Creating..."
           onPress={handleSubmit(onSubmit)}
-          disabled={!isValid || !agreedToTerms || isSubmitting}
-          loading={isSubmitting}
+          disabled={!isValid || !agreedToTerms || isSubmitting || isSigningUp}
+          loading={isSubmitting || isSigningUp}
           size="lg"
           style={styles.buttonOverride}
           textStyle={styles.buttonTextOverride}
@@ -356,5 +403,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: colors.text,
+  },
+  apiErrorText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: colors.error || "#EF4444",
+    textAlign: "center",
+    marginBottom: spacing.xs,
   },
 });

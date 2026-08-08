@@ -21,6 +21,14 @@ import {
   OTPForm
 } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
+import {
+  getUserAddress,
+  getUserAvatar,
+  getUserEmail,
+  getUserFullName,
+  getUserPhone,
+  useAuthStore,
+} from "../../../state/authStore";
 import { colors } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "ProfileDetails">;
@@ -41,13 +49,61 @@ const GALLERY_PHOTOS = [
 
 export const ProfileDetailsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+
+  const initialName = getUserFullName(user) || "Driver Account";
+  const initialEmail = getUserEmail(user);
+  const initialPhone = getUserPhone(user);
+  const initialAddress = getUserAddress(user);
+  const initialAvatar = getUserAvatar(user) || DEFAULT_AVATAR;
 
   // Profile States
-  const [profileImage, setProfileImage] = useState(DEFAULT_AVATAR);
-  const [name, setName] = useState("Sapphire Simi");
-  const [email, setEmail] = useState("Sapphire.Edward@hotmail.com");
-  const [phone, setPhone] = useState("(555) 000-0000");
-  const [address, setAddress] = useState("42 Montgomery Road, Houston");
+  const [profileImage, setProfileImage] = useState(initialAvatar);
+  const [name, setName] = useState(initialName);
+  const [email, setEmail] = useState(initialEmail);
+  const [phone, setPhone] = useState(initialPhone);
+  const [address, setAddress] = useState(initialAddress);
+
+  // Sync profile state whenever user changes in store
+  React.useEffect(() => {
+    if (user) {
+      const fullName = getUserFullName(user);
+      if (fullName) setName(fullName);
+      const mail = getUserEmail(user);
+      if (mail) setEmail(mail);
+      const ph = getUserPhone(user);
+      if (ph) setPhone(ph);
+      const addr = getUserAddress(user);
+      if (addr) setAddress(addr);
+      const av = getUserAvatar(user);
+      if (av) setProfileImage(av);
+    }
+  }, [user]);
+
+  const updateGlobalUser = (updates: Partial<{ full_name: string; email: string; phone_number: string; address_line_1: string; profile_picture: string }>) => {
+    if (!user) return;
+    const updatedUser = {
+      ...user,
+      ...(updates.full_name ? { full_name: updates.full_name } : {}),
+      ...(updates.email ? { email: updates.email } : {}),
+      ...(updates.phone_number ? { phone_number: updates.phone_number } : {}),
+      profile: {
+        ...(user.profile || { user: user.id, full_name: user.full_name, email: user.email }),
+        ...(updates.full_name ? { full_name: updates.full_name } : {}),
+        ...(updates.email ? { email: updates.email } : {}),
+        ...(updates.phone_number ? { phone_number: updates.phone_number } : {}),
+        ...(updates.address_line_1 !== undefined ? { address_line_1: updates.address_line_1 } : {}),
+        ...(updates.profile_picture ? { profile_picture: updates.profile_picture } : {}),
+      },
+    };
+    setUser(updatedUser);
+  };
+
+  const handleUpdateAvatar = (uri: string) => {
+    setProfileImage(uri);
+    updateGlobalUser({ profile_picture: uri });
+  };
 
   // Modals & Sheets
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
@@ -80,9 +136,11 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
   const handleSaveField = () => {
     if (editingField === "name") {
       setName(tempValue);
+      updateGlobalUser({ full_name: tempValue });
       setEditingField(null);
     } else if (editingField === "address") {
       setAddress(tempValue);
+      updateGlobalUser({ address_line_1: tempValue });
       setEditingField(null);
     } else if (editingField === "email" || editingField === "phone" || editingField === "password") {
       setOtpStep(true);
@@ -93,8 +151,14 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
     setIsVerifying(true);
     setTimeout(() => {
       setIsVerifying(false);
-      if (editingField === "email") setEmail(tempValue);
-      if (editingField === "phone") setPhone(tempValue);
+      if (editingField === "email") {
+        setEmail(tempValue);
+        updateGlobalUser({ email: tempValue });
+      }
+      if (editingField === "phone") {
+        setPhone(tempValue);
+        updateGlobalUser({ phone_number: tempValue });
+      }
       setEditingField(null);
       setOtpStep(false);
     }, 1200);
@@ -113,7 +177,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
       quality: 0.8,
     });
     if (!result.canceled && result.assets && result.assets.length > 0) {
-      setProfileImage(result.assets[0].uri);
+      handleUpdateAvatar(result.assets[0].uri);
     }
   };
 
@@ -238,7 +302,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
             <TouchableOpacity
               style={styles.galleryThumbContainer}
               onPress={() => {
-                setProfileImage(item);
+                handleUpdateAvatar(item);
                 setShowGallery(false);
               }}
               activeOpacity={0.8}
@@ -253,7 +317,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
       <AppCameraModal
         visible={showCamera}
         onClose={() => setShowCamera(false)}
-        onPhotoCaptured={(uri) => setProfileImage(uri)}
+        onPhotoCaptured={(uri) => handleUpdateAvatar(uri)}
         initialFacing="front"
       />
 

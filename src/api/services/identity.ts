@@ -27,4 +27,22 @@ export const identityService = {
     apiClient.get<{ status: "pending" | "verified" | "failed" }>(
       `/drivers/${driverId}/identity/status`
     ),
+
+  uploadDriversLicense: (file: { uri: string; name?: string; type?: string } | FormData) => {
+    let form: FormData;
+    if (file instanceof FormData) {
+      form = file;
+    } else {
+      form = new FormData();
+      form.append("file", {
+        uri: file.uri,
+        name: file.name || "drivers_license.jpg",
+        type: file.type || "image/jpeg",
+      } as any);
+    }
+    return apiClient.put("/accounts/profile/", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
+

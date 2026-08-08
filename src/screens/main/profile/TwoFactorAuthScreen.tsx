@@ -18,6 +18,7 @@ import {
   AppFullScreenModal,
 } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
+import { getUserMfaEnabled, useAuthStore } from "../../../state/authStore";
 import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "TwoFactorAuth">;
@@ -52,8 +53,30 @@ const ShieldIcon = () => (
 
 export const TwoFactorAuthScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
 
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const initialMfa = getUserMfaEnabled(user);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(initialMfa);
+
+  React.useEffect(() => {
+    setIs2FAEnabled(getUserMfaEnabled(user));
+  }, [user]);
+
+  const updateMfaState = (enabled: boolean) => {
+    if (!user) return;
+    const updated = {
+      ...user,
+      mfa_enabled: enabled,
+      mfa_method: enabled ? "2FA_PIN" : undefined,
+      profile: {
+        ...(user.profile || { user: user.id, full_name: user.full_name, email: user.email }),
+        mfa_enabled: enabled,
+        mfa_method: enabled ? "2FA_PIN" : undefined,
+      },
+    };
+    setUser(updated);
+  };
 
   // PIN Modal States
   const [showPinModal, setShowPinModal] = useState(false);
@@ -95,6 +118,7 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
           setIsSubmitting(false);
           setIsSuccess(true);
           setIs2FAEnabled(true);
+          updateMfaState(true);
           setTimeout(() => {
             setIsSuccess(false);
             setShowPinModal(false);
@@ -109,6 +133,7 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
 
   const confirmTurnOff = () => {
     setIs2FAEnabled(false);
+    updateMfaState(false);
     setShowTurnOffModal(false);
   };
 

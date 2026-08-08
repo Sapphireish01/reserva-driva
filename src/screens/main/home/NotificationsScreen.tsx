@@ -5,15 +5,45 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NotificationIconItem, ToggleIconItem } from "../../../components/ProfileIcons";
 import { MainStackParamList } from "../../../navigation/types";
+import { getUserNotificationSettings, useAuthStore } from "../../../state/authStore";
 import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Notifications">;
 
 export const NotificationsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
-  const [inApp, setInApp] = useState(true);
-  const [email, setEmail] = useState(false);
-  const [sms, setSms] = useState(false);
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
+
+  const initialPrefs = getUserNotificationSettings(user);
+  const [inApp, setInApp] = useState(initialPrefs.notify_in_app);
+  const [email, setEmail] = useState(initialPrefs.notify_via_email);
+  const [sms, setSms] = useState(initialPrefs.notify_via_sms);
+
+  React.useEffect(() => {
+    if (user) {
+      const prefs = getUserNotificationSettings(user);
+      setInApp(prefs.notify_in_app);
+      setEmail(prefs.notify_via_email);
+      setSms(prefs.notify_via_sms);
+    }
+  }, [user]);
+
+  const updateToggle = (key: "notify_in_app" | "notify_via_email" | "notify_via_sms", val: boolean) => {
+    if (key === "notify_in_app") setInApp(val);
+    if (key === "notify_via_email") setEmail(val);
+    if (key === "notify_via_sms") setSms(val);
+
+    if (!user) return;
+    const updated = {
+      ...user,
+      profile: {
+        ...(user.profile || { user: user.id, full_name: user.full_name, email: user.email }),
+        [key]: val,
+      },
+    };
+    setUser(updated);
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -39,7 +69,7 @@ export const NotificationsScreen = ({ navigation }: Props) => {
             </View>
             <Text style={styles.itemLabel}>In-App Notification</Text>
           </View>
-          <ToggleIconItem value={inApp} onValueChange={setInApp} />
+          <ToggleIconItem value={inApp} onValueChange={(val) => updateToggle("notify_in_app", val)} />
         </View>
 
         {/* Email Notification */}
@@ -48,7 +78,7 @@ export const NotificationsScreen = ({ navigation }: Props) => {
             <Ionicons name="mail-outline" size={20} color="#868C98" style={styles.icon} />
             <Text style={styles.itemLabel}>Email Notification</Text>
           </View>
-          <ToggleIconItem value={email} onValueChange={setEmail} />
+          <ToggleIconItem value={email} onValueChange={(val) => updateToggle("notify_via_email", val)} />
         </View>
 
         {/* SMS Notification */}
@@ -57,7 +87,7 @@ export const NotificationsScreen = ({ navigation }: Props) => {
             <Ionicons name="call-outline" size={20} color="#868C98" style={styles.icon} />
             <Text style={styles.itemLabel}>SMS Notification</Text>
           </View>
-          <ToggleIconItem value={sms} onValueChange={setSms} />
+          <ToggleIconItem value={sms} onValueChange={(val) => updateToggle("notify_via_sms", val)} />
         </View>
       </ScrollView>
     </View>

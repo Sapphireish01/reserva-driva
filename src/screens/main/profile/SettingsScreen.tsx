@@ -20,7 +20,12 @@ import {
   VehiclesIconItem,
   WarningIconItem,
 } from "../../../components/ProfileIcons";
-import { useAuthStore } from "../../../state/authStore";
+import {
+  getUserAvatar,
+  getUserEmail,
+  getUserFullName,
+  useAuthStore,
+} from "../../../state/authStore";
 import { colors, spacing } from "../../../theme/colors";
 
 type Props = any;
@@ -55,6 +60,11 @@ const SettingItem = ({ icon, label, badge, onPress, destructive }: SettingItemPr
 export const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const logout = useAuthStore((state) => state.logout);
+  const user = useAuthStore((state) => state.user);
+
+  const fullName = getUserFullName(user) || "Driver Account";
+  const email = getUserEmail(user);
+  const avatarUri = getUserAvatar(user) || DEFAULT_AVATAR;
 
   const [showDeactivateModal, setShowDeactivateModal] = React.useState(false);
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
@@ -80,10 +90,10 @@ export const SettingsScreen = ({ navigation }: Props) => {
           onPress={() => navigation.navigate("ProfileDetails")}
           activeOpacity={0.8}
         >
-          <Image source={{ uri: DEFAULT_AVATAR }} style={styles.userAvatar} />
+          <Image source={{ uri: avatarUri }} style={styles.userAvatar} />
           <View style={styles.userInfo}>
-            <Text style={styles.userName}>Sapphire Simi</Text>
-            <Text style={styles.userEmail}>sapphiresimi101@gmail.com</Text>
+            <Text style={styles.userName}>{fullName}</Text>
+            {email ? <Text style={styles.userEmail}>{email}</Text> : null}
           </View>
         </TouchableOpacity>
 

@@ -19,6 +19,13 @@ import {
   AppTextInput,
   CheckIcon,
 } from "../../../components/ui";
+import {
+  useAddVehicleMutation,
+  useVehicleBrandsQuery,
+  useVehicleColorsQuery,
+  useVehicleModelsQuery,
+  useVehiclesQuery,
+} from "../../../hooks/useVehicles";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
 
@@ -68,13 +75,11 @@ export const VehiclesScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
 
-  // Modals state
-  const [showAddEditModal, setShowAddEditModal] = useState(false);
-  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
-
-  const [selectedVehicleForAction, setSelectedVehicleForAction] = useState<Vehicle | null>(null);
-  const [showActionSheet, setShowActionSheet] = useState(false);
-  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
+  // Vehicle API queries & mutations
+  const { data: serverVehicles, isLoading: isLoadingVehicles } = useVehiclesQuery();
+  const { data: brandsData, isLoading: isLoadingBrands } = useVehicleBrandsQuery();
+  const addVehicleMutation = useAddVehicleMutation();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
   const [make, setMake] = useState("");
@@ -84,6 +89,77 @@ export const VehiclesScreen = ({ navigation }: Props) => {
   const [color, setColor] = useState("");
   const [seats, setSeats] = useState("");
   const [docName, setDocName] = useState<string | undefined>(undefined);
+  const [fileAsset, setFileAsset] = useState<{ uri: string; name?: string; type?: string } | undefined>(undefined);
+
+  // Find matching selected brand object to get brand_id for models query
+  const selectedBrandObj = React.useMemo(() => {
+    if (!make || !brandsData) return undefined;
+    return brandsData.find(
+      (b) => b.name?.toLowerCase() === make.toLowerCase() || String(b.id) === make
+    );
+  }, [make, brandsData]);
+
+  const selectedBrandId = selectedBrandObj?.id;
+
+  // Query models for the selected brand_id (e.g. GET /drivers/vehicles/models/?brand_id=1)
+  const { data: modelsData, isLoading: isLoadingModels } = useVehicleModelsQuery(
+    selectedBrandId ? { brand_id: selectedBrandId } : undefined
+  );
+
+  const { data: colorsData, isLoading: isLoadingColors } = useVehicleColorsQuery();
+
+  // Consolidate backend vehicles with local list
+  const vehiclesList = React.useMemo(() => {
+    if (serverVehicles && serverVehicles.length > 0) {
+      return serverVehicles.map((v: any) => ({
+        id: String(v.id),
+        make: typeof v.brand === "object" ? v.brand?.name : String(v.brand),
+        brand: typeof v.model === "object" ? v.model?.name : String(v.model),
+        year: String(v.year || ""),
+        plateNumber: v.plate_number || "",
+        color: typeof v.colour === "object" ? (v.colour?.color_name || v.colour?.name) : String(v.colour || "Black"),
+        seats: String(v.number_of_seats || "4"),
+        isDefault: Boolean(v.is_default),
+        docName: v.file ? String(v.file).split("/").pop() : undefined,
+      }));
+    }
+    return vehicles;
+  }, [serverVehicles, vehicles]);
+
+  // Dynamic Brand dropdown options
+  const brandOptions = React.useMemo(() => {
+    if (brandsData && brandsData.length > 0) {
+      return brandsData.map((b) => b.name);
+    }
+    return MAKES;
+  }, [brandsData]);
+
+  // Dynamic Model dropdown options based on brand_id
+  const modelOptions = React.useMemo(() => {
+    if (modelsData && modelsData.length > 0) {
+      return modelsData.map((m) => m.name);
+    }
+    if (make && BRANDS[make]) {
+      return BRANDS[make];
+    }
+    return [];
+  }, [modelsData, make]);
+
+  // Dynamic Color dropdown options from useVehicleColorsQuery
+  const colorOptions = React.useMemo(() => {
+    if (colorsData && colorsData.length > 0) {
+      return colorsData.map((c: any) => c.color_name || c.name);
+    }
+    return ["Black", "White", "Silver", "Grey", "Blue", "Red", "Gold", "Green"];
+  }, [colorsData]);
+
+  // Modals state
+  const [showAddEditModal, setShowAddEditModal] = useState(false);
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
+
+  const [selectedVehicleForAction, setSelectedVehicleForAction] = useState<Vehicle | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showDeleteSheet, setShowDeleteSheet] = useState(false);
 
   const handlePickDocument = async () => {
     try {
@@ -94,6 +170,11 @@ export const VehiclesScreen = ({ navigation }: Props) => {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const pickedFile = result.assets[0];
         setDocName(pickedFile.name || "vehicle_docs.pdf");
+        setFileAsset({
+          uri: pickedFile.uri,
+          name: pickedFile.name || "vehicle_docs.pdf",
+          type: pickedFile.mimeType || "image/jpeg",
+        });
       }
     } catch (err) {
       console.log("Document picker error:", err);
@@ -109,6 +190,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
     setColor("");
     setSeats("");
     setDocName(undefined);
+    setFileAsset(undefined);
     setShowAddEditModal(true);
   };
 
@@ -121,45 +203,83 @@ export const VehiclesScreen = ({ navigation }: Props) => {
     setColor(v.color);
     setSeats(v.seats);
     setDocName(v.docName);
+    setFileAsset(undefined);
     setShowActionSheet(false);
     setShowAddEditModal(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!make || !brand || !plateNumber) return;
+
+    // Resolve brand ID from selection name (or fallback to make)
+    const brandObj = brandsData?.find(
+      (b) => b.name?.toLowerCase() === make.toLowerCase() || String(b.id) === make
+    );
+    const brandId = brandObj ? brandObj.id : make;
+
+    // Resolve model ID from selection name (or fallback to brand)
+    const modelObj = modelsData?.find(
+      (m) => m.name?.toLowerCase() === brand.toLowerCase() || String(m.id) === brand
+    );
+    const modelId = modelObj ? modelObj.id : brand;
+
+    // Resolve colour ID from selection name (or fallback to color)
+    const colorObj = colorsData?.find(
+      (c) => (c.color_name || c.name)?.toLowerCase() === color.toLowerCase() || String(c.id) === color
+    );
+    const colourId = colorObj ? colorObj.id : (color || 1);
 
     if (editingVehicleId) {
       setVehicles((prev) =>
         prev.map((item) =>
           item.id === editingVehicleId
             ? {
-              ...item,
-              make,
-              brand,
-              year,
-              plateNumber,
-              color,
-              seats,
-              docName,
-            }
+                ...item,
+                make,
+                brand,
+                year,
+                plateNumber,
+                color,
+                seats,
+                docName,
+              }
             : item
         )
       );
+      setShowAddEditModal(false);
     } else {
-      const newV: Vehicle = {
-        id: Date.now().toString(),
-        make,
-        brand,
-        year,
-        plateNumber,
-        color,
-        seats,
-        isDefault: vehicles.length === 0,
-        docName,
-      };
-      setVehicles((prev) => [...prev, newV]);
+      try {
+        setIsSubmitting(true);
+        await addVehicleMutation.mutateAsync({
+          brand: brandId,
+          model: modelId,
+          year: year || "2020",
+          colour: colourId,
+          plate_number: plateNumber,
+          number_of_seats: seats || "4",
+          is_default: vehiclesList.length === 0,
+          file: fileAsset,
+        });
+
+        const newV: Vehicle = {
+          id: Date.now().toString(),
+          make,
+          brand,
+          year,
+          plateNumber,
+          color,
+          seats,
+          isDefault: vehiclesList.length === 0,
+          docName,
+        };
+        setVehicles((prev) => [...prev, newV]);
+        setShowAddEditModal(false);
+      } catch (err: any) {
+        console.error("Error submitting vehicle enrollment:", err);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
-    setShowAddEditModal(false);
   };
 
   const handleSetDefault = () => {
@@ -205,7 +325,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
       </View>
 
       {/* Main Content */}
-      {vehicles.length === 0 ? (
+      {vehiclesList.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyTitle}>No Vehicle Added</Text>
           <Text style={styles.emptySubtitle}>
@@ -220,7 +340,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
         </View>
       ) : (
         <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-          {vehicles.map((v) => (
+          {vehiclesList.map((v) => (
             <TouchableOpacity
               key={v.id}
               style={styles.vehicleCard}
@@ -268,25 +388,25 @@ export const VehiclesScreen = ({ navigation }: Props) => {
       >
         <ScrollView contentContainerStyle={styles.modalBody} showsVerticalScrollIndicator={false}>
           <AppDropdown
-            label="Make *"
-            placeholder="Select Make (e.g Toyota)"
-            options={MAKES}
+            label="Brand *"
+            placeholder="Select Brand"
+            options={brandOptions}
             value={make}
             onSelect={(val) => {
               setMake(val);
               setBrand("");
             }}
-            enableSearch={false}
+            enableSearch={true}
           />
 
           <AppDropdown
-            label="Model / Brand *"
-            placeholder="Select Model (e.g Camry)"
-            options={availableBrands}
+            label="Model *"
+            placeholder={isLoadingModels ? "Loading models..." : "Select Model"}
+            options={modelOptions}
             value={brand}
             onSelect={(val) => setBrand(val)}
-            disabled={!make}
-            enableSearch={false}
+            disabled={!make || isLoadingModels}
+            enableSearch={true}
           />
 
           <AppDropdown
@@ -296,6 +416,15 @@ export const VehiclesScreen = ({ navigation }: Props) => {
             value={year}
             onSelect={(val) => setYear(val)}
             enableSearch={false}
+          />
+
+          <AppDropdown
+            label="Vehicle Color"
+            placeholder="Select Color"
+            options={colorsData?.map((c) => c.color_name || c.name) || []}
+            value={color}
+            onSelect={(val) => setColor(val)}
+            enableSearch={true}
           />
 
           {/* Plate Number Input with autoFocus */}
@@ -308,12 +437,6 @@ export const VehiclesScreen = ({ navigation }: Props) => {
             autoFocus={true}
           />
 
-          <AppTextInput
-            label="Vehicle Color"
-            placeholder="e.g Black"
-            value={color}
-            onChangeText={setColor}
-          />
 
           <AppTextInput
             label="Seats Count"
@@ -364,9 +487,9 @@ export const VehiclesScreen = ({ navigation }: Props) => {
           </TouchableOpacity>
 
           <AppButton
-            title={editingVehicleId ? "Save Changes" : "Add Vehicle"}
+            title={isSubmitting ? "Submitting..." : editingVehicleId ? "Save Changes" : "Add Vehicle"}
             onPress={handleSave}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isSubmitting}
             size="lg"
             style={{ marginTop: 24 }}
           />

@@ -12,6 +12,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CheckIcon } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
+import { useAuthStore } from "../../../state/authStore";
 import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "Preferences">;
@@ -72,8 +73,10 @@ const InteractiveSlider: React.FC<SliderProps> = ({
 
 export const PreferencesScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const user = useAuthStore((s) => s.user);
 
-  const [genderPref, setGenderPref] = useState<"everyone" | "female">("everyone");
+  const initialGenderPref = user?.gender?.toLowerCase() === "female" ? "female" : "everyone";
+  const [genderPref, setGenderPref] = useState<"everyone" | "female">(initialGenderPref);
   const [pickupRadius, setPickupRadius] = useState<number>(1.5);
   const [distanceThreshold, setDistanceThreshold] = useState<number>(2.0);
   const [deviationRadius, setDeviationRadius] = useState<number>(1.0);

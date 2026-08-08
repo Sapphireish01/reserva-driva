@@ -11,4 +11,12 @@ export const driversService = {
     // should never be written to AsyncStorage, logs, or app state longer
     // than the lifetime of this request.
     apiClient.post(`/drivers/${driverId}/ssn`, { ssn }),
+
+  uploadSsnProfile: (ssnNumber: string) => {
+    const formData = new FormData();
+    formData.append("ssn_number", ssnNumber);
+    return apiClient.put("/accounts/profile/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };

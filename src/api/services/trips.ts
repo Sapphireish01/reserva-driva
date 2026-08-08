@@ -48,6 +48,39 @@ export interface EarningsSummary {
   }>;
 }
 
+export interface SetOneOffAvailabilityPayload {
+  vehicle: number | string;
+  pickup_location: string;
+  destination: string;
+  trip_date: string;
+  departure_time: string;
+  available_seats: number;
+}
+
+export interface SetDailyAvailabilityPayload {
+  vehicle: number | string;
+  pickup_location: string;
+  destination: string;
+  trip_date?: string;
+  departure_time: string;
+  available_seats: number;
+  start_date: string;
+  end_date: string;
+  frequency: "daily";
+}
+
+export interface SetCustomAvailabilityPayload {
+  vehicle: number | string;
+  pickup_location: string;
+  destination: string;
+  departure_time: string;
+  start_date: string;
+  end_date: string;
+  frequency: "custom";
+  days_of_week: number[];
+  available_seats: number;
+}
+
 // In-memory initial state for demo / offline operation
 let mockTrips: Trip[] = [
   {
@@ -246,4 +279,56 @@ export const tripsService = {
       return mockEarnings;
     }
   },
+
+  setOneOffAvailability: async (payload: SetOneOffAvailabilityPayload) => {
+    const formData = new FormData();
+    formData.append("vehicle", String(payload.vehicle));
+    formData.append("pickup_location", payload.pickup_location);
+    formData.append("destination", payload.destination);
+    formData.append("trip_date", payload.trip_date);
+    formData.append("departure_time", payload.departure_time);
+    formData.append("available_seats", String(payload.available_seats));
+
+    return apiClient.post("/drivers/trips/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  setDailyAvailability: async (payload: SetDailyAvailabilityPayload) => {
+    const formData = new FormData();
+    formData.append("vehicle", String(payload.vehicle));
+    formData.append("pickup_location", payload.pickup_location);
+    formData.append("destination", payload.destination);
+    if (payload.trip_date) formData.append("trip_date", payload.trip_date);
+    formData.append("departure_time", payload.departure_time);
+    formData.append("available_seats", String(payload.available_seats));
+    formData.append("start_date", payload.start_date);
+    formData.append("end_date", payload.end_date);
+    formData.append("frequency", payload.frequency);
+
+    return apiClient.post("/drivers/trips/recurring/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  setCustomAvailability: async (payload: SetCustomAvailabilityPayload) => {
+    return apiClient.post("/drivers/trips/recurring/", payload);
+  },
+
+  getTrips: async (params?: { status?: string; trip_id?: number | string }) => {
+    return apiClient.get<Trip[]>("/drivers/trips/", { params });
+  },
+
+  getTripDetail: async (tripId: number | string) => {
+    return apiClient.get<Trip>("/drivers/trips/", { params: { trip_id: tripId } });
+  },
+
+  cancelTrip: async (tripId: number | string) => {
+    return apiClient.put("/drivers/trips/cancel/", null, { params: { trip_id: tripId } });
+  },
+
+  publishTrip: async (tripId: number | string) => {
+    return apiClient.put("/drivers/trips/publish/", null, { params: { trip_id: tripId } });
+  },
 };
+
