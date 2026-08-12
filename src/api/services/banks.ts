@@ -10,8 +10,10 @@ export interface Bank {
 export interface BankAccount {
   id?: number | string;
   bank: number | string | Bank;
+  bank_name?: string;
   account_number: string;
   account_name: string;
+  is_verified?: boolean;
   [key: string]: unknown;
 }
 
@@ -22,7 +24,7 @@ export interface BankAccountPayload {
 }
 
 export const banksService = {
-  getBanks: () => apiClient.get<Bank[]>("/drivers/banks/"),
+  getBanks: () => apiClient.get<Bank[] | { results?: Bank[]; data?: Bank[] }>("/drivers/banks/"),
 
   setBankAccount: (payload: BankAccountPayload) => {
     const formData = new FormData();
@@ -30,12 +32,12 @@ export const banksService = {
     formData.append("account_number", payload.account_number);
     formData.append("account_name", payload.account_name);
 
-    return apiClient.post<BankAccount>("/drivers/bank-account/", formData, {
+    return apiClient.post<BankAccount | { message?: string; data?: BankAccount }>("/drivers/bank-account/", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
 
-  getBankAccount: () => apiClient.get<BankAccount>("/drivers/bank-account/"),
+  getBankAccount: () => apiClient.get<BankAccount | { data?: BankAccount }>("/drivers/bank-account/"),
 
   editBankAccount: (payload: BankAccountPayload) => {
     const formData = new FormData();
@@ -43,7 +45,7 @@ export const banksService = {
     formData.append("account_number", payload.account_number);
     formData.append("account_name", payload.account_name);
 
-    return apiClient.put<BankAccount>("/drivers/bank-account/", formData, {
+    return apiClient.put<BankAccount | { message?: string; data?: BankAccount }>("/drivers/bank-account/", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },

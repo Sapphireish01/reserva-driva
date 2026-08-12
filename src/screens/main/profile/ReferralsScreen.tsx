@@ -11,7 +11,8 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CopyIconItem } from "../../../components/ProfileIcons";
-import { CheckIcon } from "../../../components/ui";
+import { AppLoader, CheckIcon } from "../../../components/ui";
+import { useReferralDetailsQuery } from "../../../hooks/useReferrals";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
 
@@ -19,11 +20,12 @@ type Props = NativeStackScreenProps<MainStackParamList, "Referrals">;
 
 export const ReferralsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
-  const referralCode = "DRF-VALERIE-24";
-
-  const [rewardPoints, setRewardPoints] = useState("10,000");
-  const [numReferrals, setNumReferrals] = useState("10");
+  const { data: referralData, isLoading } = useReferralDetailsQuery();
   const [copiedToast, setCopiedToast] = useState(false);
+
+  const rewardPoints = (referralData?.reward_points ?? 0).toLocaleString();
+  const numReferrals = String(referralData?.no_of_referrals ?? 0);
+  const referralCode = referralData?.referral_code || "RES-EP-83293";
 
   const handleCopyCode = () => {
     Clipboard.setString(referralCode);
@@ -46,79 +48,86 @@ export const ReferralsScreen = ({ navigation }: Props) => {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingBottom: Math.max(insets.bottom, spacing.lg) },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.mainContent}>
-          {/* Top Stats Cards */}
-          <View style={styles.statsRow}>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>Your Reward Points</Text>
-              <Text style={styles.statValue}>{rewardPoints}</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statLabel}>No. Of Referrals</Text>
-              <Text style={styles.statValue}>{numReferrals}</Text>
-            </View>
-          </View>
-
-          {/* Invite Friends & Earn Rewards */}
-          <View style={styles.sectionGroup}>
-            <Text style={styles.sectionHeader}>Invite friends and earn rewards</Text>
-            <Text style={styles.bannerText}>
-              Earn an extra ₦1,000 for every successful driver you refer. Invite qualified drivers today and start turning your network into extra income.
-            </Text>
-          </View>
-
-          {/* Referral Code Box */}
-          <View style={styles.sectionGroup}>
-            <Text style={styles.labelHeader}>Referral Code</Text>
-            <TouchableOpacity
-              style={styles.codeCard}
-              onPress={handleCopyCode}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.codeText}>{referralCode}</Text>
-              <CopyIconItem color="#868C98" size={20} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Toast Popup */}
-          {copiedToast && (
-            <View style={styles.toastCard}>
-              <CheckIcon size={16} style={{ marginRight: 6 }} />
-              <Text style={styles.toastText}>Referral code copied!</Text>
-            </View>
-          )}
-
-          {/* How It Works */}
-          <View style={styles.sectionGroup}>
-            <Text style={styles.howItWorksTitle}>How It Works</Text>
-            <Text style={styles.explainerSubtitle}>A simple three-step explainer:</Text>
-
-            <View style={styles.stepList}>
-              <Text style={styles.stepText}>1. Share your referral code.</Text>
-              <Text style={styles.stepText}>2. Your friend signs up and gets verified</Text>
-              <Text style={styles.stepText}>3. You both earn rewards.</Text>
-            </View>
-          </View>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <AppLoader size={36} />
         </View>
+      ) : (
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: Math.max(insets.bottom, spacing.lg) },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.mainContent}>
+            {/* Top Stats Cards */}
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>Your Reward Points</Text>
+                <Text style={styles.statValue}>{rewardPoints}</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>No. Of Referrals</Text>
+                <Text style={styles.statValue}>{numReferrals}</Text>
+              </View>
+            </View>
 
-        {/* Footer Terms Note at the bottom */}
-        <Text style={styles.footerNote}>
-          Rewards are credited after your friend's first completed trip. Terms apply.
-        </Text>
-      </ScrollView>
+            {/* Invite Friends & Earn Rewards */}
+            <View style={styles.sectionGroup}>
+              <Text style={styles.sectionHeader}>Invite friends and earn rewards</Text>
+              <Text style={styles.bannerText}>
+                Earn an extra ₦1,000 for every successful driver you refer. Invite qualified drivers today and start turning your network into extra income.
+              </Text>
+            </View>
+
+            {/* Referral Code Box */}
+            <View style={styles.sectionGroup}>
+              <Text style={styles.labelHeader}>Referral Code</Text>
+              <TouchableOpacity
+                style={styles.codeCard}
+                onPress={handleCopyCode}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.codeText}>{referralCode}</Text>
+                <CopyIconItem color="#868C98" size={20} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Toast Popup */}
+            {copiedToast && (
+              <View style={styles.toastCard}>
+                <CheckIcon size={16} style={{ marginRight: 6 }} />
+                <Text style={styles.toastText}>Referral code copied!</Text>
+              </View>
+            )}
+
+            {/* How It Works */}
+            <View style={styles.sectionGroup}>
+              <Text style={styles.howItWorksTitle}>How It Works</Text>
+              <Text style={styles.explainerSubtitle}>A simple three-step explainer:</Text>
+
+              <View style={styles.stepList}>
+                <Text style={styles.stepText}>1. Share your referral code.</Text>
+                <Text style={styles.stepText}>2. Your friend signs up and gets verified</Text>
+                <Text style={styles.stepText}>3. You both earn rewards.</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Footer Terms Note at the bottom */}
+          <Text style={styles.footerNote}>
+            Rewards are credited after your friend's first completed trip. Terms apply.
+          </Text>
+        </ScrollView>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFFFFF" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",

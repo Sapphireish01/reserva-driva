@@ -16,44 +16,74 @@ import {
   AppTextInput,
   CheckIcon,
 } from "../../../components/ui";
+import {
+  useContactSubjectsQuery,
+  useCreateSupportTicketMutation,
+} from "../../../hooks/useSupportTickets";
 import { MainStackParamList } from "../../../navigation/types";
-import { spacing } from "../../../theme/colors";
+import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "ContactUs">;
 
-const CATEGORIES = [
-  "Payment Issues",
-  "Account Issues",
-  "Security Concern",
-  "Other",
-  "Bug",
-];
-
 export const ContactUsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const contactSubjectsQuery = useContactSubjectsQuery();
+  const createTicketMutation = useCreateSupportTicketMutation();
 
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
+  const [attachments, setAttachments] = useState<{ uri: string; name?: string; type?: string }[]>([]);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  const categories = contactSubjectsQuery.data || [];
 
   const isFormValid =
     subject.trim().length > 0 &&
     category.trim().length > 0 &&
     description.trim().length > 0;
 
-  const handleSubmit = () => {
+  const isSubmitting = createTicketMutation.isPending;
+
+  const handleSubmit = async () => {
     if (!isFormValid || isSubmitting) return;
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    setApiError(null);
+    try {
+      const formattedCategory = category.trim().toUpperCase();
+      console.log("🌐 [API Call] Submitting support ticket:", {
+        category: formattedCategory,
+        subject,
+        description,
+        attachments,
+      });
+
+      await createTicketMutation.mutateAsync({
+        category: formattedCategory,
+        subject: subject.trim(),
+        description: description.trim(),
+        attachments: attachments.length > 0 ? attachments[0] : undefined,
+      });
+
       setIsSubmitted(true);
       setTimeout(() => {
         navigation.goBack();
       }, 1200);
-    }, 1200);
+    } catch (err: any) {
+      console.error("❌ [API Error] Failed to submit support ticket:", err?.response?.data || err?.message);
+      const backendData = err?.response?.data;
+      let msg = "Failed to submit request. Please try again.";
+      if (typeof backendData === "string") {
+        msg = backendData;
+      } else if (backendData && typeof backendData === "object") {
+        msg = backendData.detail || backendData.message || backendData.category?.[0] || backendData.description?.[0] || msg;
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      setApiError(msg);
+    }
   };
 
   return (
@@ -77,17 +107,23 @@ export const ContactUsScreen = ({ navigation }: Props) => {
           label="Subject *"
           placeholder="e.g Payment Issue"
           value={subject}
-          onChangeText={setSubject}
+          onChangeText={(val) => {
+            setSubject(val);
+            if (apiError) setApiError(null);
+          }}
           autoFocus={true}
         />
 
         {/* Category Field */}
         <AppDropdown
           label="Category *"
-          placeholder="e.g Payment Issue"
-          options={CATEGORIES}
+          placeholder={contactSubjectsQuery.isLoading ? "Loading categories..." : "Select Category"}
+          options={categories}
           value={category}
-          onSelect={(val) => setCategory(val)}
+          onSelect={(val) => {
+            setCategory(val);
+            if (apiError) setApiError(null);
+          }}
           enableSearch={false}
         />
 
@@ -96,15 +132,22 @@ export const ContactUsScreen = ({ navigation }: Props) => {
           label="Description *"
           placeholder="Describe your issue..."
           value={description}
-          onChangeText={setDescription}
+          onChangeText={(val) => {
+            setDescription(val);
+            if (apiError) setApiError(null);
+          }}
+          attachments={attachments}
+          onAttachmentsChange={setAttachments}
           maxLength={200}
         />
+
+        {apiError ? <Text style={styles.errorText}>{apiError}</Text> : null}
 
         {/* Submit Request Button */}
         <AppButton
           title={isSubmitted ? "Request Submitted!" : "Submit Request"}
           onPress={handleSubmit}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isSubmitting}
           loading={isSubmitting}
           variant={isSubmitted ? "secondary" : "primary"}
           size="lg"
@@ -145,5 +188,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.xl * 2,
+  },
+  errorText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: colors.error || "#EF4444",
+    marginTop: 4,
   },
 });

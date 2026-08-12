@@ -17,9 +17,11 @@ import {
   AppBottomSheet,
   AppCameraModal,
   AppFullScreenModal,
+  AppPhoneInput,
   AppTextInput,
   OTPForm
 } from "../../../components/ui";
+import { useCountryCodes } from "../../../hooks/useCountryCodes";
 import { MainStackParamList } from "../../../navigation/types";
 import {
   getUserAddress,
@@ -29,6 +31,7 @@ import {
   getUserPhone,
   useAuthStore,
 } from "../../../state/authStore";
+import { authService } from "../../../api/services/auth";
 import { colors } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "ProfileDetails">;
@@ -47,10 +50,20 @@ const GALLERY_PHOTOS = [
   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300",
 ];
 
+const getFlagEmoji = (countryCode: string) => {
+  if (!countryCode || countryCode.length !== 2) return "🌐";
+  const codePoints = countryCode
+    .toUpperCase()
+    .split("")
+    .map((char) => 127397 + char.charCodeAt(0));
+  return String.fromCodePoint(...codePoints);
+};
+
 export const ProfileDetailsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const setUser = useAuthStore((s) => s.setUser);
+  const { countries } = useCountryCodes();
 
   const initialName = getUserFullName(user) || "Driver Account";
   const initialEmail = getUserEmail(user);
@@ -64,6 +77,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
   const [email, setEmail] = useState(initialEmail);
   const [phone, setPhone] = useState(initialPhone);
   const [address, setAddress] = useState(initialAddress);
+  const [selectedCallingCode, setSelectedCallingCode] = useState(user?.profile?.dial_code || "+1");
 
   // Sync profile state whenever user changes in store
   React.useEffect(() => {
@@ -78,8 +92,17 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
       if (addr) setAddress(addr);
       const av = getUserAvatar(user);
       if (av) setProfileImage(av);
+      if (user.profile?.dial_code) {
+        setSelectedCallingCode(user.profile.dial_code);
+      }
     }
   }, [user]);
+
+  const userDialCode = user?.profile?.dial_code || selectedCallingCode || "+1";
+  const currentCountry = countries.find(
+    (c) => c.dialCode === userDialCode || c.dialCode === `+${userDialCode.replace("+", "")}`
+  ) || countries[0];
+  const currentFlag = currentCountry?.flag || getFlagEmoji(currentCountry?.code || "US");
 
   const updateGlobalUser = (updates: Partial<{ full_name: string; email: string; phone_number: string; address_line_1: string; profile_picture: string }>) => {
     if (!user) return;
@@ -92,7 +115,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
         ...(user.profile || { user: user.id, full_name: user.full_name, email: user.email }),
         ...(updates.full_name ? { full_name: updates.full_name } : {}),
         ...(updates.email ? { email: updates.email } : {}),
-        ...(updates.phone_number ? { phone_number: updates.phone_number } : {}),
+        ...(updates.phone_number ? { phone_number: updates.phone_number, dial_code: selectedCallingCode } : {}),
         ...(updates.address_line_1 !== undefined ? { address_line_1: updates.address_line_1 } : {}),
         ...(updates.profile_picture ? { profile_picture: updates.profile_picture } : {}),
       },
@@ -100,9 +123,23 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
     setUser(updatedUser);
   };
 
-  const handleUpdateAvatar = (uri: string) => {
+  const handleUpdateAvatar = async (uri: string) => {
     setProfileImage(uri);
     updateGlobalUser({ profile_picture: uri });
+    try {
+      const formData = new FormData();
+      formData.append("profile_picture", {
+        uri,
+        name: "profile_picture.jpg",
+        type: "image/jpeg",
+      } as any);
+      const res = await authService.updateProfile(formData);
+      if (res.data?.data || res.data) {
+        setUser(res.data.data || res.data);
+      }
+    } catch (err) {
+      console.warn("⚠️ Failed to update profile picture on server:", err);
+    }
   };
 
   // Modals & Sheets
@@ -129,39 +166,64 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
     setConfirmPassword("");
     if (field === "name") setTempValue(name);
     if (field === "email") setTempValue(email);
-    if (field === "phone") setTempValue(phone);
+    if (field === "phone") {
+      setTempValue(phone);
+      setSelectedCallingCode(user?.profile?.dial_code || "+1");
+    }
     if (field === "address") setTempValue(address);
   };
 
-  const handleSaveField = () => {
+  const handleSaveField = async () => {
     if (editingField === "name") {
       setName(tempValue);
       updateGlobalUser({ full_name: tempValue });
       setEditingField(null);
+      try {
+        const res = await authService.updateProfile({ full_name: tempValue });
+        if (res.data?.data || res.data) setUser(res.data.data || res.data);
+      } catch (err) {
+        console.warn("⚠️ Failed to update name on backend:", err);
+      }
     } else if (editingField === "address") {
       setAddress(tempValue);
       updateGlobalUser({ address_line_1: tempValue });
       setEditingField(null);
+      try {
+        const res = await authService.updateProfile({ address_line_1: tempValue });
+        if (res.data?.data || res.data) setUser(res.data.data || res.data);
+      } catch (err) {
+        console.warn("⚠️ Failed to update address on backend:", err);
+      }
     } else if (editingField === "email" || editingField === "phone" || editingField === "password") {
       setOtpStep(true);
     }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     setIsVerifying(true);
-    setTimeout(() => {
+    let payload: Record<string, string> = {};
+    if (editingField === "email") {
+      setEmail(tempValue);
+      updateGlobalUser({ email: tempValue });
+      payload = { email: tempValue };
+    } else if (editingField === "phone") {
+      setPhone(tempValue);
+      updateGlobalUser({ phone_number: tempValue });
+      payload = { phone_number: tempValue, dial_code: selectedCallingCode };
+    }
+
+    try {
+      if (Object.keys(payload).length > 0) {
+        const res = await authService.updateProfile(payload);
+        if (res.data?.data || res.data) setUser(res.data.data || res.data);
+      }
+    } catch (err) {
+      console.warn("⚠️ Failed to update profile details on backend:", err);
+    } finally {
       setIsVerifying(false);
-      if (editingField === "email") {
-        setEmail(tempValue);
-        updateGlobalUser({ email: tempValue });
-      }
-      if (editingField === "phone") {
-        setPhone(tempValue);
-        updateGlobalUser({ phone_number: tempValue });
-      }
       setEditingField(null);
       setOtpStep(false);
-    }, 1200);
+    }
   };
 
   const handleChooseFromGallery = async () => {
@@ -228,7 +290,7 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
           <Text style={styles.fieldLabel}>Phone Number</Text>
           <TouchableOpacity style={styles.fieldCard} onPress={() => openEditModal("phone")} activeOpacity={0.7}>
             <View style={styles.phoneValueRow}>
-              <Text style={styles.flagEmoji}>🇺🇸</Text>
+              <Text style={styles.flagEmoji}>{currentFlag}</Text>
               <Text style={styles.fieldValue}>{phone}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
@@ -372,6 +434,13 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
                 isPassword
               />
             </View>
+          ) : editingField === "phone" ? (
+            <AppPhoneInput
+              label="Phone Number"
+              value={tempValue}
+              onChangeText={setTempValue}
+              onCountryCodeChange={(dialCode) => setSelectedCallingCode(`+${dialCode}`)}
+            />
           ) : (
             <AppTextInput
               label={`Edit ${editingField}`}

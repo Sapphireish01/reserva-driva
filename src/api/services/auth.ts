@@ -33,6 +33,90 @@ export interface UserProfile {
   notify_via_sms?: boolean;
 }
 
+export interface UpdateProfilePayload {
+  full_name?: string;
+  email?: string;
+  phone_number?: string;
+  address_line_1?: string;
+  notify_in_app?: boolean;
+  notify_via_email?: boolean;
+  notify_via_sms?: boolean;
+  profile_picture?: string;
+  mfa_enabled?: boolean;
+  mfa_method?: string;
+  [key: string]: unknown;
+}
+
+export interface UpdateProfileResponse {
+  message?: string;
+  data?: UserData | { user?: UserData; profile?: UserProfile };
+  [key: string]: unknown;
+}
+
+export interface UpdateNotificationSettingsPayload {
+  notify_in_app?: boolean;
+  notify_via_email?: boolean;
+  notify_via_sms?: boolean;
+  [key: string]: unknown;
+}
+
+export interface UpdateNotificationSettingsResponse {
+  success?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
+export interface UserPreferencesPayload {
+  pickup_radius?: number | string;
+  distnace_threshold?: number | string;
+  distance_threshold?: number | string;
+  deviation_radius?: number | string;
+  gender_preferences?: string;
+  [key: string]: unknown;
+}
+
+export interface Setup2FAPayload {
+  user_pin: string;
+  confirm_pin: string;
+}
+
+export interface Setup2FAResponse {
+  success?: boolean | string;
+  message?: string;
+  detail?: string;
+  [key: string]: unknown;
+}
+
+export interface InitiatePinChangePayload {
+  current_pin: string;
+}
+
+export interface InitiatePinChangeResponse {
+  success?: boolean | string;
+  message?: string;
+  detail?: string;
+  [key: string]: unknown;
+}
+
+export interface ConfirmPinChangePayload {
+  user_pin: string;
+  confirm_pin: string;
+}
+
+export interface ConfirmPinChangeResponse {
+  success?: boolean | string;
+  message?: string;
+  detail?: string;
+  [key: string]: unknown;
+}
+
+export interface Manage2FAResponse {
+  success?: boolean | string;
+  message?: string;
+  detail?: string;
+  [key: string]: unknown;
+}
+
 export interface UserData {
   id: number;
   full_name: string;
@@ -80,11 +164,13 @@ export const authService = {
   requestOtp: (driverId: string, method: "sms" | "email") =>
     apiClient.post("/auth/otp/request", { driverId, method }),
 
-  verifyOtp: (driverId: string, code: string) =>
-    apiClient.post<{ verified: boolean; token?: string }>("/auth/otp/verify", {
-      driverId,
-      code,
-    }),
+  verifyOtp: (otp: string) => {
+    const formData = new FormData();
+    formData.append("otp", otp);
+    return apiClient.post<{ message?: string; detail?: string }>("/accounts/verify-otp/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 
   loginDriver: (payload: LoginPayload) => {
     const formData = new FormData();
@@ -102,5 +188,112 @@ export const authService = {
   getProfile: () => {
     return apiClient.get<UserData | { user?: UserData; profile?: UserProfile }>("/accounts/profile/");
   },
+
+  updateProfile: (payload: UpdateProfilePayload | FormData) => {
+    let body: FormData;
+    if (payload instanceof FormData) {
+      body = payload;
+    } else {
+      body = new FormData();
+      Object.entries(payload).forEach(([key, val]) => {
+        if (val !== undefined && val !== null) {
+          const strVal = typeof val === "boolean" ? (val ? "True" : "False") : String(val);
+          body.append(key, strVal);
+        }
+      });
+    }
+    return apiClient.put<UpdateProfileResponse>("/accounts/profile/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  getPreferences: () => {
+    return apiClient.get<UserPreferencesPayload | { data?: UserPreferencesPayload }>("/accounts/profile/preferences/");
+  },
+
+  updatePreferences: (payload: UserPreferencesPayload | FormData) => {
+    let body: FormData;
+    if (payload instanceof FormData) {
+      body = payload;
+    } else {
+      body = new FormData();
+      Object.entries(payload).forEach(([key, val]) => {
+        if (val !== undefined && val !== null) {
+          body.append(key, String(val));
+        }
+      });
+    }
+    return apiClient.put<{ message?: string; data?: UserPreferencesPayload }>(
+      "/accounts/profile/preferences/",
+      body,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+  },
+
+  updateNotificationSettings: (payload: UpdateNotificationSettingsPayload | FormData) => {
+    let body: FormData;
+    if (payload instanceof FormData) {
+      body = payload;
+    } else {
+      body = new FormData();
+      Object.entries(payload).forEach(([key, val]) => {
+        if (val !== undefined && val !== null) {
+          const strVal = typeof val === "boolean" ? (val ? "True" : "False") : String(val);
+          body.append(key, strVal);
+        }
+      });
+    }
+    return apiClient.put<UpdateNotificationSettingsResponse>(
+      "/accounts/profile/notifications/",
+      body,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+  },
+
+  manage2FAStatus: (enabled: boolean) => {
+    const body = new FormData();
+    body.append("mfa_enabled", enabled ? "True" : "False");
+    return apiClient.put<Manage2FAResponse>("/accounts/manage/2fa/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  setup2FA: (payload: Setup2FAPayload) => {
+    const body = new FormData();
+    body.append("user_pin", payload.user_pin);
+    body.append("confirm_pin", payload.confirm_pin);
+    return apiClient.post<Setup2FAResponse>("/accounts/2fa/setup/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  deactivate2FA: () => {
+    const body = new FormData();
+    return apiClient.post<Setup2FAResponse>("/accounts/2fa/deactivate/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  initiatePinChange: (payload: InitiatePinChangePayload) => {
+    const body = new FormData();
+    body.append("current_pin", payload.current_pin);
+    return apiClient.post<InitiatePinChangeResponse>("/accounts/2fa/initiate-pin-change/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  confirmPinChange: (payload: ConfirmPinChangePayload) => {
+    const body = new FormData();
+    body.append("user_pin", payload.user_pin);
+    body.append("confirm_pin", payload.confirm_pin);
+    return apiClient.post<ConfirmPinChangeResponse>("/accounts/2fa/confirm-pin-change/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
+
 

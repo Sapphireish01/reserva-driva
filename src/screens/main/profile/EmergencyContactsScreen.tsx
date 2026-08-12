@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   Clipboard,
   ScrollView,
@@ -15,30 +15,35 @@ import {
   AppBottomSheet,
   AppButton,
   AppFullScreenModal,
+  AppLoader,
+  AppPhoneInput,
+  AppPhoneInputRef,
   AppTextInput,
 } from "../../../components/ui";
+import { EmergencyContact } from "../../../api/services/emergency";
+import {
+  useCreateEmergencyContactMutation,
+  useDeleteEmergencyContactMutation,
+  useEmergencyContacts,
+  useUpdateEmergencyContactMutation,
+} from "../../../hooks/useEmergencyContacts";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "EmergencyContacts">;
 
-interface Contact {
-  id: string;
-  name: string;
-  phone: string;
-}
-
-const INITIAL_CONTACTS: Contact[] = [
-  { id: "1", name: "Prosper Edward", phone: "+23428495069" },
-  { id: "2", name: "Edward Prosper", phone: "+23428495069" },
-];
-
 export const EmergencyContactsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
-  const [contacts, setContacts] = useState<Contact[]>(INITIAL_CONTACTS);
+  const phoneInputRef = useRef<AppPhoneInputRef>(null);
+
+  // API Queries & Mutations
+  const { data: contacts = [], isLoading } = useEmergencyContacts();
+  const createContactMutation = useCreateEmergencyContactMutation();
+  const updateContactMutation = useUpdateEmergencyContactMutation();
+  const deleteContactMutation = useDeleteEmergencyContactMutation();
 
   // Active state modals
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
+  const [selectedContact, setSelectedContact] = useState<EmergencyContact | null>(null);
   const [showDetailsSheet, setShowDetailsSheet] = useState(false);
   const [showAddEditModal, setShowAddEditModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -47,9 +52,19 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
   // Form states
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>("1");
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Toast copied notification
   const [showCopiedToast, setShowCopiedToast] = useState(false);
+
+  const getFormattedPhone = (contact: EmergencyContact): string => {
+    if (contact.full_phone_number) return contact.full_phone_number;
+    if (contact.phone_code && contact.phone_number) {
+      return `${contact.phone_code}${contact.phone_number}`;
+    }
+    return contact.phone_number || "";
+  };
 
   const handleCopyPhone = (phone: string) => {
     Clipboard.setString(phone);
@@ -63,6 +78,7 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
     setIsEditing(false);
     setContactName("");
     setContactPhone("");
+    setFormError(null);
     setShowAddEditModal(true);
   };
 
@@ -70,39 +86,71 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
     if (!selectedContact) return;
     setIsEditing(true);
     setContactName(selectedContact.name);
-    setContactPhone(selectedContact.phone);
+    setContactPhone(selectedContact.phone_number || "");
+    setFormError(null);
     setShowDetailsSheet(false);
     setShowAddEditModal(true);
   };
 
-  const handleSaveContact = () => {
-    if (!contactName.trim() || !contactPhone.trim()) return;
-    if (isEditing && selectedContact) {
-      setContacts((prev) =>
-        prev.map((c) =>
-          c.id === selectedContact.id
-            ? { ...c, name: contactName.trim(), phone: contactPhone.trim() }
-            : c
-        )
-      );
-    } else {
-      const newContact: Contact = {
-        id: Date.now().toString(),
-        name: contactName.trim(),
-        phone: contactPhone.trim(),
-      };
-      setContacts((prev) => [...prev, newContact]);
+  const handleSaveContact = async () => {
+    if (!contactName.trim()) {
+      setFormError("Contact name is required");
+      return;
     }
-    setShowAddEditModal(false);
+    if (!contactPhone.trim()) {
+      setFormError("Phone number is required");
+      return;
+    }
+
+    setFormError(null);
+    const selectedCountryObj = phoneInputRef.current?.getSelectedCountry();
+    const countryId = selectedCountryObj?.id ?? selectedContact?.country ?? 1;
+
+    try {
+      if (isEditing && selectedContact) {
+        await updateContactMutation.mutateAsync({
+          id: selectedContact.id,
+          name: contactName.trim(),
+          country: countryId,
+          phone_number: contactPhone.trim(),
+        });
+      } else {
+        await createContactMutation.mutateAsync({
+          name: contactName.trim(),
+          country: countryId,
+          phone_number: contactPhone.trim(),
+        });
+      }
+      setShowAddEditModal(false);
+    } catch (err: any) {
+      console.error("❌ [API Error] Failed to save emergency contact:", err?.response?.data || err?.message);
+      const backendData = err?.response?.data;
+      let msg = "Failed to save contact. Please try again.";
+      if (typeof backendData === "string") {
+        msg = backendData;
+      } else if (backendData && typeof backendData === "object") {
+        msg = backendData.detail || backendData.message || backendData.name?.[0] || backendData.phone_number?.[0] || msg;
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      setFormError(msg);
+    }
   };
 
-  const handleDeleteContact = () => {
+  const handleDeleteContact = async () => {
     if (!selectedContact) return;
-    setContacts((prev) => prev.filter((c) => c.id !== selectedContact.id));
-    setShowDeleteModal(false);
-    setShowDetailsSheet(false);
-    setSelectedContact(null);
+    try {
+      await deleteContactMutation.mutateAsync(selectedContact.id);
+      setShowDeleteModal(false);
+      setShowDetailsSheet(false);
+      setSelectedContact(null);
+    } catch (err: any) {
+      console.error("❌ [API Error] Failed to delete emergency contact:", err?.response?.data || err?.message);
+    }
   };
+
+  const isSaving = createContactMutation.isPending || updateContactMutation.isPending;
+  const isDeleting = deleteContactMutation.isPending;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -128,34 +176,58 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {contacts.map((contact) => (
-          <TouchableOpacity
-            key={contact.id}
-            style={styles.contactCard}
-            onPress={() => {
-              setSelectedContact(contact);
-              setShowDetailsSheet(true);
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.contactName} numberOfLines={1}>
-              {contact.name}
-            </Text>
-            <View style={styles.phoneRow}>
-              <Text style={styles.contactPhone}>{contact.phone}</Text>
-              <TouchableOpacity
-                onPress={() => handleCopyPhone(contact.phone)}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <View style={{ marginLeft: 8 }}>
-                  <CopyIconItem color="#94A3B8" size={18} />
-                </View>
-              </TouchableOpacity>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <AppLoader size={36} />
+        </View>
+      ) : (
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {contacts.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="people-outline" size={48} color="#94A3B8" />
+              <Text style={styles.emptyTitle}>No Emergency Contacts</Text>
+              <Text style={styles.emptySubtitle}>
+                Tap the + button above to add a contact for your safety on the road.
+              </Text>
+              <AppButton
+                title="Add Emergency Contact"
+                onPress={openAddContact}
+                style={{ marginTop: 16 }}
+              />
             </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+          ) : (
+            contacts.map((contact) => {
+              const formattedPhone = getFormattedPhone(contact);
+              return (
+                <TouchableOpacity
+                  key={contact.id}
+                  style={styles.contactCard}
+                  onPress={() => {
+                    setSelectedContact(contact);
+                    setShowDetailsSheet(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.contactName} numberOfLines={1}>
+                    {contact.name}
+                  </Text>
+                  <View style={styles.phoneRow}>
+                    <Text style={styles.contactPhone}>{formattedPhone}</Text>
+                    <TouchableOpacity
+                      onPress={() => handleCopyPhone(formattedPhone)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    >
+                      <View style={{ marginLeft: 8 }}>
+                        <CopyIconItem color="#94A3B8" size={18} />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </ScrollView>
+      )}
 
       {/* Contact Details Bottom Sheet */}
       <AppBottomSheet
@@ -199,22 +271,31 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
             label="Contact Name *"
             placeholder="e.g Prosper Edward"
             value={contactName}
-            onChangeText={setContactName}
+            onChangeText={(val) => {
+              setContactName(val);
+              if (formError) setFormError(null);
+            }}
             autoCapitalize="words"
             autoFocus={true}
           />
 
-          <AppTextInput
+          <AppPhoneInput
+            ref={phoneInputRef}
             label="Phone Number *"
-            placeholder="(000) 000-0000"
             value={contactPhone}
-            onChangeText={setContactPhone}
-            keyboardType="phone-pad"
+            onChangeText={(val) => {
+              setContactPhone(val);
+              if (formError) setFormError(null);
+            }}
+            onCountryCodeChange={setSelectedCountryCode}
+            error={formError || undefined}
           />
 
           <AppButton
-            title="Save Contact"
+            title={isSaving ? "Saving..." : "Save Contact"}
             onPress={handleSaveContact}
+            loading={isSaving}
+            disabled={isSaving}
             size="lg"
             style={{ marginTop: 24 }}
           />
@@ -232,8 +313,10 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
         </Text>
         <View style={styles.deleteActionColumn}>
           <AppButton
-            title="Delete Contact"
+            title={isDeleting ? "Deleting..." : "Delete Contact"}
             onPress={handleDeleteContact}
+            loading={isDeleting}
+            disabled={isDeleting}
             variant="destructive"
             size="lg"
             style={{ borderRadius: 14 }}
@@ -241,6 +324,7 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
           <AppButton
             title="Cancel"
             onPress={() => setShowDeleteModal(false)}
+            disabled={isDeleting}
             size="lg"
             style={styles.cancelButton}
             textStyle={styles.cancelButtonText}
@@ -253,6 +337,7 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFFFFF" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -265,7 +350,7 @@ const styles = StyleSheet.create({
   backButton: { width: 40, height: 40, justifyContent: "center" },
   addButton: { width: 40, height: 40, justifyContent: "center", alignItems: "flex-end" },
   headerTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, flexGrow: 1 },
   contactCard: {
     backgroundColor: "#F6F8FA",
     borderRadius: 14,
@@ -327,4 +412,31 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   toastText: { fontFamily: "DM Sans Bold", fontSize: 13, color: "#FFFFFF" },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingTop: 60,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyTitle: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 18,
+    color: "#0F172A",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontFamily: "DM Sans",
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  errorText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: colors.error || "#EF4444",
+    marginTop: 4,
+  },
 });

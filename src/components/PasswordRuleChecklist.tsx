@@ -59,9 +59,9 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: 4,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: colors.border,
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   },
   pillText: {
     fontFamily: "DM Sans",
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: "400",
     color: colors.grey,
   },

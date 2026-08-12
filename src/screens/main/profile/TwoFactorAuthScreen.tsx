@@ -17,6 +17,7 @@ import {
   AppButton,
   AppFullScreenModal,
 } from "../../../components/ui";
+import { authService } from "../../../api/services/auth";
 import { MainStackParamList } from "../../../navigation/types";
 import { getUserMfaEnabled, useAuthStore } from "../../../state/authStore";
 import { colors, spacing } from "../../../theme/colors";
@@ -78,7 +79,7 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
     setUser(updated);
   };
 
-  // PIN Modal States
+  // PIN Setup Modal States
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinStep, setPinStep] = useState<"create" | "confirm">("create");
   const [pinCode, setPinCode] = useState("");
@@ -87,8 +88,19 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Turn Off Modal
+  // Turn Off Modal States
   const [showTurnOffModal, setShowTurnOffModal] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+
+  // Change PIN Modal States
+  const [showChangePinModal, setShowChangePinModal] = useState(false);
+  const [changePinStep, setChangePinStep] = useState<"current" | "new" | "confirm">("current");
+  const [currentPin, setCurrentPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmNewPin, setConfirmNewPin] = useState("");
+  const [changePinError, setChangePinError] = useState("");
+  const [isSubmittingChangePin, setIsSubmittingChangePin] = useState(false);
+  const [isSuccessChangePin, setIsSuccessChangePin] = useState(false);
 
   const handleToggle2FA = (val: boolean) => {
     if (val) {
@@ -103,7 +115,7 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
     }
   };
 
-  const handleContinuePin = () => {
+  const handleContinuePin = async () => {
     if (pinCode.length < 6) return;
 
     if (pinStep === "create") {
@@ -114,8 +126,17 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
     } else {
       if (pinCode === firstCode) {
         setIsSubmitting(true);
-        setTimeout(() => {
-          setIsSubmitting(false);
+        setPinError("");
+        try {
+          // 1. Setup 2FA PIN
+          await authService.setup2FA({
+            user_pin: firstCode,
+            confirm_pin: pinCode,
+          });
+
+          // 2. Manage 2FA status to enable
+          await authService.manage2FAStatus(true);
+
           setIsSuccess(true);
           setIs2FAEnabled(true);
           updateMfaState(true);
@@ -123,7 +144,18 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
             setIsSuccess(false);
             setShowPinModal(false);
           }, 1200);
-        }, 1200);
+        } catch (err: any) {
+          console.warn("⚠️ Failed to setup 2FA on backend:", err?.response?.data || err?.message);
+          const backendErr =
+            err?.response?.data?.message ||
+            err?.response?.data?.detail ||
+            err?.response?.data?.user_pin?.[0] ||
+            "Failed to set 2FA PIN. Please try again.";
+          setPinError(String(backendErr));
+          setPinCode("");
+        } finally {
+          setIsSubmitting(false);
+        }
       } else {
         setPinError("PINs do not match. Please try again.");
         setPinCode("");
@@ -131,10 +163,83 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
     }
   };
 
-  const confirmTurnOff = () => {
-    setIs2FAEnabled(false);
-    updateMfaState(false);
-    setShowTurnOffModal(false);
+  const confirmTurnOff = async () => {
+    if (isDeactivating) return;
+    setIsDeactivating(true);
+    try {
+      // 1. Deactivate 2FA
+      await authService.deactivate2FA();
+      // 2. Manage 2FA status to disable
+      await authService.manage2FAStatus(false);
+
+      setIs2FAEnabled(false);
+      updateMfaState(false);
+      setShowTurnOffModal(false);
+    } catch (err: any) {
+      console.warn("⚠️ Failed to deactivate 2FA on backend:", err?.response?.data || err?.message);
+    } finally {
+      setIsDeactivating(false);
+    }
+  };
+
+  const handleContinueChangePin = async () => {
+    if (changePinStep === "current") {
+      if (currentPin.length < 6) return;
+      setIsSubmittingChangePin(true);
+      setChangePinError("");
+      try {
+        const res = await authService.initiatePinChange({ current_pin: currentPin });
+        if (res.data?.success || res.data) {
+          setChangePinStep("new");
+          setChangePinError("");
+        }
+      } catch (err: any) {
+        console.warn("⚠️ Invalid current PIN:", err?.response?.data || err?.message);
+        const backendErr =
+          err?.response?.data?.message ||
+          err?.response?.data?.detail ||
+          err?.response?.data?.current_pin?.[0] ||
+          "Invalid current PIN. Please try again.";
+        setChangePinError(String(backendErr));
+        setCurrentPin("");
+      } finally {
+        setIsSubmittingChangePin(false);
+      }
+    } else if (changePinStep === "new") {
+      if (newPin.length < 6) return;
+      setChangePinStep("confirm");
+      setChangePinError("");
+    } else if (changePinStep === "confirm") {
+      if (confirmNewPin.length < 6) return;
+      if (confirmNewPin !== newPin) {
+        setChangePinError("PINs do not match. Please try again.");
+        setConfirmNewPin("");
+        return;
+      }
+      setIsSubmittingChangePin(true);
+      setChangePinError("");
+      try {
+        await authService.confirmPinChange({
+          user_pin: newPin,
+          confirm_pin: confirmNewPin,
+        });
+        setIsSuccessChangePin(true);
+        setTimeout(() => {
+          setIsSuccessChangePin(false);
+          setShowChangePinModal(false);
+        }, 1200);
+      } catch (err: any) {
+        console.warn("⚠️ Failed to change PIN:", err?.response?.data || err?.message);
+        const backendErr =
+          err?.response?.data?.message ||
+          err?.response?.data?.detail ||
+          "Failed to change PIN. Please try again.";
+        setChangePinError(String(backendErr));
+        setConfirmNewPin("");
+      } finally {
+        setIsSubmittingChangePin(false);
+      }
+    }
   };
 
   return (
@@ -166,6 +271,26 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
           <Text style={styles.toggleTitle}>Turn on</Text>
           <ToggleIconItem value={is2FAEnabled} onValueChange={handleToggle2FA} />
         </View>
+
+        {/* Change PIN Option (Visible when 2FA is active) */}
+        {is2FAEnabled && (
+          <TouchableOpacity
+            style={[styles.toggleCard, { marginTop: spacing.md }]}
+            onPress={() => {
+              setChangePinStep("current");
+              setCurrentPin("");
+              setNewPin("");
+              setConfirmNewPin("");
+              setChangePinError("");
+              setIsSuccessChangePin(false);
+              setShowChangePinModal(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.toggleTitle}>Change PIN</Text>
+            <Ionicons name="chevron-forward" size={20} color="#868C98" />
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
       {/* PIN Setup Full-Screen Modal */}
@@ -206,6 +331,62 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
         </View>
       </AppFullScreenModal>
 
+      {/* Change PIN Full-Screen Modal */}
+      <AppFullScreenModal
+        visible={showChangePinModal}
+        onClose={() => setShowChangePinModal(false)}
+        title="Change 2FA PIN"
+        leftActionText="Cancel"
+        height="85%"
+      >
+        <View style={styles.pinModalBody}>
+          <Text style={styles.pinInstructionTitle}>
+            {changePinStep === "current"
+              ? "Enter your current six digit PIN"
+              : changePinStep === "new"
+              ? "Create a new six digit PIN"
+              : "Confirm your new six digit PIN"}
+          </Text>
+
+          <View style={styles.otpWrapper}>
+            <OTPCodeInput
+              value={
+                changePinStep === "current"
+                  ? currentPin
+                  : changePinStep === "new"
+                  ? newPin
+                  : confirmNewPin
+              }
+              onChange={(val) => {
+                if (changePinStep === "current") setCurrentPin(val);
+                else if (changePinStep === "new") setNewPin(val);
+                else setConfirmNewPin(val);
+                if (changePinError) setChangePinError("");
+              }}
+            />
+          </View>
+
+          {changePinError ? <Text style={styles.errorText}>{changePinError}</Text> : null}
+
+          <AppButton
+            title="Continue"
+            onPress={handleContinueChangePin}
+            disabled={
+              (changePinStep === "current" && currentPin.length < 6) ||
+              (changePinStep === "new" && newPin.length < 6) ||
+              (changePinStep === "confirm" && confirmNewPin.length < 6) ||
+              isSubmittingChangePin ||
+              isSuccessChangePin
+            }
+            loading={isSubmittingChangePin}
+            success={isSuccessChangePin}
+            successTitle="PIN Changed"
+            size="lg"
+            style={{ marginTop: 36 }}
+          />
+        </View>
+      </AppFullScreenModal>
+
       {/* Turn Off 2FA Confirmation Sheet */}
       <AppBottomSheet
         visible={showTurnOffModal}
@@ -220,6 +401,8 @@ export const TwoFactorAuthScreen = ({ navigation }: Props) => {
             title="Turn Off"
             onPress={confirmTurnOff}
             variant="destructive"
+            loading={isDeactivating}
+            disabled={isDeactivating}
             size="lg"
             style={{ borderRadius: 14 }}
           />

@@ -21,6 +21,7 @@ import {
 } from "../../../components/ui";
 import {
   useAddVehicleMutation,
+  useAllVehicleModelsQuery,
   useVehicleBrandsQuery,
   useVehicleColorsQuery,
   useVehicleModelsQuery,
@@ -107,24 +108,65 @@ export const VehiclesScreen = ({ navigation }: Props) => {
   );
 
   const { data: colorsData, isLoading: isLoadingColors } = useVehicleColorsQuery();
+  const { data: allModelsData } = useAllVehicleModelsQuery();
 
-  // Consolidate backend vehicles with local list
+  // Consolidate backend vehicles with local list, resolving IDs to human-readable names
   const vehiclesList = React.useMemo(() => {
     if (serverVehicles && serverVehicles.length > 0) {
-      return serverVehicles.map((v: any) => ({
-        id: String(v.id),
-        make: typeof v.brand === "object" ? v.brand?.name : String(v.brand),
-        brand: typeof v.model === "object" ? v.model?.name : String(v.model),
-        year: String(v.year || ""),
-        plateNumber: v.plate_number || "",
-        color: typeof v.colour === "object" ? (v.colour?.color_name || v.colour?.name) : String(v.colour || "Black"),
-        seats: String(v.number_of_seats || "4"),
-        isDefault: Boolean(v.is_default),
-        docName: v.file ? String(v.file).split("/").pop() : undefined,
-      }));
+      return serverVehicles.map((v: any) => {
+        // 1. Resolve Brand / Make
+        let makeName = "";
+        if (v.brand && typeof v.brand === "object") {
+          makeName = v.brand.name || v.brand.brand_name || "";
+        } else if (v.brand !== undefined && v.brand !== null) {
+          const foundBrand = brandsData?.find(
+            (b) => String(b.id) === String(v.brand) || b.name?.toLowerCase() === String(v.brand).toLowerCase()
+          );
+          makeName = foundBrand ? foundBrand.name : String(v.brand);
+        }
+
+        // 2. Resolve Model (UI displays model name under 'brand' property)
+        let modelName = "";
+        const rawModel = v.model ?? v.vehicle_model;
+        if (rawModel && typeof rawModel === "object") {
+          modelName = rawModel.name || rawModel.model_name || "";
+        } else if (rawModel !== undefined && rawModel !== null) {
+          const foundModel =
+            modelsData?.find((m) => String(m.id) === String(rawModel)) ||
+            allModelsData?.find((m) => String(m.id) === String(rawModel) || m.name?.toLowerCase() === String(rawModel).toLowerCase());
+          modelName = foundModel ? foundModel.name : String(rawModel);
+        }
+
+        // 3. Resolve Colour / Color
+        let colorName = "";
+        const rawColor = v.colour ?? v.color;
+        if (rawColor && typeof rawColor === "object") {
+          colorName = rawColor.color_name || rawColor.name || "";
+        } else if (rawColor !== undefined && rawColor !== null) {
+          const foundColor = colorsData?.find(
+            (c) =>
+              String(c.id) === String(rawColor) ||
+              c.name?.toLowerCase() === String(rawColor).toLowerCase() ||
+              c.color_name?.toLowerCase() === String(rawColor).toLowerCase()
+          );
+          colorName = foundColor ? (foundColor.color_name || foundColor.name) : String(rawColor);
+        }
+
+        return {
+          id: String(v.id),
+          make: makeName,
+          brand: modelName,
+          year: String(v.year || ""),
+          plateNumber: v.plate_number || "",
+          color: colorName || "Black",
+          seats: String(v.number_of_seats || "4"),
+          isDefault: Boolean(v.is_default),
+          docName: v.file ? String(v.file).split("/").pop() : undefined,
+        };
+      });
     }
     return vehicles;
-  }, [serverVehicles, vehicles]);
+  }, [serverVehicles, vehicles, brandsData, modelsData, allModelsData, colorsData]);
 
   // Dynamic Brand dropdown options
   const brandOptions = React.useMemo(() => {
@@ -134,16 +176,29 @@ export const VehiclesScreen = ({ navigation }: Props) => {
     return MAKES;
   }, [brandsData]);
 
-  // Dynamic Model dropdown options based on brand_id
+  // Dynamic Model dropdown options based on brand_id & make
   const modelOptions = React.useMemo(() => {
     if (modelsData && modelsData.length > 0) {
       return modelsData.map((m) => m.name);
     }
+    if (selectedBrandId && allModelsData && allModelsData.length > 0) {
+      const filtered = allModelsData.filter(
+        (m) =>
+          String(m.brand_id) === String(selectedBrandId) ||
+          String((m.brand as any)?.id) === String(selectedBrandId)
+      );
+      if (filtered.length > 0) {
+        return filtered.map((m) => m.name);
+      }
+    }
     if (make && BRANDS[make]) {
       return BRANDS[make];
     }
+    if (allModelsData && allModelsData.length > 0) {
+      return allModelsData.map((m) => m.name);
+    }
     return [];
-  }, [modelsData, make]);
+  }, [modelsData, selectedBrandId, make, allModelsData]);
 
   // Dynamic Color dropdown options from useVehicleColorsQuery
   const colorOptions = React.useMemo(() => {
@@ -405,7 +460,7 @@ export const VehiclesScreen = ({ navigation }: Props) => {
             options={modelOptions}
             value={brand}
             onSelect={(val) => setBrand(val)}
-            disabled={!make || isLoadingModels}
+            disabled={!make || (isLoadingModels && modelOptions.length === 0)}
             enableSearch={true}
           />
 

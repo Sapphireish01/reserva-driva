@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { NotificationIconItem, ToggleIconItem } from "../../../components/ProfileIcons";
+import { authService } from "../../../api/services/auth";
 import { MainStackParamList } from "../../../navigation/types";
 import { getUserNotificationSettings, useAuthStore } from "../../../state/authStore";
 import { colors, spacing } from "../../../theme/colors";
@@ -29,20 +30,43 @@ export const NotificationsScreen = ({ navigation }: Props) => {
     }
   }, [user]);
 
-  const updateToggle = (key: "notify_in_app" | "notify_via_email" | "notify_via_sms", val: boolean) => {
+  const updateToggle = async (key: "notify_in_app" | "notify_via_email" | "notify_via_sms", val: boolean) => {
+    // Immediate optimistic state update
     if (key === "notify_in_app") setInApp(val);
     if (key === "notify_via_email") setEmail(val);
     if (key === "notify_via_sms") setSms(val);
 
+    const updatedInApp = key === "notify_in_app" ? val : inApp;
+    const updatedEmail = key === "notify_via_email" ? val : email;
+    const updatedSms = key === "notify_via_sms" ? val : sms;
+
     if (!user) return;
-    const updated = {
+
+    // Optimistically update Zustand store
+    const updatedLocalUser = {
       ...user,
       profile: {
         ...(user.profile || { user: user.id, full_name: user.full_name, email: user.email }),
         [key]: val,
       },
     };
-    setUser(updated);
+    await setUser(updatedLocalUser);
+
+    try {
+      // Call PUT /accounts/profile/notifications/ service
+      await authService.updateNotificationSettings({
+        notify_in_app: updatedInApp,
+        notify_via_email: updatedEmail,
+        notify_via_sms: updatedSms,
+      });
+    } catch (err) {
+      console.warn("⚠️ Failed to update notification preferences on server:", err);
+      // Revert state on network error
+      if (key === "notify_in_app") setInApp(!val);
+      if (key === "notify_via_email") setEmail(!val);
+      if (key === "notify_via_sms") setSms(!val);
+      await setUser(user);
+    }
   };
 
   return (

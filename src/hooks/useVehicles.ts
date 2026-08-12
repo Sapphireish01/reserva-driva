@@ -12,7 +12,7 @@ export const VEHICLE_KEYS = {
   all: ["vehicles"] as const,
   list: () => [...VEHICLE_KEYS.all, "list"] as const,
   brands: () => [...VEHICLE_KEYS.all, "brands"] as const,
-  models: (params?: { brand_id?: number | string; model_id?: number | string }) =>
+  models: (params?: { brand_id?: number | string; model_id?: number | string; all?: boolean }) =>
     [...VEHICLE_KEYS.all, "models", params] as const,
   colors: () => [...VEHICLE_KEYS.all, "colors"] as const,
 };
@@ -49,6 +49,16 @@ export const useVehicleModelsQuery = (params?: {
       return res.data;
     },
     enabled: Boolean(params?.brand_id || params?.model_id),
+  });
+};
+
+export const useAllVehicleModelsQuery = () => {
+  return useQuery<VehicleModel[]>({
+    queryKey: VEHICLE_KEYS.models({ all: true }),
+    queryFn: async () => {
+      const res = await vehiclesService.getModels();
+      return res.data;
+    },
   });
 };
 

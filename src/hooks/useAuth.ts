@@ -46,14 +46,9 @@ export const useRequestOtpMutation = () => {
 
 export const useVerifyOtpMutation = () => {
   return useMutation({
-    mutationFn: async ({
-      driverId,
-      code,
-    }: {
-      driverId: string;
-      code: string;
-    }) => {
-      const res = await authService.verifyOtp(driverId, code);
+    mutationFn: async (payload: string | { otp: string; driverId?: string; code?: string }) => {
+      const otpCode = typeof payload === "string" ? payload : payload.otp || payload.code || "";
+      const res = await authService.verifyOtp(otpCode);
       return res.data;
     },
   });

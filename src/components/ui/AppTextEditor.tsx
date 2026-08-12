@@ -1,7 +1,9 @@
 import { colors } from "@/theme/colors";
-import { Feather } from "@expo/vector-icons";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import React, { forwardRef, useState } from "react";
 import {
+  Image,
   StyleSheet,
   Text,
   TextInput,
@@ -11,6 +13,15 @@ import {
   ViewStyle,
 } from "react-native";
 import { inputTokens } from "../../theme/tokens";
+import { AppBottomSheet } from "./AppBottomSheet";
+import { AppButton } from "./AppButton";
+import { AppTextInput } from "./AppTextInput";
+
+export interface AttachmentFile {
+  uri: string;
+  name?: string;
+  type?: string;
+}
 
 export interface AppTextEditorProps extends TextInputProps {
   label?: string;
@@ -22,6 +33,8 @@ export interface AppTextEditorProps extends TextInputProps {
   containerStyle?: ViewStyle;
   onInsertLink?: () => void;
   onInsertImage?: () => void;
+  attachments?: AttachmentFile[];
+  onAttachmentsChange?: (attachments: AttachmentFile[]) => void;
 }
 
 export const AppTextEditor = forwardRef<TextInput, AppTextEditorProps>(
@@ -35,11 +48,14 @@ export const AppTextEditor = forwardRef<TextInput, AppTextEditorProps>(
       minHeight = 160,
       containerStyle,
       value = "",
+      onChangeText,
       onFocus,
       onBlur,
       autoFocus = false,
       onInsertLink,
       onInsertImage,
+      attachments = [],
+      onAttachmentsChange,
       style,
       ...props
     },
@@ -50,6 +66,19 @@ export const AppTextEditor = forwardRef<TextInput, AppTextEditorProps>(
     const [isItalic, setIsItalic] = useState(false);
     const [isUnderline, setIsUnderline] = useState(false);
     const [textAlign, setTextAlign] = useState<"left" | "center">("left");
+    const [isBulletList, setIsBulletList] = useState(false);
+
+    // Built-in Link Modal states
+    const [showLinkModal, setShowLinkModal] = useState(false);
+    const [linkTitle, setLinkTitle] = useState("");
+    const [linkUrl, setLinkUrl] = useState("");
+
+    // Local Attachments state
+    const [localAttachments, setLocalAttachments] = useState<AttachmentFile[]>(attachments);
+
+    React.useEffect(() => {
+      setLocalAttachments(attachments);
+    }, [attachments]);
 
     const handleFocus = (e: any) => {
       setIsFocused(true);
@@ -62,6 +91,79 @@ export const AppTextEditor = forwardRef<TextInput, AppTextEditorProps>(
     };
 
     const currentLength = typeof value === "string" ? value.length : 0;
+
+    const handleToggleBullet = () => {
+      setIsBulletList((prev) => !prev);
+      const strVal = typeof value === "string" ? value : "";
+      if (!strVal) {
+        onChangeText?.("• ");
+      } else if (strVal.endsWith("\n")) {
+        onChangeText?.(strVal + "• ");
+      } else {
+        onChangeText?.(strVal + "\n• ");
+      }
+    };
+
+    const handleLinkBtnPress = () => {
+      if (onInsertLink) {
+        onInsertLink();
+        return;
+      }
+      setLinkTitle("");
+      setLinkUrl("");
+      setShowLinkModal(true);
+    };
+
+    const handleConfirmInsertLink = () => {
+      if (!linkUrl.trim()) return;
+      const strVal = typeof value === "string" ? value : "";
+      const formattedLink = linkTitle.trim()
+        ? `[${linkTitle.trim()}](${linkUrl.trim()})`
+        : linkUrl.trim();
+      const spacer = strVal && !strVal.endsWith(" ") && !strVal.endsWith("\n") ? " " : "";
+      onChangeText?.(strVal + spacer + formattedLink);
+      setShowLinkModal(false);
+      setLinkTitle("");
+      setLinkUrl("");
+    };
+
+    const handleImageBtnPress = async () => {
+      if (onInsertImage) {
+        onInsertImage();
+        return;
+      }
+      try {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permissionResult.granted) {
+          alert("Permission to access media library is required to attach images.");
+          return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          quality: 0.8,
+        });
+
+        if (!result.canceled && result.assets && result.assets.length > 0) {
+          const asset = result.assets[0];
+          const newFile: AttachmentFile = {
+            uri: asset.uri,
+            name: asset.fileName || `attachment_${Date.now()}.jpg`,
+            type: asset.mimeType || "image/jpeg",
+          };
+          const updated = [...localAttachments, newFile];
+          setLocalAttachments(updated);
+          onAttachmentsChange?.(updated);
+        }
+      } catch (err) {
+        console.warn("⚠️ Failed to pick image attachment:", err);
+      }
+    };
+
+    const handleRemoveAttachment = (index: number) => {
+      const updated = localAttachments.filter((_, i) => i !== index);
+      setLocalAttachments(updated);
+      onAttachmentsChange?.(updated);
+    };
 
     return (
       <View style={[styles.container, containerStyle]}>
@@ -161,8 +263,16 @@ export const AppTextEditor = forwardRef<TextInput, AppTextEditorProps>(
             </TouchableOpacity>
 
             {/* Bullet List */}
-            <TouchableOpacity style={styles.toolBtn} activeOpacity={0.7}>
-              <Feather name="list" size={16} color="#868C98" />
+            <TouchableOpacity
+              style={[styles.toolBtn, isBulletList && styles.toolBtnActive]}
+              onPress={handleToggleBullet}
+              activeOpacity={0.7}
+            >
+              <Feather
+                name="list"
+                size={16}
+                color={isBulletList ? "#0F172A" : "#868C98"}
+              />
             </TouchableOpacity>
 
             <View style={styles.divider} />
@@ -170,16 +280,16 @@ export const AppTextEditor = forwardRef<TextInput, AppTextEditorProps>(
             {/* Insert Link */}
             <TouchableOpacity
               style={styles.toolBtn}
-              onPress={onInsertLink}
+              onPress={handleLinkBtnPress}
               activeOpacity={0.7}
             >
               <Feather name="link-2" size={16} color="#868C98" />
             </TouchableOpacity>
 
-            {/* Insert Image */}
+            {/* Insert Image / Media Attachment */}
             <TouchableOpacity
               style={styles.toolBtn}
-              onPress={onInsertImage}
+              onPress={handleImageBtnPress}
               activeOpacity={0.7}
             >
               <Feather name="image" size={16} color="#868C98" />
@@ -207,9 +317,31 @@ export const AppTextEditor = forwardRef<TextInput, AppTextEditorProps>(
             textAlignVertical="top"
             maxLength={maxLength}
             value={value}
+            onChangeText={onChangeText}
             autoFocus={autoFocus}
             {...props}
           />
+
+          {/* Attached Media Chips */}
+          {localAttachments.length > 0 && (
+            <View style={styles.attachmentsContainer}>
+              {localAttachments.map((file, idx) => (
+                <View key={file.uri + idx} style={styles.attachmentChip}>
+                  <Image source={{ uri: file.uri }} style={styles.attachmentThumbnail} />
+                  <Text style={styles.attachmentName} numberOfLines={1}>
+                    {file.name || "Attachment"}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => handleRemoveAttachment(idx)}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Ionicons name="close-circle" size={18} color="#64748B" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Bottom Right Character Counter & Resize handle */}
           {showCharCount && (
@@ -227,6 +359,37 @@ export const AppTextEditor = forwardRef<TextInput, AppTextEditorProps>(
         ) : helperText ? (
           <Text style={styles.helperText}>{helperText}</Text>
         ) : null}
+
+        {/* Built-in Link Insertion Bottom Sheet */}
+        <AppBottomSheet
+          visible={showLinkModal}
+          onClose={() => setShowLinkModal(false)}
+          title="Insert Link"
+        >
+          <View style={styles.linkModalContent}>
+            <AppTextInput
+              label="Link Title / Text (Optional)"
+              placeholder="e.g. Booking Portal"
+              value={linkTitle}
+              onChangeText={setLinkTitle}
+            />
+            <AppTextInput
+              label="URL *"
+              placeholder="https://example.com"
+              value={linkUrl}
+              onChangeText={setLinkUrl}
+              keyboardType="url"
+              autoCapitalize="none"
+            />
+            <AppButton
+              title="Insert Link"
+              onPress={handleConfirmInsertLink}
+              disabled={!linkUrl.trim()}
+              size="md"
+              style={{ marginTop: 12 }}
+            />
+          </View>
+        </AppBottomSheet>
       </View>
     );
   }
@@ -254,9 +417,7 @@ const styles = StyleSheet.create({
     padding: 12,
     justifyContent: "space-between",
   },
-  focusedCard: {
-    // borderColor: inputTokens.focusedBorderColor,
-  },
+  focusedCard: {},
   errorCard: {
     borderColor: inputTokens.errorBorderColor,
   },
@@ -306,6 +467,35 @@ const styles = StyleSheet.create({
     paddingTop: 2,
     paddingBottom: 2,
   },
+  attachmentsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 10,
+    marginBottom: 4,
+  },
+  attachmentChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F1F5F9",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    maxWidth: "100%",
+    gap: 6,
+  },
+  attachmentThumbnail: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    backgroundColor: "#E2E8F0",
+  },
+  attachmentName: {
+    fontFamily: "DM Sans",
+    fontSize: 12,
+    color: "#334155",
+    maxWidth: 140,
+  },
   footerRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -336,5 +526,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#64748B",
     marginTop: 4,
+  },
+  linkModalContent: {
+    paddingVertical: 8,
+    gap: 8,
   },
 });

@@ -5,24 +5,24 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ToggleIconItem } from "../../../../components/ProfileIcons";
-import { CheckIcon } from "../../../../components/ui";
-import { colors, spacing } from "../../../../theme/colors";
+import { spacing } from "@/theme/colors";
 import { DatePickerModal } from "./DatePickerModal";
 import { TimePickerModal } from "./TimePickerModal";
+import { SeatsPickerSheet } from "./availability/SeatsPickerSheet";
+import { Step1RouteTimeForm } from "./availability/Step1RouteTimeForm";
+import { Step2RecurringForm } from "./availability/Step2RecurringForm";
+import { Step3SeatsPriceForm } from "./availability/Step3SeatsPriceForm";
+import { Step4ReviewSchedule } from "./availability/Step4ReviewSchedule";
 
 interface SetAvailabilityModalProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (tripData: any) => void;
 }
-
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thur", "Fri", "Sat", "Sun"];
 
 export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   visible,
@@ -31,10 +31,10 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
 
-  // Step 1 or Step 2
-  const [step, setStep] = useState<1 | 2>(1);
+  // Step state: 1 (Route/Time), 2 (Recurring), 3 (Seats/Price), 4 (Review Schedule)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Step 1 Form State
+  // Step 1 State
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [time, setTime] = useState("");
@@ -42,21 +42,29 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   const [rawDateObj, setRawDateObj] = useState<Date | null>(null);
   const [isRecurring, setIsRecurring] = useState(false);
 
-  // Step 2 Form State
+  // Step 2 State
   const [frequency, setFrequency] = useState<"Daily" | "Weekly" | "Monthly" | "">("");
   const [isCustomRange, setIsCustomRange] = useState(false);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [endDateFormatted, setEndDateFormatted] = useState("");
 
-  // Modals Visibility
+  // Step 3 State
+  const [availableSeats, setAvailableSeats] = useState("");
+  const [price, setPrice] = useState("");
+  const [showSeatsPicker, setShowSeatsPicker] = useState(false);
+
+  // Step 4 Publish State
+  const [publishStatus, setPublishStatus] = useState<"idle" | "publishing" | "published">("idle");
+
+  // Picker Sub-Modals Visibility
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [datePickerTarget, setDatePickerTarget] = useState<"startDate" | "endDate">("startDate");
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // Validation state
+  // Validation
   const [dateValidationError, setDateValidationError] = useState<string | null>(null);
 
-  // Reset form state on close
+  // Reset all state on close
   const handleClose = () => {
     setStep(1);
     setPickup("");
@@ -69,6 +77,10 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
     setIsCustomRange(false);
     setSelectedDays([]);
     setEndDateFormatted("");
+    setAvailableSeats("");
+    setPrice("");
+    setShowSeatsPicker(false);
+    setPublishStatus("idle");
     setDateValidationError(null);
     onClose();
   };
@@ -105,34 +117,66 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   };
 
   const handleStep1Continue = () => {
-    if (!pickup.trim() || !destination.trim() || !time || !dateFormatted) {
-      return;
-    }
-    if (rawDateObj && !validateDateAdvance(rawDateObj)) {
-      return;
-    }
+    if (!pickup.trim() || !destination.trim() || !time || !dateFormatted) return;
+    if (rawDateObj && !validateDateAdvance(rawDateObj)) return;
 
     if (isRecurring) {
       setStep(2);
     } else {
-      handleFinalSubmit();
+      setStep(3);
     }
   };
 
-  const handleFinalSubmit = () => {
-    onSubmit({
-      pickupLocation: pickup,
-      destination,
-      departureTime: time,
-      date: dateFormatted,
-      isRecurring,
-      frequency: isRecurring ? frequency : undefined,
-      customDays: isRecurring && isCustomRange ? selectedDays : undefined,
-      endDate: isRecurring ? endDateFormatted : undefined,
-    });
-    handleClose();
+  const handleStep2Continue = () => {
+    if (!isStep2Valid) return;
+    setStep(3);
   };
 
+  const handleStep3Continue = () => {
+    if (!isStep3Valid) return;
+    setStep(4);
+  };
+
+  const handlePublish = () => {
+    if (publishStatus !== "idle") return;
+
+    setPublishStatus("publishing");
+
+    setTimeout(() => {
+      setPublishStatus("published");
+
+      setTimeout(() => {
+        const cleanPrice = price.replace(/[^0-9.]/g, "");
+
+        onSubmit({
+          pickupLocation: pickup,
+          destination,
+          departureTime: time,
+          date: dateFormatted,
+          isRecurring,
+          frequency: getFormattedFrequency(),
+          customDays: isRecurring && isCustomRange ? selectedDays : undefined,
+          endDate: isRecurring ? endDateFormatted : undefined,
+          availableSeats: parseInt(availableSeats, 10) || 1,
+          pricePerSeat: parseFloat(cleanPrice) || 0,
+        });
+
+        handleClose();
+      }, 800);
+    }, 1000);
+  };
+
+  const handleBackPress = () => {
+    if (step === 4) {
+      setStep(3);
+    } else if (step === 3) {
+      setStep(isRecurring ? 2 : 1);
+    } else if (step === 2) {
+      setStep(1);
+    }
+  };
+
+  // Step Validation checks
   const isStep1Valid =
     pickup.trim().length > 0 &&
     destination.trim().length > 0 &&
@@ -142,8 +186,24 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
 
   const isStep2Valid =
     !isRecurring ||
-    (frequency.length > 0 || (isCustomRange && selectedDays.length > 0)) &&
-    endDateFormatted.length > 0;
+    ((frequency.length > 0 || (isCustomRange && selectedDays.length > 0)) &&
+      endDateFormatted.length > 0);
+
+  const cleanPriceVal = price.replace(/[^0-9.]/g, "");
+  const isStep3Valid =
+    availableSeats.trim().length > 0 &&
+    price.trim().length > 0 &&
+    !isNaN(Number(cleanPriceVal)) &&
+    Number(cleanPriceVal) >= 0;
+
+  const getFormattedFrequency = () => {
+    if (!isRecurring) return "Single Trip";
+    if (isCustomRange && selectedDays.length > 0) {
+      const daysStr = selectedDays.join(", ");
+      return frequency ? `${daysStr} • ${frequency}` : `${daysStr} • Weekly`;
+    }
+    return frequency || "Weekly";
+  };
 
   return (
     <>
@@ -154,12 +214,14 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.headerLeft}>
-                {step === 2 && (
-                  <TouchableOpacity onPress={() => setStep(1)} style={{ marginRight: 10 }}>
+                {step > 1 && (
+                  <TouchableOpacity onPress={handleBackPress} style={{ marginRight: 10 }}>
                     <Ionicons name="arrow-back" size={20} color="#0F172A" />
                   </TouchableOpacity>
                 )}
-                <Text style={styles.headerTitle}>Set Availability</Text>
+                <Text style={styles.headerTitle}>
+                  {step === 4 ? "Review Schedule" : "Set Availability"}
+                </Text>
               </View>
 
               <TouchableOpacity onPress={handleClose}>
@@ -168,192 +230,91 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
-              {step === 1 ? (
-                <>
-                  {/* Privacy Banner */}
-                  <View style={styles.privacyBanner}>
-                    <Text style={styles.privacyText}>
-                      For your privacy and safety, choose a nearby public location instead of your home or workplace.
-                    </Text>
-                  </View>
+              {step === 1 && (
+                <Step1RouteTimeForm
+                  pickup={pickup}
+                  onChangePickup={setPickup}
+                  destination={destination}
+                  onChangeDestination={setDestination}
+                  time={time}
+                  onOpenTimePicker={() => setShowTimePicker(true)}
+                  dateFormatted={dateFormatted}
+                  onOpenDatePicker={() => {
+                    setDatePickerTarget("startDate");
+                    setShowDatePicker(true);
+                  }}
+                  dateValidationError={dateValidationError}
+                  isRecurring={isRecurring}
+                  onChangeIsRecurring={setIsRecurring}
+                  isValid={isStep1Valid}
+                  onContinue={handleStep1Continue}
+                />
+              )}
 
-                  {/* Pickup Location */}
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Pickup Location</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="e.g Ajao Estate Police Station"
-                      placeholderTextColor="#94A3B8"
-                      value={pickup}
-                      onChangeText={setPickup}
-                    />
-                  </View>
+              {step === 2 && (
+                <Step2RecurringForm
+                  frequency={frequency}
+                  onSelectFrequency={(freq) => {
+                    setFrequency(freq);
+                    setIsCustomRange(false);
+                  }}
+                  isCustomRange={isCustomRange}
+                  onToggleCustomRange={(val) => {
+                    setIsCustomRange(val);
+                    if (val) setFrequency("");
+                  }}
+                  selectedDays={selectedDays}
+                  onToggleDaySelection={toggleDaySelection}
+                  endDateFormatted={endDateFormatted}
+                  onOpenEndDatePicker={() => {
+                    setDatePickerTarget("endDate");
+                    setShowDatePicker(true);
+                  }}
+                  isValid={isStep2Valid}
+                  onContinue={handleStep2Continue}
+                />
+              )}
 
-                  {/* Destination */}
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Destination</Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="e.g CMS Bus stop"
-                      placeholderTextColor="#94A3B8"
-                      value={destination}
-                      onChangeText={setDestination}
-                    />
-                  </View>
+              {step === 3 && (
+                <Step3SeatsPriceForm
+                  availableSeats={availableSeats}
+                  onOpenSeatsPicker={() => setShowSeatsPicker(true)}
+                  price={price}
+                  onChangePrice={setPrice}
+                  isValid={isStep3Valid}
+                  onContinue={handleStep3Continue}
+                />
+              )}
 
-                  {/* Time Field */}
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Time</Text>
-                    <TouchableOpacity
-                      style={styles.pickerField}
-                      onPress={() => setShowTimePicker(true)}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.pickerValue, !time && styles.placeholderText]}>
-                        {time || "e.g 9:53 AM"}
-                      </Text>
-                      <Ionicons name="time-outline" size={20} color="#64748B" />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Date Field */}
-                  <View style={styles.fieldGroup}>
-                    <Text style={styles.label}>Date</Text>
-                    <TouchableOpacity
-                      style={[
-                        styles.pickerField,
-                        Boolean(dateValidationError) && styles.pickerFieldError,
-                      ]}
-                      onPress={() => {
-                        setDatePickerTarget("startDate");
-                        setShowDatePicker(true);
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.pickerValue, !dateFormatted && styles.placeholderText]}>
-                        {dateFormatted || "e.g 30 Mar 2026"}
-                      </Text>
-                      <Ionicons name="calendar-outline" size={20} color="#64748B" />
-                    </TouchableOpacity>
-                    {Boolean(dateValidationError) && (
-                      <Text style={styles.errorText}>{dateValidationError}</Text>
-                    )}
-                  </View>
-
-                  {/* Recurring Trip Toggle */}
-                  <View style={styles.toggleRow}>
-                    <ToggleIconItem
-                      value={isRecurring}
-                      onValueChange={setIsRecurring}
-                    />
-                    <Text style={styles.toggleLabel}>Recurring Trip?</Text>
-                  </View>
-
-                  {/* Continue Button */}
-                  <TouchableOpacity
-                    style={[styles.continueBtn, !isStep1Valid && styles.continueBtnDisabled]}
-                    disabled={!isStep1Valid}
-                    onPress={handleStep1Continue}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.continueBtnText, !isStep1Valid && styles.continueBtnTextDisabled]}>
-                      Continue
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <>
-                  {/* Step 2: Recurring Options */}
-                  <Text style={[styles.label, { marginBottom: 12 }]}>Frequency</Text>
-
-                  {/* Frequency Options */}
-                  {["Daily", "Weekly", "Monthly"].map((freq) => {
-                    const isSelected = frequency === freq && !isCustomRange;
-                    return (
-                      <TouchableOpacity
-                        key={freq}
-                        style={[styles.freqCard, isSelected && styles.freqCardSelected]}
-                        onPress={() => {
-                          setFrequency(freq as any);
-                          setIsCustomRange(false);
-                        }}
-                        activeOpacity={0.8}
-                      >
-                        <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                          {isSelected && <CheckIcon size={14} color="#FFFFFF" />}
-                        </View>
-                        <Text style={styles.freqText}>{freq}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-
-                  {/* Custom Range Switch */}
-                  <View style={[styles.toggleRow, { marginTop: 12, justifyContent: "flex-end" }]}>
-                    <ToggleIconItem
-                      value={isCustomRange}
-                      onValueChange={(val) => {
-                        setIsCustomRange(val);
-                        if (val) setFrequency("");
-                      }}
-                    />
-                    <Text style={styles.toggleLabel}>Custom Range</Text>
-                  </View>
-
-                  {/* Custom Days Pills (when Custom Range ON) */}
-                  {isCustomRange && (
-                    <View style={styles.daysGrid}>
-                      {WEEKDAYS.map((day) => {
-                        const isSelected = selectedDays.includes(day);
-                        return (
-                          <TouchableOpacity
-                            key={day}
-                            style={[styles.dayPill, isSelected && styles.dayPillSelected]}
-                            onPress={() => toggleDaySelection(day)}
-                            activeOpacity={0.8}
-                          >
-                            <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                              {isSelected && <CheckIcon size={12} color="#FFFFFF" />}
-                            </View>
-                            <Text style={styles.dayPillText}>{day}</Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  )}
-
-                  {/* End Date */}
-                  <View style={[styles.fieldGroup, { marginTop: 16 }]}>
-                    <Text style={styles.label}>End Date</Text>
-                    <TouchableOpacity
-                      style={styles.pickerField}
-                      onPress={() => {
-                        setDatePickerTarget("endDate");
-                        setShowDatePicker(true);
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={[styles.pickerValue, !endDateFormatted && styles.placeholderText]}>
-                        {endDateFormatted || "30 Apr 2026"}
-                      </Text>
-                      <Ionicons name="calendar-outline" size={20} color="#64748B" />
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Submit Button */}
-                  <TouchableOpacity
-                    style={[styles.continueBtn, !isStep2Valid && styles.continueBtnDisabled]}
-                    disabled={!isStep2Valid}
-                    onPress={handleFinalSubmit}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={[styles.continueBtnText, !isStep2Valid && styles.continueBtnTextDisabled]}>
-                      Continue
-                    </Text>
-                  </TouchableOpacity>
-                </>
+              {step === 4 && (
+                <Step4ReviewSchedule
+                  price={price}
+                  pickup={pickup}
+                  destination={destination}
+                  time={time}
+                  dateFormatted={dateFormatted}
+                  frequency={getFormattedFrequency()}
+                  isRecurring={isRecurring}
+                  endDateFormatted={endDateFormatted}
+                  availableSeats={availableSeats}
+                  publishStatus={publishStatus}
+                  onPublish={handlePublish}
+                />
               )}
             </ScrollView>
           </View>
+
+          {/* Inline Seats Picker Overlay */}
+          <SeatsPickerSheet
+            visible={showSeatsPicker}
+            onClose={() => setShowSeatsPicker(false)}
+            selectedSeat={availableSeats}
+            onSelectSeat={(seatNum) => {
+              setAvailableSeats(seatNum);
+              setShowSeatsPicker(false);
+            }}
+            insetsBottom={insets.bottom}
+          />
         </View>
       </Modal>
 
@@ -410,161 +371,5 @@ const styles = StyleSheet.create({
     fontFamily: "DM Sans",
     fontSize: 15,
     color: "#64748B",
-  },
-  privacyBanner: {
-    backgroundColor: "#EFF6FF",
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 16,
-  },
-  privacyText: {
-    fontFamily: "DM Sans",
-    fontSize: 13,
-    color: "#193CB8",
-    lineHeight: 18,
-  },
-  fieldGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 12,
-    fontWeight: "500",
-    color: colors.dark,
-    marginBottom: 6,
-  },
-  textInput: {
-    // backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 14,
-    fontFamily: "DM Sans",
-    color: "#0F172A",
-  },
-  pickerField: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    // backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  pickerFieldError: {
-    borderColor: "#EF4444",
-    backgroundColor: "#FEF2F2",
-  },
-  pickerValue: {
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    color: "#0F172A",
-  },
-  placeholderText: {
-    color: "#94A3B8",
-  },
-  errorText: {
-    fontFamily: "DM Sans",
-    fontSize: 12,
-    color: "#EF4444",
-    marginTop: 4,
-  },
-  toggleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 20,
-  },
-  toggleLabel: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
-  continueBtn: {
-    backgroundColor: "#375DFB",
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  continueBtnDisabled: {
-    backgroundColor: "#F1F5F9",
-  },
-  continueBtnText: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#FFFFFF",
-  },
-  continueBtnTextDisabled: {
-    color: "#94A3B8",
-  },
-  freqCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  freqCardSelected: {
-    borderColor: "#375DFB",
-    backgroundColor: "#EFF6FF",
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#CBD5E1",
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  checkboxSelected: {
-    backgroundColor: "#375DFB",
-    borderColor: "#375DFB",
-  },
-  freqText: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 14,
-    color: "#0F172A",
-    fontWeight: "500",
-  },
-  daysGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginVertical: 12,
-  },
-  dayPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "48%",
-    backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  },
-  dayPillSelected: {
-    borderColor: "#375DFB",
-    backgroundColor: "#EFF6FF",
-  },
-  dayPillText: {
-    fontFamily: "DM Sans",
-    fontSize: 14,
-    color: "#0F172A",
   },
 });

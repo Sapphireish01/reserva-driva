@@ -1,92 +1,144 @@
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EditIconItem } from "../../../components/ProfileIcons";
 import {
+  AppButton,
   AppDropdown,
   AppFullScreenModal,
-  AppTextInput
+  AppLoader,
+  AppTextInput,
 } from "../../../components/ui";
+import {
+  useBankAccountQuery,
+  useBanksQuery,
+  useSetBankAccountMutation,
+} from "../../../hooks/useBankAccounts";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "BankDetails">;
 
-const SUPPORTED_BANKS = [
-  "Zenith Bank",
-  "Access Bank",
-  "Polaris Bank",
-  "Opay",
-  "Guaranty Trust Bank (GTBank)",
-  "Kuda Microfinance Bank",
-  "First Bank of Nigeria",
-  "United Bank for Africa (UBA)",
-  "Stanbic IBTC Bank",
-  "Moniepoint MFB",
-  "Fidelity Bank",
-  "Union Bank",
-  "Sterling Bank",
-  "Wema Bank (ALAT)",
-  "Palmpay",
-  "Ecobank",
-  "FCMB",
-  "Heritage Bank",
-  "Keystone Bank",
-  "Providus Bank",
+const FALLBACK_BANKS = [
+  "Bank of America",
+  "JPMorgan Chase",
+  "Wells Fargo",
+  "Citibank",
+  "U.S. Bank",
+  "PNC Bank",
+  "Truist Bank",
+  "Capital One",
+  "TD Bank",
+  "Fifth Third Bank",
 ];
 
 export const BankDetailsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
 
-  const [bankName, setBankName] = useState("Zenith Bank");
-  const [accountNumber, setAccountNumber] = useState("*******0000");
-  const [accountName, setAccountName] = useState("Drifully");
+  // API Queries & Mutations
+  const { data: bankAccount, isLoading: isLoadingAccount } = useBankAccountQuery();
+  const { data: banksList = [], isLoading: isLoadingBanks } = useBanksQuery();
+  const setBankAccountMutation = useSetBankAccountMutation();
 
   // Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editBank, setEditBank] = useState("Zenith Bank");
+  const [editBankName, setEditBankName] = useState("");
   const [editAccNo, setEditAccNo] = useState("");
   const [resolvedAccountName, setResolvedAccountName] = useState("");
-  const [isResolving, setIsResolving] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Dynamic Bank Dropdown Options
+  const bankOptions = useMemo(() => {
+    if (banksList && banksList.length > 0) {
+      return banksList.map((b) => b.name);
+    }
+    return FALLBACK_BANKS;
+  }, [banksList]);
+
+  // Derived Display Values for active Bank Account
+  const displayBankName = useMemo(() => {
+    if (bankAccount?.bank_name) return bankAccount.bank_name;
+    if (typeof bankAccount?.bank === "object" && (bankAccount.bank as any)?.name) {
+      return (bankAccount.bank as any).name;
+    }
+    if (bankAccount?.bank && banksList.length > 0) {
+      const found = banksList.find((b) => String(b.id) === String(bankAccount.bank));
+      if (found) return found.name;
+    }
+    return bankAccount?.bank_name || "Bank of America";
+  }, [bankAccount, banksList]);
+
+  const displayAccountNumber = useMemo(() => {
+    if (!bankAccount?.account_number) return "*******0000";
+    const acc = bankAccount.account_number;
+    return acc.length >= 4 ? `*******${acc.slice(-4)}` : acc;
+  }, [bankAccount]);
+
+  const displayAccountName = bankAccount?.account_name || "Fade Bayo";
 
   const handleOpenEdit = () => {
-    setEditBank(bankName);
-    setEditAccNo("");
-    setResolvedAccountName("");
+    setEditBankName(displayBankName);
+    setEditAccNo(bankAccount?.account_number || "0305455090");
+    setResolvedAccountName(displayAccountName);
+    setApiError(null);
     setShowEditModal(true);
   };
 
   const handleAccNoChange = (text: string) => {
     setEditAccNo(text);
-    if (text.trim().length === 10) {
-      setIsResolving(true);
-      setTimeout(() => {
-        setIsResolving(false);
-        setResolvedAccountName("Onyekele Salamu");
-      }, 600);
-    } else {
-      setResolvedAccountName("");
+    if (apiError) setApiError(null);
+  };
+
+  const handleSave = async () => {
+    if (!editBankName || !editAccNo || !resolvedAccountName) return;
+
+    setApiError(null);
+
+    // Resolve Bank ID from selection
+    const selectedBankObj = banksList.find(
+      (b) => b.name.toLowerCase() === editBankName.toLowerCase()
+    );
+    const bankId = selectedBankObj ? selectedBankObj.id : 1;
+
+    try {
+      console.log("🌐 [API Action] Saving bank details:", {
+        bank: bankId,
+        account_number: editAccNo,
+        account_name: resolvedAccountName,
+      });
+
+      await setBankAccountMutation.mutateAsync({
+        bank: bankId,
+        account_number: editAccNo.trim(),
+        account_name: resolvedAccountName.trim(),
+      });
+
+      setShowEditModal(false);
+    } catch (err: any) {
+      console.error("❌ [API Error] Failed to save bank account:", err?.response?.data || err?.message);
+      const backendData = err?.response?.data;
+      let msg = "Failed to save bank details. Please try again.";
+      if (typeof backendData === "string") {
+        msg = backendData;
+      } else if (backendData && typeof backendData === "object") {
+        msg = backendData.detail || backendData.message || backendData.bank?.[0] || backendData.account_number?.[0] || msg;
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      setApiError(msg);
     }
   };
 
-  const handleSave = () => {
-    if (!editBank || !editAccNo || !resolvedAccountName) return;
-    setBankName(editBank);
-    const masked = editAccNo.length >= 4 ? `*******${editAccNo.slice(-4)}` : editAccNo;
-    setAccountNumber(masked);
-    setAccountName(resolvedAccountName);
-    setShowEditModal(false);
-  };
-
-  const isFormValid = editBank.length > 0 && editAccNo.length === 10 && resolvedAccountName.length > 0;
+  const isFormValid = editBankName.length > 0 && editAccNo.length >= 8 && resolvedAccountName.trim().length > 0;
+  const isSaving = setBankAccountMutation.isPending;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -109,26 +161,32 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Info Details */}
-        <View style={styles.infoContainer}>
-          <View style={styles.infoRow}>
-            <View style={styles.infoCol}>
-              <Text style={styles.infoLabel}>Bank Name</Text>
-              <Text style={styles.infoValue}>{bankName}</Text>
-            </View>
-            <View style={[styles.infoCol, { alignItems: "flex-end" }]}>
-              <Text style={styles.infoLabel}>Account Number</Text>
-              <Text style={styles.infoValue}>{accountNumber}</Text>
-            </View>
-          </View>
-
-          <View style={styles.infoCol}>
-            <Text style={styles.infoLabel}>Account Name</Text>
-            <Text style={styles.infoValue}>{accountName}</Text>
-          </View>
+      {isLoadingAccount ? (
+        <View style={styles.loadingContainer}>
+          <AppLoader size={36} />
         </View>
-      </ScrollView>
+      ) : (
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Info Details */}
+          <View style={styles.infoContainer}>
+            <View style={styles.infoRow}>
+              <View style={styles.infoCol}>
+                <Text style={styles.infoLabel}>Bank Name</Text>
+                <Text style={styles.infoValue}>{displayBankName}</Text>
+              </View>
+              <View style={[styles.infoCol, { alignItems: "flex-end" }]}>
+                <Text style={styles.infoLabel}>Account Number</Text>
+                <Text style={styles.infoValue}>{displayAccountNumber}</Text>
+              </View>
+            </View>
+
+            <View style={styles.infoCol}>
+              <Text style={styles.infoLabel}>Account Name</Text>
+              <Text style={styles.infoValue}>{displayAccountName}</Text>
+            </View>
+          </View>
+        </ScrollView>
+      )}
 
       {/* Edit Bank Details Full-Screen Modal */}
       <AppFullScreenModal
@@ -137,46 +195,56 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
         title="Edit Bank Details"
         rightActionText="Save"
         onRightAction={handleSave}
-        rightActionDisabled={!isFormValid}
+        rightActionDisabled={!isFormValid || isSaving}
       >
         <View style={styles.modalBody}>
           {/* Bank Dropdown with Search */}
           <AppDropdown
             label="Bank Name *"
-            placeholder="Select Bank"
-            options={SUPPORTED_BANKS}
-            value={editBank}
-            onSelect={(val) => setEditBank(val)}
+            placeholder={isLoadingBanks ? "Loading banks..." : "Select Bank"}
+            options={bankOptions}
+            value={editBankName}
+            onSelect={(val) => {
+              setEditBankName(val);
+              if (apiError) setApiError(null);
+            }}
             enableSearch={true}
             searchPlaceholder="Search banks..."
           />
 
-          {/* Account Number Input with autoFocus */}
+          {/* Account Number Input */}
           <AppTextInput
             label="Account Number *"
-            placeholder="e.g 0000000000"
+            placeholder="e.g 0305455090"
             value={editAccNo}
             onChangeText={handleAccNoChange}
             keyboardType="number-pad"
-            maxLength={10}
+            maxLength={16}
             autoFocus={true}
           />
 
-          {/* Resolved Account Name */}
-          {resolvedAccountName.length > 0 && (
-            <View style={styles.resolvedNameCard}>
-              {/* <Text style={styles.resolvedLabel}>Account Name</Text> */}
-              <Text style={styles.resolvedValue}>{resolvedAccountName}</Text>
-            </View>
-          )}
+          {/* Account Name Input */}
+          <AppTextInput
+            label="Account Name *"
+            placeholder="e.g Fade Bayo"
+            value={resolvedAccountName}
+            onChangeText={(val) => {
+              setResolvedAccountName(val);
+              if (apiError) setApiError(null);
+            }}
+            autoCapitalize="words"
+          />
 
-          {/* <AppButton
-            title="Save Details"
+          {apiError ? <Text style={styles.errorText}>{apiError}</Text> : null}
+
+          <AppButton
+            title={isSaving ? "Saving..." : "Save Details"}
             onPress={handleSave}
-            disabled={!isFormValid}
+            loading={isSaving}
+            disabled={!isFormValid || isSaving}
             size="lg"
             style={{ marginTop: 24 }}
-          /> */}
+          />
         </View>
       </AppFullScreenModal>
     </View>
@@ -185,6 +253,7 @@ export const BankDetailsScreen = ({ navigation }: Props) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFFFFF" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -207,9 +276,10 @@ const styles = StyleSheet.create({
   infoLabel: { fontFamily: "DM Sans", fontSize: 14, color: "#868C98" },
   infoValue: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A" },
   modalBody: { padding: 20 },
-  resolvedNameCard: {
+  errorText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: colors.error || "#EF4444",
     marginTop: 4,
   },
-  resolvedLabel: { fontFamily: "DM Sans", fontSize: 12, color: "#166534" },
-  resolvedValue: { fontFamily: "DM Sans Bold", fontSize: 15, fontWeight: "700", color: colors.dark },
 });

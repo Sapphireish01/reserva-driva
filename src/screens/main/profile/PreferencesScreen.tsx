@@ -10,8 +10,9 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CheckIcon } from "../../../components/ui";
+import { AppLoader, CheckIcon } from "../../../components/ui";
 import { MainStackParamList } from "../../../navigation/types";
+import { authService } from "../../../api/services/auth";
 import { useAuthStore } from "../../../state/authStore";
 import { colors, spacing } from "../../../theme/colors";
 
@@ -81,10 +82,61 @@ export const PreferencesScreen = ({ navigation }: Props) => {
   const [distanceThreshold, setDistanceThreshold] = useState<number>(2.0);
   const [deviationRadius, setDeviationRadius] = useState<number>(1.0);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 2000);
+  React.useEffect(() => {
+    let mounted = true;
+    const fetchPrefs = async () => {
+      try {
+        const res = await authService.getPreferences();
+        const data: any = res.data?.data || res.data;
+        if (mounted && data) {
+          if (data.pickup_radius !== undefined && data.pickup_radius !== null) {
+            setPickupRadius(Number(data.pickup_radius));
+          }
+          const dt = data.distnace_threshold ?? data.distance_threshold;
+          if (dt !== undefined && dt !== null) {
+            setDistanceThreshold(Number(dt));
+          }
+          if (data.deviation_radius !== undefined && data.deviation_radius !== null) {
+            setDeviationRadius(Number(data.deviation_radius));
+          }
+          if (data.gender_preferences) {
+            const g = String(data.gender_preferences).toUpperCase();
+            if (g === "F" || g === "FEMALE") setGenderPref("female");
+            else setGenderPref("everyone");
+          }
+        }
+      } catch (err) {
+        console.warn("⚠️ Failed to load user preferences from backend:", err);
+      }
+    };
+    fetchPrefs();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const genderVal = genderPref === "female" ? "F" : "M";
+      await authService.updatePreferences({
+        pickup_radius: pickupRadius,
+        distnace_threshold: distanceThreshold,
+        distance_threshold: distanceThreshold,
+        deviation_radius: deviationRadius,
+        gender_preferences: genderVal,
+      });
+
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 2500);
+    } catch (err: any) {
+      console.warn("⚠️ Failed to save user preferences on backend:", err?.response?.data || err?.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -188,7 +240,7 @@ export const PreferencesScreen = ({ navigation }: Props) => {
             />
             {/* Quick Chips */}
             <View style={styles.adjustRow}>
-              {[1.0, 1.5, 2.5, 3.5, 5.0].map((val) => (
+              {[1.0, 1.5, 2.0, 2.5, 3.5, 5.0].map((val) => (
                 <TouchableOpacity
                   key={val}
                   style={[
@@ -233,7 +285,7 @@ export const PreferencesScreen = ({ navigation }: Props) => {
             />
 
             <View style={styles.adjustRow}>
-              {[1.0, 2.0, 3.0, 4.0, 5.0].map((val) => (
+              {[1.0, 1.5, 2.0, 2.5, 3.5, 5.0].map((val) => (
                 <TouchableOpacity
                   key={val}
                   style={[
@@ -278,7 +330,7 @@ export const PreferencesScreen = ({ navigation }: Props) => {
             />
 
             <View style={styles.adjustRow}>
-              {[0.5, 1.0, 1.5, 2.0, 3.0].map((val) => (
+              {[1.0, 1.5, 2.0, 2.5, 3.5, 5.0].map((val) => (
                 <TouchableOpacity
                   key={val}
                   style={[
@@ -310,8 +362,17 @@ export const PreferencesScreen = ({ navigation }: Props) => {
         )}
 
         {/* Save Changes Button */}
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave} activeOpacity={0.85}>
-          <Text style={styles.saveButtonText}>Save Changes</Text>
+        <TouchableOpacity
+          style={[styles.saveButton, isSaving && { opacity: 0.7 }]}
+          onPress={handleSave}
+          activeOpacity={0.85}
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <AppLoader size={20} color="#375DFB" />
+          ) : (
+            <Text style={styles.saveButtonText}>Save Changes</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </View>

@@ -23,6 +23,7 @@ import {
   AppTextEditor,
   CheckIcon,
 } from "../../../components/ui";
+import { useCreateSupportTicketMutation } from "../../../hooks/useSupportTickets";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors } from "../../../theme/colors";
 
@@ -37,15 +38,16 @@ const UploadingStatusIcon = ({ size = 16 }: { size?: number }) => (
   </Svg>
 );
 
-const CATEGORIES = [
-  "Passenger",
-  "Account Issues",
+const SUPPORT_TICKET_CATEGORIES = [
+  "Payment Issue",
+  "Account Issue",
   "Security Concern",
   "Other",
   "Bug",
-];
+] as const;
 
 interface AttachmentFile {
+  uri?: string;
   name: string;
   sizeKb: number;
   progress: number;
@@ -54,20 +56,22 @@ interface AttachmentFile {
 
 export const ReportProblemScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const createTicketMutation = useCreateSupportTicketMutation();
 
   const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [attachment, setAttachment] = useState<AttachmentFile | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   // Modals state
   const [showAttachmentSheet, setShowAttachmentSheet] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
 
   // Submission state
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
 
   const isFormValid = category.trim().length > 0 && description.trim().length > 0;
+  const isSubmitting = createTicketMutation.isPending;
 
   // Spin animation for uploading status icon
   const spinAnim = useRef(new Animated.Value(0)).current;
@@ -87,13 +91,9 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
     }
   }, [attachment?.status]);
 
-  const spin = spinAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  });
-
-  const startUploadProgress = (filename: string, sizeKb: number) => {
+  const startUploadProgress = (uri: string, filename: string, sizeKb: number) => {
     setAttachment({
+      uri,
       name: filename,
       sizeKb,
       progress: 15,
@@ -139,26 +139,52 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
       const asset = result.assets[0];
       const filename = asset.fileName || "Issue.png";
       const sizeKb = asset.fileSize ? Math.round(asset.fileSize / 1024) : 120;
-      startUploadProgress(filename, sizeKb);
+      startUploadProgress(asset.uri, filename, sizeKb);
     }
   };
 
   const handlePhotoCaptured = (uri: string) => {
     setShowCamera(false);
     const filename = "ScannedDoc.png";
-    startUploadProgress(filename, 120);
+    startUploadProgress(uri, filename, 120);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!isFormValid || isSubmitting) return;
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+
+    setApiError(null);
+    try {
+      console.log("🌐 [API Call] Submitting support ticket:", {
+        category,
+        description,
+        attachment: attachment?.name,
+      });
+
+      await createTicketMutation.mutateAsync({
+        category: category.trim(),
+        description: description.trim(),
+        attachments: attachment?.uri
+          ? { uri: attachment.uri, name: attachment.name, type: "image/jpeg" }
+          : undefined,
+      });
+
       setIsSent(true);
       setTimeout(() => {
         navigation.goBack();
       }, 1200);
-    }, 1200);
+    } catch (err: any) {
+      console.error("❌ [API Error] Failed to submit support ticket:", err?.response?.data || err?.message);
+      const backendData = err?.response?.data;
+      let msg = "Failed to submit report. Please try again.";
+      if (typeof backendData === "string") {
+        msg = backendData;
+      } else if (backendData && typeof backendData === "object") {
+        msg = backendData.detail || backendData.message || backendData.category?.[0] || backendData.description?.[0] || msg;
+      } else if (err?.message) {
+        msg = err.message;
+      }
+      setApiError(msg);
+    }
   };
 
   return (
@@ -188,18 +214,24 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
           <AppDropdown
             label="Category *"
             placeholder="Select category e.g Payment Issue"
-            options={CATEGORIES}
+            options={SUPPORT_TICKET_CATEGORIES as unknown as string[]}
             value={category}
-            onSelect={(val) => setCategory(val)}
+            onSelect={(val) => {
+              setCategory(val);
+              if (apiError) setApiError(null);
+            }}
             enableSearch={false}
           />
 
-          {/* Description Text Editor - autoFocus on mount */}
+          {/* Description Text Editor */}
           <AppTextEditor
             label="Description *"
             placeholder="Type your message here..."
             value={description}
-            onChangeText={setDescription}
+            onChangeText={(val) => {
+              setDescription(val);
+              if (apiError) setApiError(null);
+            }}
             maxLength={200}
             autoFocus={true}
             onInsertImage={() => setShowAttachmentSheet(true)}
@@ -262,6 +294,8 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
               )}
             </View>
           )}
+
+          {apiError ? <Text style={styles.errorText}>{apiError}</Text> : null}
         </View>
       </ScrollView>
 
@@ -275,7 +309,7 @@ export const ReportProblemScreen = ({ navigation }: Props) => {
         <AppButton
           title={isSent ? "Sent" : "Submit Report"}
           onPress={handleSubmit}
-          disabled={!isFormValid}
+          disabled={!isFormValid || isSubmitting}
           loading={isSubmitting}
           variant={isSent ? "secondary" : "primary"}
           size="lg"
@@ -367,7 +401,6 @@ const styles = StyleSheet.create({
     fontFamily: "DM Sans Bold",
     fontSize: 14,
     fontWeight: "700",
-    // color: "#375DFB",
     marginLeft: 6,
   },
   attachmentCard: {
@@ -454,8 +487,12 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 20,
     paddingTop: 12,
-    // borderTopWidth: 1,
-    // borderTopColor: "#F1F5F9",
     backgroundColor: "#FFFFFF",
+  },
+  errorText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: colors.error || "#EF4444",
+    marginTop: 8,
   },
 });
