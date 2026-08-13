@@ -1,9 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
-import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { ToggleIconItem } from "@/components/ProfileIcons";
 import { CheckIcon } from "@/components/ui";
 import { colors } from "@/theme/colors";
+import { Ionicons } from "@expo/vector-icons";
+import React from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thur", "Fri", "Sat", "Sun"];
 
@@ -47,7 +47,7 @@ export const Step2RecurringForm: React.FC<Step2RecurringFormProps> = ({
             activeOpacity={0.8}
           >
             <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-              {isSelected && <CheckIcon size={14} color="#FFFFFF" />}
+              {isSelected && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
             </View>
             <Text style={styles.freqText}>{freq}</Text>
           </TouchableOpacity>
@@ -76,7 +76,7 @@ export const Step2RecurringForm: React.FC<Step2RecurringFormProps> = ({
                 activeOpacity={0.8}
               >
                 <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
-                  {isSelected && <CheckIcon size={12} color="#FFFFFF" />}
+                  {isSelected && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
                 </View>
                 <Text style={styles.dayPillText}>{day}</Text>
               </TouchableOpacity>
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   freqCard: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F6F8FA",
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -168,16 +168,16 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
   },
   freqCardSelected: {
-    borderColor: "#375DFB",
-    backgroundColor: "#EFF6FF",
+    borderColor: "#E2E8F0",
+    // backgroundColor: "#EFF6FF",
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 22,
+    height: 22,
     borderRadius: 6,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: "#CBD5E1",
-    backgroundColor: "#FFFFFF",
+    // backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
@@ -203,20 +203,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "48%",
     backgroundColor: "#F8FAFC",
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   dayPillSelected: {
-    borderColor: "#375DFB",
-    backgroundColor: "#EFF6FF",
+    backgroundColor: "#F8FAFC",
   },
   dayPillText: {
     fontFamily: "DM Sans",
-    fontSize: 14,
+    fontSize: 15,
     color: "#0F172A",
+    fontWeight: "500",
   },
   continueBtn: {
     backgroundColor: "#375DFB",

@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CopyIconItem } from "../../../components/ProfileIcons";
-import { AppLoader, CheckIcon } from "../../../components/ui";
+import { CheckIcon, ReferralsScreenSkeleton } from "../../../components/ui";
 import { useReferralDetailsQuery } from "../../../hooks/useReferrals";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing } from "../../../theme/colors";
@@ -49,8 +49,8 @@ export const ReferralsScreen = ({ navigation }: Props) => {
       </View>
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <AppLoader size={36} />
+        <View style={styles.content}>
+          <ReferralsScreenSkeleton />
         </View>
       ) : (
         <ScrollView

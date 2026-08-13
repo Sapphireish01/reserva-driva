@@ -410,7 +410,7 @@ interface ToggleIconProps {
 }
 
 export const ToggleIconItem: React.FC<ToggleIconProps> = ({ value, onValueChange }) => {
-  const trackColor = value ? "#0A0D14" : "#F6F8FA";
+  const trackColor = value ? "#375DFB" : "#F6F8FA";
   return (
     <TouchableOpacity
       activeOpacity={0.8}

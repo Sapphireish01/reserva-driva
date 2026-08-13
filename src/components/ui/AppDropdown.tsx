@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { inputTokens } from "../../theme/tokens";
 import { AppBottomSheet } from "./AppBottomSheet";
+import { AppLoader } from "./AppLoader";
 
 export interface DropdownOption {
   label: string;
@@ -28,6 +29,7 @@ export interface AppDropdownProps {
   enableSearch?: boolean;
   searchPlaceholder?: string;
   disabled?: boolean;
+  isLoading?: boolean;
   containerStyle?: ViewStyle;
 }
 
@@ -41,10 +43,13 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
   enableSearch = true,
   searchPlaceholder = "Search...",
   disabled = false,
+  isLoading = false,
   containerStyle,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const isDropdownDisabled = disabled || isLoading;
 
   // Normalize options array
   const normalizedOptions: DropdownOption[] = useMemo(() => {
@@ -69,7 +74,7 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
   }, [normalizedOptions, searchQuery, enableSearch]);
 
   const handleOpen = () => {
-    if (disabled) return;
+    if (isDropdownDisabled) return;
     setSearchQuery("");
     setModalVisible(true);
   };
@@ -116,22 +121,30 @@ export const AppDropdown: React.FC<AppDropdownProps> = ({
           styles.inputCard,
           modalVisible && styles.focusedCard,
           !!error && styles.errorCard,
-          disabled && styles.disabledCard,
+          isDropdownDisabled && styles.disabledCard,
         ]}
         onPress={handleOpen}
         activeOpacity={0.8}
-        disabled={disabled}
+        disabled={isDropdownDisabled}
       >
         <Text
           style={[
             styles.valueText,
-            !selectedOption && styles.placeholderText,
+            (!selectedOption || isLoading) && styles.placeholderText,
           ]}
           numberOfLines={1}
         >
-          {selectedOption ? selectedOption.label : placeholder}
+          {isLoading
+            ? "Loading options..."
+            : selectedOption
+            ? selectedOption.label
+            : placeholder}
         </Text>
-        <Ionicons name="chevron-down" size={18} color="#64748B" />
+        {isLoading ? (
+          <AppLoader size={16} color="#64748B" />
+        ) : (
+          <Ionicons name="chevron-down" size={18} color="#64748B" />
+        )}
       </TouchableOpacity>
 
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -216,8 +229,8 @@ const styles = StyleSheet.create({
   valueText: {
     flex: 1,
     fontFamily: "DM Sans",
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 14,
+    fontWeight: "400",
     color: colors.dark,
     marginRight: 8,
   },

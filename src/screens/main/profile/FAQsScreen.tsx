@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Modal,
   ScrollView,
@@ -11,58 +11,37 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { FAQ } from "../../../api/services/support";
+import { FAQCardSkeleton } from "../../../components/ui";
+import { useFAQsQuery } from "../../../hooks/useSupportTickets";
 import { MainStackParamList } from "../../../navigation/types";
 import { spacing } from "../../../theme/colors";
 
 type Props = NativeStackScreenProps<MainStackParamList, "FAQs">;
 
-interface FAQItem {
-  id: string;
-  question: string;
-  answer: string;
-}
-
-const FAQ_LIST: FAQItem[] = [
-  {
-    id: "1",
-    question: "How do I book this vehicle?",
-    answer:
-      "You can book this vehicle by selecting your pickup and return dates, reviewing the total price, and confirming your reservation through our secure checkout.",
-  },
-  {
-    id: "2",
-    question: "Do I need to select dates before booking?",
-    answer:
-      "Yes. You must select your pickup and return dates so we can check availability and calculate the total rental cost.",
-  },
-  {
-    id: "3",
-    question: "What happens after I book?",
-    answer:
-      "Once your booking is confirmed, you'll receive a confirmation with the pickup location, vehicle details, and rental instructions.",
-  },
-  {
-    id: "4",
-    question: "How long can i schedule a trip for?",
-    answer:
-      "You can schedule trips ranging from single day rentals up to multiple weeks, depending on host availability and reservation requirements.",
-  },
-  {
-    id: "5",
-    question: "How to initiate a refund?",
-    answer:
-      "To initiate a refund, navigate to your bookings tab, select the active trip, and choose 'Request Cancellation & Refund' according to our policy.",
-  },
-];
-
 export const FAQsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const { data: serverFAQs, isLoading } = useFAQsQuery();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFAQ, setSelectedFAQ] = useState<FAQItem | null>(null);
+  const [selectedFAQ, setSelectedFAQ] = useState<FAQ | null>(null);
 
-  const filteredFAQs = FAQ_LIST.filter((faq) =>
-    faq.question.toLowerCase().includes(searchQuery.toLowerCase().trim())
-  );
+  const faqsList: FAQ[] = useMemo(() => {
+    if (serverFAQs && Array.isArray(serverFAQs)) {
+      return serverFAQs.filter((faq) => faq.is_active !== false);
+    }
+    return [];
+  }, [serverFAQs]);
+
+  const filteredFAQs = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    if (!q) return faqsList;
+    return faqsList.filter(
+      (faq) =>
+        faq.question.toLowerCase().includes(q) ||
+        faq.answer.toLowerCase().includes(q) ||
+        faq.category.toLowerCase().includes(q)
+    );
+  }, [faqsList, searchQuery]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -90,20 +69,42 @@ export const FAQsScreen = ({ navigation }: Props) => {
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={18} color="#94A3B8" />
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* FAQ Accordion List */}
-        {filteredFAQs.map((faq) => (
-          <TouchableOpacity
-            key={faq.id}
-            style={styles.faqCard}
-            onPress={() => setSelectedFAQ(faq)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.faqQuestion}>{faq.question}</Text>
-            <Ionicons name="chevron-down" size={18} color="#94A3B8" />
-          </TouchableOpacity>
-        ))}
+        {/* Loading Skeletons */}
+        {isLoading ? (
+          <>
+            <FAQCardSkeleton />
+            <FAQCardSkeleton />
+            <FAQCardSkeleton />
+            <FAQCardSkeleton />
+            <FAQCardSkeleton />
+          </>
+        ) : filteredFAQs.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {searchQuery.trim() ? "No FAQs found matching your search." : "No FAQs available right now."}
+            </Text>
+          </View>
+        ) : (
+          /* FAQ Accordion List */
+          filteredFAQs.map((faq) => (
+            <TouchableOpacity
+              key={faq.id}
+              style={styles.faqCard}
+              onPress={() => setSelectedFAQ(faq)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.faqQuestion}>{faq.question}</Text>
+              <Ionicons name="chevron-down" size={18} color="#94A3B8" />
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
 
       {/* FAQ Answer Detail Bottom Sheet Modal */}
@@ -162,8 +163,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
     borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
+    paddingHorizontal: spacing.sm2,
+    paddingVertical: spacing.sm2,
     marginBottom: spacing.md,
     backgroundColor: "#F8FAFC",
   },
@@ -180,8 +181,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
     borderRadius: 10,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.sm2,
+    paddingVertical: spacing.sm2,
     marginBottom: spacing.sm,
     backgroundColor: "#FFFFFF",
   },
@@ -227,5 +228,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     color: "#475569",
+  },
+  emptyContainer: {
+    paddingVertical: 32,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontFamily: "DM Sans",
+    fontSize: 14,
+    color: "#94A3B8",
+    textAlign: "center",
   },
 });

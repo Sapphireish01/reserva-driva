@@ -11,8 +11,10 @@ All contributors and AI coding agents MUST check and adhere to the following rep
 1. **[AGENTS.md](file:///c:/Users/DELL/Desktop/Clients/Mobile/reserva-driver/AGENTS.md)**: Operating rules, priority order, scope control, and prohibited actions.
 2. **[API_STANDARDS.md](file:///c:/Users/DELL/Desktop/Clients/Mobile/reserva-driver/API_STANDARDS.md)**: Service layer architecture, single shared Axios client, request interceptors, cancellation, error mapping, and typing.
 3. **[UI_STANDARDS.md](file:///c:/Users/DELL/Desktop/Clients/Mobile/reserva-driver/UI_STANDARDS.md)**: Design tokens, layout standards, touch targets, loading/empty/error states, and typography.
-4. **[MOBILE_DEVELOPMENT_CHECKLIST.md](file:///c:/Users/DELL/Desktop/Clients/Mobile/reserva-driver/MOBILE_DEVELOPMENT_CHECKLIST.md)**: Engineering principles, performance optimization, list virtualization, security, and Definition of Done.
-5. **[README.md](file:///c:/Users/DELL/Desktop/Clients/Mobile/reserva-driver/README.md)**: Repository setup and startup instructions.
+4. **[UI_STANDARDS.md](file:///c:/Users/DELL/Desktop/Clients/Mobile/reserva-driver/UI_STANDARDS.md)**: Design tokens, layout standards, touch targets, loading/empty/error states, and typography.
+5. **[loading-principle-standard.md](file:///c:/Users/DELL/Desktop/Clients/Mobile/reserva-driver/loading-principle-standard.md)**: Loading principle standard.
+6. **[MOBILE_DEVELOPMENT_CHECKLIST.md](file:///c:/Users/DELL/Desktop/Clients/Mobile/reserva-driver/MOBILE_DEVELOPMENT_CHECKLIST.md)**: Engineering principles, performance optimization, list virtualization, security, and Definition of Done.
+7. **[README.md](file:///c:/Users/DELL/Desktop/Clients/Mobile/reserva-driver/README.md)**: Repository setup and startup instructions.
 
 ---
 
@@ -52,6 +54,7 @@ reserva-driver/
 ├── AGENTS.md                       # AI agent development operating rules
 ├── API_STANDARDS.md                # API integration & service layer standards
 ├── UI_STANDARDS.md                 # UI/UX engineering standards
+├── loading-principle-standard.md   # Loading principle standard
 ├── MOBILE_DEVELOPMENT_CHECKLIST.md# Engineering checklist & Definition of Done
 └── PROJECT_CONTEXT.md              # High-level project context
 ```

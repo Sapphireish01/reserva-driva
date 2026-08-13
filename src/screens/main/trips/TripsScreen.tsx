@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
@@ -8,6 +9,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  useCancelTripMutation,
+  useDriverTripsQuery,
+} from "../../../hooks/useDriverTrips";
 import { colors, spacing } from "../../../theme/colors";
 import { CancelTripModal } from "./components/CancelTripModal";
 import { SetAvailabilityModal } from "./components/SetAvailabilityModal";
@@ -19,6 +24,21 @@ type TabType = "Upcoming" | "Recurring" | "Completed" | "Cancelled";
 export const TripsScreen = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState<TabType>("Upcoming");
 
+  // Live API query for trips
+  const statusParam =
+    activeTab === "Upcoming"
+      ? "scheduled"
+      : activeTab === "Completed"
+      ? "completed"
+      : activeTab === "Cancelled"
+      ? "cancelled"
+      : undefined;
+
+  const { data: serverTrips, isLoading: isLoadingTrips, refetch } = useDriverTripsQuery(
+    statusParam ? { status: statusParam } : undefined
+  );
+  const cancelTripMutation = useCancelTripMutation();
+
   // Modals state
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any | null>(null);
@@ -26,82 +46,74 @@ export const TripsScreen = ({ navigation }: any) => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  // Sample trips matching the exact spec in design images
-  const [trips, setTrips] = useState<any[]>([
-    {
-      id: "trip-101",
-      origin: "Frebson Fitness Gym",
-      destination: "CMS Bus Stop Lagos Island",
-      seatsRemaining: 2,
-      totalSeats: 4,
-      departureTime: "10:30AM",
-      date: "Tomorrow",
-      status: "scheduled",
-      isRecurring: true,
-      frequency: "Mon, Wed, Fri • Weekly",
-      endDate: "27 Apr 2026",
-      estimatedEarnings: "42.15",
-      pricePerSeat: "12.15",
-      isPaused: false,
-    },
-    {
-      id: "trip-102",
-      origin: "Frebson Fitness Gym",
-      destination: "CMS Bus Stop Lagos Island",
-      seatsRemaining: 2,
-      totalSeats: 4,
-      departureTime: "10:30AM",
-      date: "30 Mar 2026",
-      status: "scheduled",
-      isRecurring: false,
-      estimatedEarnings: "25.00",
-      pricePerSeat: "12.50",
-      isPaused: false,
-    },
-  ]);
+  // Normalize server trips into UI display objects
+  const trips = React.useMemo(() => {
+    const rawList = Array.isArray(serverTrips)
+      ? serverTrips
+      : (serverTrips as any)?.results && Array.isArray((serverTrips as any).results)
+      ? (serverTrips as any).results
+      : [];
+
+    if (rawList.length === 0) return [];
+    return rawList.map((t: any) => {
+      const isRec = Boolean(
+        t.recurrence_frequency || (t.recurrence_days && t.recurrence_days.length > 0)
+      );
+
+      let formattedFreq = "";
+      if (t.recurrence_days && t.recurrence_days.length > 0) {
+        const shortDays = t.recurrence_days
+          .map((d: string) => (typeof d === "string" ? d.substring(0, 3) : String(d)))
+          .join(", ");
+        formattedFreq = `${shortDays} • ${t.recurrence_frequency || "Weekly"}`;
+      } else if (t.recurrence_frequency) {
+        formattedFreq = t.recurrence_frequency;
+      }
+
+      return {
+        id: String(t.id),
+        raw: t,
+        origin: t.pickup_location || t.origin || "Pickup Location",
+        destination: t.destination || "Destination",
+        seatsRemaining: t.seats_available ?? t.available_seats ?? t.seatsRemaining ?? 2,
+        totalSeats: t.available_seats ?? t.totalSeats ?? 4,
+        departureTime: t.departure_time_display || t.departure_time || t.departureTime || "06:00 AM",
+        date: t.trip_date || t.date || "Scheduled Date",
+        status: t.status || "scheduled",
+        isRecurring: isRec,
+        frequency: formattedFreq || "Daily",
+        pricePerSeat: String(t.price_per_seat || "0.00"),
+        isPaused: false,
+      };
+    });
+  }, [serverTrips]);
 
   const handleAddTrip = (newTripData: any) => {
-    const newTrip = {
-      id: `trip-${Date.now()}`,
-      origin: newTripData.pickupLocation,
-      destination: newTripData.destination,
-      seatsRemaining: 3,
-      totalSeats: 4,
-      departureTime: newTripData.departureTime,
-      date: newTripData.date,
-      status: "scheduled",
-      isRecurring: newTripData.isRecurring,
-      frequency: newTripData.frequency || "Daily",
-      endDate: newTripData.endDate,
-      estimatedEarnings: "36.45",
-      pricePerSeat: "12.15",
-      isPaused: false,
-    };
-    setTrips([newTrip, ...trips]);
+    refetch();
   };
 
   const handleStartTrip = (tripId: string) => {
-    setTrips((prev) =>
-      prev.map((t) => (t.id === tripId ? { ...t, status: "completed" } : t))
-    );
+    // start trip action logic
   };
 
   const handleTogglePause = (tripId: string) => {
-    setTrips((prev) =>
-      prev.map((t) => (t.id === tripId ? { ...t, isPaused: !t.isPaused } : t))
-    );
+    // pause trip action logic
   };
 
-  const handleConfirmCancel = (tripId: string) => {
-    setTrips((prev) =>
-      prev.map((t) => (t.id === tripId ? { ...t, status: "cancelled" } : t))
-    );
+  const handleConfirmCancel = async (tripId: string) => {
+    try {
+      await cancelTripMutation.mutateAsync(tripId);
+      setShowCancelModal(false);
+      setShowActionSheet(false);
+    } catch (err) {
+      console.error("Error cancelling trip:", err);
+    }
   };
 
   // Filter trips per tab
-  const filteredTrips = trips.filter((t) => {
-    if (activeTab === "Upcoming") return t.status === "scheduled" && !t.isRecurring;
-    if (activeTab === "Recurring") return t.isRecurring && t.status === "scheduled";
+  const filteredTrips = trips.filter((t: any) => {
+    if (activeTab === "Upcoming") return (t.status === "scheduled" || t.status === "ongoing") && !t.isRecurring;
+    if (activeTab === "Recurring") return t.isRecurring && (t.status === "scheduled" || t.status === "ongoing");
     if (activeTab === "Completed") return t.status === "completed";
     if (activeTab === "Cancelled") return t.status === "cancelled";
     return false;

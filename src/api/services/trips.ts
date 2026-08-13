@@ -1,16 +1,33 @@
 import { apiClient } from "../client";
 
 export interface Trip {
-  id: string;
-  origin: string;
-  destination: string;
-  departureTime: string;
-  availableSeats: number;
-  totalSeats: number;
-  pricePerSeat: number;
+  id: number | string;
+  driver?: number | string;
+  vehicle?: number | string;
+  pickup_location?: string;
+  destination?: string;
+  trip_date?: string;
+  departure_time?: string;
+  departure_time_display?: string;
+  scheduled_at?: string;
+  available_seats?: number;
+  seats_booked?: number;
+  seats_available?: number;
+  price_per_seat?: string | number;
+  recurrence_frequency?: string;
+  recurrence_days?: string[];
+  status: "scheduled" | "ongoing" | "in_progress" | "completed" | "cancelled";
+  created_at?: string;
+  updated_at?: string;
   notes?: string;
-  status: "scheduled" | "in_progress" | "completed" | "cancelled";
-  passengerCount: number;
+  // UI normalized fallback properties
+  origin?: string;
+  departureTime?: string;
+  availableSeats?: number;
+  totalSeats?: number;
+  pricePerSeat?: number;
+  passengerCount?: number;
+  isRecurring?: boolean;
 }
 
 export interface PassengerRequest {

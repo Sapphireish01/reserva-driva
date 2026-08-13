@@ -15,10 +15,10 @@ import {
   AppBottomSheet,
   AppButton,
   AppFullScreenModal,
-  AppLoader,
   AppPhoneInput,
   AppPhoneInputRef,
   AppTextInput,
+  EmergencyContactCardSkeleton,
 } from "../../../components/ui";
 import { EmergencyContact } from "../../../api/services/emergency";
 import {
@@ -177,9 +177,11 @@ export const EmergencyContactsScreen = ({ navigation }: Props) => {
       </View>
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <AppLoader size={36} />
-        </View>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <EmergencyContactCardSkeleton />
+          <EmergencyContactCardSkeleton />
+          <EmergencyContactCardSkeleton />
+        </ScrollView>
       ) : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {contacts.length === 0 ? (

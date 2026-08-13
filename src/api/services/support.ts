@@ -20,7 +20,22 @@ export interface ContactSubject {
   label: string;
 }
 
+export interface FAQ {
+  id: number;
+  category: string;
+  question: string;
+  answer: string;
+  is_active: boolean;
+  order: number;
+  created?: string;
+  last_updated?: string;
+}
+
 export const supportService = {
+  getFAQs: () => {
+    return apiClient.get<FAQ[]>("/accounts/faqs/");
+  },
+
   getContactSubjects: () => {
     return apiClient.get<ContactSubject[]>("/accounts/contact-subjects/");
   },

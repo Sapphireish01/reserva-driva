@@ -185,6 +185,16 @@ export const authService = {
     return apiClient.post<{ access: string }>("/accounts/token/refresh/", { refresh });
   },
 
+  logout: (refresh?: string) => {
+    const formData = new FormData();
+    if (refresh) {
+      formData.append("refresh", refresh);
+    }
+    return apiClient.post<{ message?: string }>("/accounts/logout/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
   getProfile: () => {
     return apiClient.get<UserData | { user?: UserData; profile?: UserProfile }>("/accounts/profile/");
   },

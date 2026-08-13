@@ -23,6 +23,17 @@ export const useContactSubjectsQuery = () => {
   });
 };
 
+export const useFAQsQuery = () => {
+  return useQuery({
+    queryKey: ["faqs"],
+    queryFn: async () => {
+      const res = await supportService.getFAQs();
+      return res.data;
+    },
+    staleTime: 1000 * 60 * 10, // 10 mins cache
+  });
+};
+
 export const useCreateSupportTicketMutation = () => {
   return useMutation({
     mutationFn: async (payload: CreateSupportTicketPayload) => {

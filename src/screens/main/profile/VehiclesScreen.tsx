@@ -18,6 +18,7 @@ import {
   AppFullScreenModal,
   AppTextInput,
   CheckIcon,
+  VehicleCardSkeleton,
 } from "../../../components/ui";
 import {
   useAddVehicleMutation,
@@ -380,7 +381,13 @@ export const VehiclesScreen = ({ navigation }: Props) => {
       </View>
 
       {/* Main Content */}
-      {vehiclesList.length === 0 ? (
+      {isLoadingVehicles ? (
+        <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+          <VehicleCardSkeleton />
+          <VehicleCardSkeleton />
+          <VehicleCardSkeleton />
+        </ScrollView>
+      ) : vehiclesList.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyTitle}>No Vehicle Added</Text>
           <Text style={styles.emptySubtitle}>

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+  ActivityIndicator,
   StyleSheet,
   Text,
   TextInput,
@@ -8,7 +9,15 @@ import {
   View,
 } from "react-native";
 import { ToggleIconItem } from "@/components/ProfileIcons";
+import { AppDropdown, DropdownOption } from "@/components/ui";
 import { colors } from "@/theme/colors";
+
+export interface FormattedVehicleOption {
+  id: string;
+  label: string;
+  plateNumber: string;
+  seats: string;
+}
 
 interface Step1RouteTimeFormProps {
   pickup: string;
@@ -20,6 +29,10 @@ interface Step1RouteTimeFormProps {
   dateFormatted: string;
   onOpenDatePicker: () => void;
   dateValidationError: string | null;
+  selectedVehicleId: string;
+  onChangeSelectedVehicle: (val: string) => void;
+  vehicleOptions: FormattedVehicleOption[];
+  isLoadingVehicles: boolean;
   isRecurring: boolean;
   onChangeIsRecurring: (val: boolean) => void;
   isValid: boolean;
@@ -36,11 +49,23 @@ export const Step1RouteTimeForm: React.FC<Step1RouteTimeFormProps> = ({
   dateFormatted,
   onOpenDatePicker,
   dateValidationError,
+  selectedVehicleId,
+  onChangeSelectedVehicle,
+  vehicleOptions,
+  isLoadingVehicles,
   isRecurring,
   onChangeIsRecurring,
   isValid,
   onContinue,
 }) => {
+  const isSingleVehicle = vehicleOptions.length === 1;
+  const singleVehicle = isSingleVehicle ? vehicleOptions[0] : null;
+
+  const dropdownOptions: DropdownOption[] = vehicleOptions.map((v) => ({
+    label: v.label,
+    value: v.id,
+  }));
+
   return (
     <>
       {/* Privacy Banner */}
@@ -48,6 +73,29 @@ export const Step1RouteTimeForm: React.FC<Step1RouteTimeFormProps> = ({
         <Text style={styles.privacyText}>
           For your privacy and safety, choose a nearby public location instead of your home or workplace.
         </Text>
+      </View>
+
+      {/* Vehicle Selection */}
+      <View style={styles.fieldGroup}>
+        <Text style={styles.label}>Vehicle</Text>
+        {isSingleVehicle && singleVehicle && !isLoadingVehicles ? (
+          <TextInput
+            style={[styles.textInput, styles.readOnlyInput]}
+            value={singleVehicle.label}
+            editable={false}
+            readOnly={true}
+          />
+        ) : (
+          <AppDropdown
+            placeholder="Select Vehicle"
+            options={dropdownOptions}
+            value={selectedVehicleId}
+            onSelect={(val) => onChangeSelectedVehicle(val)}
+            enableSearch={vehicleOptions.length > 5}
+            isLoading={isLoadingVehicles}
+            containerStyle={{ marginBottom: 0 }}
+          />
+        )}
       </View>
 
       {/* Pickup Location */}
@@ -166,6 +214,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: "DM Sans",
     color: "#0F172A",
+  },
+  readOnlyInput: {
+    backgroundColor: "#F8FAFC",
+    color: "#475569",
+    borderColor: "#E2E8F0",
   },
   pickerField: {
     flexDirection: "row",

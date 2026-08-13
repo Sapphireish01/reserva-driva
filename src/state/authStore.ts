@@ -255,8 +255,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     clearProactiveRefreshTimer();
-    await clearStoredTokens();
-    set({ isAuthenticated: false, user: null });
+    try {
+      const refreshToken = await getStoredRefreshToken();
+      if (refreshToken) {
+        console.log("🌐 [API Call] POST /accounts/logout/ with refresh token...");
+        await authService.logout(refreshToken);
+        console.log("✅ [API Call] Logout endpoint successful!");
+      }
+    } catch (err) {
+      console.warn("⚠️ Server logout endpoint warning/failed, proceeding with local token wipe:", err);
+    } finally {
+      await clearStoredTokens();
+      set({ isAuthenticated: false, user: null });
+    }
   },
 
   setUser: async (rawUser) => {

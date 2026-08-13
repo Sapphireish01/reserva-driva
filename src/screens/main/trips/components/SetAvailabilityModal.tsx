@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Modal,
   ScrollView,
@@ -9,11 +9,25 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  useSetCustomAvailabilityMutation,
+  useSetDailyAvailabilityMutation,
+  useSetOneOffAvailabilityMutation,
+} from "@/hooks/useDriverTrips";
+import {
+  useAllVehicleModelsQuery,
+  useVehicleBrandsQuery,
+  useVehicleColorsQuery,
+  useVehiclesQuery,
+} from "@/hooks/useVehicles";
 import { spacing } from "@/theme/colors";
 import { DatePickerModal } from "./DatePickerModal";
 import { TimePickerModal } from "./TimePickerModal";
 import { SeatsPickerSheet } from "./availability/SeatsPickerSheet";
-import { Step1RouteTimeForm } from "./availability/Step1RouteTimeForm";
+import {
+  FormattedVehicleOption,
+  Step1RouteTimeForm,
+} from "./availability/Step1RouteTimeForm";
 import { Step2RecurringForm } from "./availability/Step2RecurringForm";
 import { Step3SeatsPriceForm } from "./availability/Step3SeatsPriceForm";
 import { Step4ReviewSchedule } from "./availability/Step4ReviewSchedule";
@@ -24,6 +38,41 @@ interface SetAvailabilityModalProps {
   onSubmit: (tripData: any) => void;
 }
 
+const formatDateToApi = (dateObj: Date | null, dateStr: string): string => {
+  if (dateObj) {
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const dd = String(dateObj.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  // Fallback parsing dateStr e.g. "30 Mar 2026"
+  const parsed = new Date(dateStr);
+  if (!isNaN(parsed.getTime())) {
+    const yyyy = parsed.getFullYear();
+    const mm = String(parsed.getMonth() + 1).padStart(2, "0");
+    const dd = String(parsed.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+  return dateStr;
+};
+
+const formatTimeToApi = (timeStr: string): string => {
+  // Converts e.g. "6:00 AM" or "06:00 AM" or "6:00PM" -> "06:00:00" / "18:00:00"
+  if (!timeStr) return "06:00:00";
+  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+  if (!match) return timeStr.includes(":") ? `${timeStr}:00` : `${timeStr}:00:00`;
+
+  let hours = parseInt(match[1], 10);
+  const minutes = match[2].padStart(2, "0");
+  const modifier = match[3] ? match[3].toUpperCase() : null;
+
+  if (modifier === "PM" && hours < 12) hours += 12;
+  if (modifier === "AM" && hours === 12) hours = 0;
+
+  const hh = String(hours).padStart(2, "0");
+  return `${hh}:${minutes}:00`;
+};
+
 export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   visible,
   onClose,
@@ -31,10 +80,70 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
 
+  // Vehicle data queries
+  const { data: serverVehicles, isLoading: isLoadingVehicles } = useVehiclesQuery();
+  const { data: brandsData } = useVehicleBrandsQuery();
+  const { data: allModelsData } = useAllVehicleModelsQuery();
+  const { data: colorsData } = useVehicleColorsQuery();
+
+  // API mutations for trips
+  const setOneOffMutation = useSetOneOffAvailabilityMutation();
+  const setDailyMutation = useSetDailyAvailabilityMutation();
+  const setCustomMutation = useSetCustomAvailabilityMutation();
+
+  // Format vehicle options with resolved human readable names
+  const vehicleOptions: FormattedVehicleOption[] = useMemo(() => {
+    const rawVehicles = Array.isArray(serverVehicles)
+      ? serverVehicles
+      : (serverVehicles as any)?.results && Array.isArray((serverVehicles as any).results)
+      ? (serverVehicles as any).results
+      : [];
+
+    if (rawVehicles.length === 0) return [];
+    return rawVehicles.map((v: any) => {
+      let makeName = "";
+      if (v.brand && typeof v.brand === "object") {
+        makeName = v.brand.name || v.brand.brand_name || "";
+      } else if (v.brand !== undefined && v.brand !== null) {
+        const foundBrand = brandsData?.find(
+          (b) => String(b.id) === String(v.brand) || b.name?.toLowerCase() === String(v.brand).toLowerCase()
+        );
+        makeName = foundBrand ? foundBrand.name : String(v.brand);
+      }
+
+      let modelName = "";
+      const rawModel = v.model ?? v.vehicle_model;
+      if (rawModel && typeof rawModel === "object") {
+        modelName = rawModel.name || rawModel.model_name || "";
+      } else if (rawModel !== undefined && rawModel !== null) {
+        const foundModel = allModelsData?.find(
+          (m) => String(m.id) === String(rawModel) || m.name?.toLowerCase() === String(rawModel).toLowerCase()
+        );
+        modelName = foundModel ? foundModel.name : String(rawModel);
+      }
+
+      const vehicleTitle = [makeName, modelName, v.year ? String(v.year) : ""]
+        .filter(Boolean)
+        .join(" ");
+
+      const label = v.plate_number
+        ? `${vehicleTitle || "Vehicle"} (${v.plate_number})`
+        : vehicleTitle || "Vehicle";
+
+      return {
+        id: String(v.id),
+        label,
+        plateNumber: v.plate_number || "",
+        seats: String(v.number_of_seats || "4"),
+      };
+    });
+  }, [serverVehicles, brandsData, allModelsData]);
+
   // Step state: 1 (Route/Time), 2 (Recurring), 3 (Seats/Price), 4 (Review Schedule)
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Step 1 State
+  const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [time, setTime] = useState("");
@@ -53,6 +162,30 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   const [price, setPrice] = useState("");
   const [showSeatsPicker, setShowSeatsPicker] = useState(false);
 
+  // Auto-select vehicle and seats
+  useEffect(() => {
+    if (vehicleOptions.length > 0 && !selectedVehicleId) {
+      const defaultVehicle = serverVehicles?.find((v: any) => v.is_default);
+      if (defaultVehicle) {
+        setSelectedVehicleId(String(defaultVehicle.id));
+      } else {
+        setSelectedVehicleId(vehicleOptions[0].id);
+      }
+    }
+  }, [vehicleOptions, serverVehicles, selectedVehicleId]);
+
+  // Sync availableSeats when selected vehicle changes if availableSeats is empty
+  useEffect(() => {
+    if (selectedVehicleId && !availableSeats) {
+      const selectedV = vehicleOptions.find((v) => v.id === selectedVehicleId);
+      if (selectedV?.seats) {
+        setAvailableSeats(selectedV.seats);
+      } else {
+        setAvailableSeats("4");
+      }
+    }
+  }, [selectedVehicleId, vehicleOptions, availableSeats]);
+
   // Step 4 Publish State
   const [publishStatus, setPublishStatus] = useState<"idle" | "publishing" | "published">("idle");
 
@@ -67,6 +200,7 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   // Reset all state on close
   const handleClose = () => {
     setStep(1);
+    setSelectedVehicleId("");
     setPickup("");
     setDestination("");
     setTime("");
@@ -117,7 +251,7 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   };
 
   const handleStep1Continue = () => {
-    if (!pickup.trim() || !destination.trim() || !time || !dateFormatted) return;
+    if (!selectedVehicleId || !pickup.trim() || !destination.trim() || !time || !dateFormatted) return;
     if (rawDateObj && !validateDateAdvance(rawDateObj)) return;
 
     if (isRecurring) {
@@ -133,22 +267,82 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   };
 
   const handleStep3Continue = () => {
-    if (!isStep3Valid) return;
+    if (!availableSeats) {
+      setAvailableSeats(selectedVehicleObj?.seats || "4");
+    }
     setStep(4);
   };
 
-  const handlePublish = () => {
+  const selectedVehicleObj = vehicleOptions.find((v) => v.id === selectedVehicleId);
+
+  const handlePublish = async () => {
     if (publishStatus !== "idle") return;
 
     setPublishStatus("publishing");
 
-    setTimeout(() => {
+    try {
+      const cleanPrice = price.replace(/[^0-9.]/g, "");
+      const seatsCount = parseInt(availableSeats, 10) || 1;
+      const apiTripDate = formatDateToApi(rawDateObj, dateFormatted);
+      const apiDepartureTime = formatTimeToApi(time);
+
+      if (!isRecurring) {
+        // One-off trip POST /drivers/trips/
+        await setOneOffMutation.mutateAsync({
+          vehicle: selectedVehicleId,
+          pickup_location: pickup,
+          destination,
+          trip_date: apiTripDate,
+          departure_time: apiDepartureTime,
+          available_seats: seatsCount,
+        });
+      } else {
+        // Recurring trip POST /drivers/trips/recurring/
+        const apiEndDate = formatDateToApi(null, endDateFormatted);
+        const freqKey = isCustomRange ? "custom" : (frequency ? (frequency.toLowerCase() as any) : "daily");
+
+        if (isCustomRange) {
+          const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+          const daysIndices = selectedDays
+            .map((day) => {
+              // Map both "Thur" and "Thu" or other variations if any
+              const normalized = day === "Thur" ? "Thu" : day;
+              return WEEKDAYS.indexOf(normalized);
+            })
+            .filter((idx) => idx !== -1);
+
+          await setCustomMutation.mutateAsync({
+            vehicle: selectedVehicleId,
+            pickup_location: pickup,
+            destination,
+            departure_time: apiDepartureTime,
+            start_date: apiTripDate,
+            end_date: apiEndDate,
+            frequency: "custom",
+            days_of_week: daysIndices,
+            available_seats: seatsCount,
+          });
+        } else {
+          await setDailyMutation.mutateAsync({
+            vehicle: selectedVehicleId,
+            pickup_location: pickup,
+            destination,
+            trip_date: apiTripDate,
+            departure_time: apiDepartureTime,
+            available_seats: seatsCount,
+            start_date: apiTripDate,
+            end_date: apiEndDate,
+            frequency: freqKey === "daily" ? "daily" : (freqKey as any),
+          });
+        }
+      }
+
       setPublishStatus("published");
 
       setTimeout(() => {
-        const cleanPrice = price.replace(/[^0-9.]/g, "");
-
         onSubmit({
+          vehicleId: selectedVehicleId,
+          vehicle: selectedVehicleObj?.label,
           pickupLocation: pickup,
           destination,
           departureTime: time,
@@ -157,13 +351,16 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
           frequency: getFormattedFrequency(),
           customDays: isRecurring && isCustomRange ? selectedDays : undefined,
           endDate: isRecurring ? endDateFormatted : undefined,
-          availableSeats: parseInt(availableSeats, 10) || 1,
+          availableSeats: seatsCount,
           pricePerSeat: parseFloat(cleanPrice) || 0,
         });
 
         handleClose();
-      }, 800);
-    }, 1000);
+      }, 600);
+    } catch (err) {
+      console.error("Error publishing trip availability:", err);
+      setPublishStatus("idle");
+    }
   };
 
   const handleBackPress = () => {
@@ -178,6 +375,7 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
 
   // Step Validation checks
   const isStep1Valid =
+    selectedVehicleId.length > 0 &&
     pickup.trim().length > 0 &&
     destination.trim().length > 0 &&
     time.length > 0 &&
@@ -191,10 +389,8 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
 
   const cleanPriceVal = price.replace(/[^0-9.]/g, "");
   const isStep3Valid =
-    availableSeats.trim().length > 0 &&
-    price.trim().length > 0 &&
-    !isNaN(Number(cleanPriceVal)) &&
-    Number(cleanPriceVal) >= 0;
+    (availableSeats.trim().length > 0 || Boolean(selectedVehicleObj?.seats)) &&
+    (price.trim().length === 0 || (!isNaN(Number(cleanPriceVal)) && Number(cleanPriceVal) >= 0));
 
   const getFormattedFrequency = () => {
     if (!isRecurring) return "Single Trip";
@@ -232,6 +428,10 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 520 }}>
               {step === 1 && (
                 <Step1RouteTimeForm
+                  selectedVehicleId={selectedVehicleId}
+                  onChangeSelectedVehicle={setSelectedVehicleId}
+                  vehicleOptions={vehicleOptions}
+                  isLoadingVehicles={isLoadingVehicles}
                   pickup={pickup}
                   onChangePickup={setPickup}
                   destination={destination}
@@ -297,6 +497,7 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
                   isRecurring={isRecurring}
                   endDateFormatted={endDateFormatted}
                   availableSeats={availableSeats}
+                  vehicleLabel={selectedVehicleObj?.label}
                   publishStatus={publishStatus}
                   onPublish={handlePublish}
                 />

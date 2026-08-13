@@ -18,6 +18,7 @@ interface Step4ReviewScheduleProps {
   isRecurring: boolean;
   endDateFormatted: string;
   availableSeats: string;
+  vehicleLabel?: string;
   publishStatus: "idle" | "publishing" | "published";
   onPublish: () => void;
 }
@@ -32,6 +33,7 @@ export const Step4ReviewSchedule: React.FC<Step4ReviewScheduleProps> = ({
   isRecurring,
   endDateFormatted,
   availableSeats,
+  vehicleLabel,
   publishStatus,
   onPublish,
 }) => {
@@ -75,6 +77,15 @@ export const Step4ReviewSchedule: React.FC<Step4ReviewScheduleProps> = ({
 
       {/* Summary Details */}
       <View style={styles.summaryList}>
+        {Boolean(vehicleLabel) && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Vehicle</Text>
+            <Text style={styles.summaryValue} numberOfLines={1}>
+              {vehicleLabel}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Time</Text>
           <Text style={styles.summaryValue}>{time}</Text>
