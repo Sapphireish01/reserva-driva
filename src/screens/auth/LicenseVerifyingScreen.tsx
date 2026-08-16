@@ -18,7 +18,11 @@ export const LicenseVerifyingScreen = ({ route, navigation }: Props) => {
 
     const run = async () => {
       try {
-        await identityService.uploadLicenseImages(driverId, frontUri, backUri);
+        await identityService.uploadDriversLicense({
+          uri: frontUri,
+          name: "driver_license.jpg",
+          type: "image/jpeg",
+        });
         setStatus("pending");
 
         poll = setInterval(async () => {

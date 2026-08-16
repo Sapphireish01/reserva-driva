@@ -3,7 +3,7 @@ export type AuthStackParamList = {
   Login: undefined;
   ForgotPassword: undefined;
   ForgotPasswordOTP: { email: string };
-  ResetPassword: { email: string };
+  ResetPassword: { email: string; otpCode: string };
   SignUp: undefined;
   VerificationMethod: { driverId: string };
   OTPVerification: { driverId: string; method: "sms" | "email" };
@@ -12,6 +12,7 @@ export type AuthStackParamList = {
   LicenseBackCapture: { driverId: string; frontUri: string };
   LicenseVerifying: { driverId: string; frontUri: string; backUri: string };
   SSN: { driverId: string };
+  MFAVerification: { email?: string };
   AccountCreated: undefined;
 };
 

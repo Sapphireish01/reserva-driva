@@ -13,6 +13,7 @@ import {
 import { LicenseIntroScreen } from "../screens/auth/LicenseIntroScreen";
 import { LicenseVerifyingScreen } from "../screens/auth/LicenseVerifyingScreen";
 import { LoginScreen } from "../screens/auth/LoginScreen";
+import { MFAVerificationScreen } from "../screens/auth/MFAVerificationScreen";
 import { OTPVerificationScreen } from "../screens/auth/OTPVerificationScreen";
 import { ResetPasswordScreen } from "../screens/auth/ResetPasswordScreen";
 import { SignUpScreen } from "../screens/auth/SignUpScreen";
@@ -21,6 +22,8 @@ import { VerificationMethodScreen } from "../screens/auth/VerificationMethodScre
 import { OnboardingScreen } from "../screens/onboarding/OnboardingScreen";
 import { colors, spacing } from "../theme/colors";
 import { AuthStackParamList } from "./types";
+
+import { useAuthStore } from "../state/authStore";
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -45,18 +48,22 @@ const CustomHeaderBackButton = () => {
   );
 };
 
-export const AuthNavigator = () => (
-  <Stack.Navigator
-    screenOptions={{
-      headerShown: false,
-      headerTintColor: colors.textMuted,
-      headerShadowVisible: false,
-      headerStyle: {
-        backgroundColor: colors.background,
-      },
-      headerLeft: () => <CustomHeaderBackButton />,
-    }}
-  >
+export const AuthNavigator = () => {
+  const hasSignedInBefore = useAuthStore((s) => s.hasSignedInBefore);
+
+  return (
+    <Stack.Navigator
+      initialRouteName={hasSignedInBefore ? "Login" : "Onboarding"}
+      screenOptions={{
+        headerShown: false,
+        headerTintColor: colors.textMuted,
+        headerShadowVisible: false,
+        headerStyle: {
+          backgroundColor: colors.background,
+        },
+        headerLeft: () => <CustomHeaderBackButton />,
+      }}
+    >
     <Stack.Screen name="Onboarding" component={OnboardingScreen} />
     <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: true, title: "" }} />
     <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: true, title: "" }} />
@@ -79,9 +86,15 @@ export const AuthNavigator = () => (
     <Stack.Screen name="LicenseVerifying" component={LicenseVerifyingScreen} />
     <Stack.Screen name="SSN" component={SSNScreen} options={{ headerShown: true, title: "" }} />
     <Stack.Screen
+      name="MFAVerification"
+      component={MFAVerificationScreen}
+      options={{ headerShown: true, title: "" }}
+    />
+    <Stack.Screen
       name="AccountCreated"
       component={AccountCreatedScreen}
       options={{ gestureEnabled: false }}
     />
   </Stack.Navigator>
 );
+};

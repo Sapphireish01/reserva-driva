@@ -2,6 +2,7 @@ import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { authService } from "../../api/services/auth";
 import { AppButton, OTPForm } from "../../components/ui";
 import { useVerifyOtpMutation } from "../../hooks/useAuth";
 import { AuthStackParamList } from "../../navigation/types";
@@ -46,10 +47,21 @@ export const OTPVerificationScreen = ({ route, navigation }: Props) => {
     [driverId, isVerifying, navigation, verifyOtp]
   );
 
-  const handleResend = React.useCallback(() => {
+  const handleResend = React.useCallback(async () => {
     setErrorMessage(null);
-    // Resend trigger
-  }, []);
+    const emailToUse = (route.params as any)?.email;
+    if (!emailToUse) {
+      console.warn("⚠️ No email passed to OTPVerificationScreen for resend");
+      return;
+    }
+    try {
+      console.log("🌐 [API Call] POST /accounts/resend-otp/?email=", emailToUse);
+      await authService.resendOtp(emailToUse);
+      console.log("✅ [API Success] Resent OTP successfully");
+    } catch (err: any) {
+      console.error("❌ [API Error] resendOtp failed:", err);
+    }
+  }, [route.params]);
 
   return (
     <View style={[styles.container]}>

@@ -141,6 +141,16 @@ export interface LoginResponse {
   [key: string]: unknown;
 }
 
+export interface Verify2FAResponse {
+  success?: boolean;
+  verified?: boolean;
+  message?: string;
+  access?: string;
+  refresh?: string;
+  user?: UserData;
+  [key: string]: unknown;
+}
+
 export const authService = {
   signUp: (payload: SignupPayload) => {
     const formData = new FormData();
@@ -170,6 +180,12 @@ export const authService = {
     return apiClient.post<{ message?: string; detail?: string }>("/accounts/verify-otp/", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+  },
+
+  resendOtp: (email: string) => {
+    return apiClient.post<{ Success?: string; message?: string }>(
+      `/accounts/resend-otp/?email=${encodeURIComponent(email)}`
+    );
   },
 
   loginDriver: (payload: LoginPayload) => {
@@ -303,6 +319,45 @@ export const authService = {
     return apiClient.post<ConfirmPinChangeResponse>("/accounts/2fa/confirm-pin-change/", body, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+  },
+
+  verify2FA: (mfaCode: string) => {
+    const body = new FormData();
+    body.append("mfa_code", mfaCode);
+    return apiClient.post<Verify2FAResponse>("/accounts/2fa/verify/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  requestPasswordReset: (email: string) => {
+    const body = new FormData();
+    body.append("email", email);
+    return apiClient.post<{ message?: string }>("/accounts/password-reset/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  verifyPasswordResetOtp: (otp: string) => {
+    const body = new FormData();
+    body.append("otp", otp);
+    return apiClient.post<{ message?: string }>("/accounts/password-reset/verify-otp/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  confirmPasswordReset: (otpCode: string, password: string) => {
+    const body = new FormData();
+    body.append("user_pin", password);
+    body.append("confirm_pin", password);
+    body.append("password", password);
+    body.append("confirm_password", password);
+    return apiClient.post<{ message?: string }>(
+      `/accounts/password-reset/confirm/?otp_code=${encodeURIComponent(otpCode)}`,
+      body,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
   },
 };
 

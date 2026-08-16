@@ -21,10 +21,10 @@ export const SSNScreen = ({ route, navigation }: Props) => {
     setSubmitting(true);
     setError(null);
     try {
-      // Submitted once, over TLS, straight to the backend for tokenization.
+      // Submitted once, over TLS, straight to the backend for profile update.
       // `ssn` is never written to SecureStore/AsyncStorage and is discarded
       // from component state as soon as this screen unmounts.
-      await driversService.submitSsn(driverId, ssn);
+      await driversService.uploadSsnProfile(ssn);
       navigation.navigate("AccountCreated");
     } catch (e: any) {
       setError(e?.message ?? "Couldn't verify your SSN. Please try again.");

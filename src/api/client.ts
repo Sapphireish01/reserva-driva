@@ -4,12 +4,28 @@ import * as SecureStore from "expo-secure-store";
 const TOKEN_KEY = "rezarva_driver_token";
 const REFRESH_TOKEN_KEY = "rezarva_driver_refresh_token";
 const USER_KEY = "rezarva_driver_user_data";
+const HAS_SIGNED_IN_BEFORE_KEY = "rezarva_driver_has_signed_in_before";
 
 export const getStoredToken = () => SecureStore.getItemAsync(TOKEN_KEY);
 export const setStoredToken = (token: string) => SecureStore.setItemAsync(TOKEN_KEY, token);
 
 export const getStoredRefreshToken = () => SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
 export const setStoredRefreshToken = (token: string) => SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
+
+export const getHasSignedInBefore = async (): Promise<boolean> => {
+  try {
+    const val = await SecureStore.getItemAsync(HAS_SIGNED_IN_BEFORE_KEY);
+    return val === "true";
+  } catch {
+    return false;
+  }
+};
+
+export const setHasSignedInBefore = (hasSignedIn: boolean) =>
+  hasSignedIn
+    ? SecureStore.setItemAsync(HAS_SIGNED_IN_BEFORE_KEY, "true")
+    : SecureStore.deleteItemAsync(HAS_SIGNED_IN_BEFORE_KEY);
+
 
 export const getStoredUserData = async <T = any>(): Promise<T | null> => {
   try {

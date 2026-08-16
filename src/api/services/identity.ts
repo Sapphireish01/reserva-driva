@@ -34,9 +34,9 @@ export const identityService = {
       form = file;
     } else {
       form = new FormData();
-      form.append("file", {
+      form.append("driver_license", {
         uri: file.uri,
-        name: file.name || "drivers_license.jpg",
+        name: file.name || "driver_license.jpg",
         type: file.type || "image/jpeg",
       } as any);
     }

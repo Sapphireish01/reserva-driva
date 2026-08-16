@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import {
   clearStoredTokens,
+  getHasSignedInBefore,
   getJwtExpirationMs,
   getStoredRefreshToken,
   getStoredToken,
   getStoredUserData,
+  setHasSignedInBefore,
   setStoredRefreshToken,
   setStoredToken,
   setStoredUserData,
@@ -180,17 +182,20 @@ export const normalizeUserData = (data: any): UserData | null => {
 interface AuthState {
   isAuthenticated: boolean;
   isInitializing: boolean;
+  hasSignedInBefore: boolean;
   user: UserData | null;
   initializeAuth: () => Promise<void>;
   fetchProfile: () => Promise<UserData | null>;
   login: (accessToken: string, refreshToken?: string, user?: any) => Promise<void>;
   logout: () => Promise<void>;
   setUser: (user: any) => Promise<void>;
+  setHasSignedInBefore: (val: boolean) => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isInitializing: true,
+  hasSignedInBefore: false,
   user: null,
 
   fetchProfile: async () => {
@@ -212,10 +217,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   initializeAuth: async () => {
     try {
-      const [token, refreshToken, storedUserRaw] = await Promise.all([
+      const [token, refreshToken, storedUserRaw, hasSignedIn] = await Promise.all([
         getStoredToken(),
         getStoredRefreshToken(),
         getStoredUserData<any>(),
+        getHasSignedInBefore(),
       ]);
 
       const storedUser = normalizeUserData(storedUserRaw);
@@ -224,12 +230,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         if (refreshToken) {
           scheduleProactiveRefresh(token, refreshToken);
         }
-        set({ isAuthenticated: true, user: storedUser, isInitializing: false });
+        await setHasSignedInBefore(true);
+        set({ isAuthenticated: true, user: storedUser, hasSignedInBefore: true, isInitializing: false });
 
         // Silently refresh profile from server in background
         get().fetchProfile().catch(() => {});
       } else {
-        set({ isAuthenticated: false, user: null, isInitializing: false });
+        set({ isAuthenticated: false, user: null, hasSignedInBefore: hasSignedIn, isInitializing: false });
       }
     } catch (err) {
       console.warn("⚠️ Failed to initialize auth store:", err);
@@ -243,14 +250,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       await setStoredRefreshToken(refreshToken);
       scheduleProactiveRefresh(accessToken, refreshToken);
     }
+    await setHasSignedInBefore(true);
     const normalized = normalizeUserData(rawUser);
     if (normalized) {
       await setStoredUserData(normalized);
     }
-    set({ isAuthenticated: true, user: normalized || null });
+    set({ isAuthenticated: true, hasSignedInBefore: true, user: normalized || null });
 
     // Fetch freshest user profile after login
     get().fetchProfile().catch(() => {});
+  },
+
+  setHasSignedInBefore: async (val: boolean) => {
+    await setHasSignedInBefore(val);
+    set({ hasSignedInBefore: val });
   },
 
   logout: async () => {

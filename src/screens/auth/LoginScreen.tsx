@@ -46,7 +46,13 @@ export const LoginScreen = ({ navigation }: Props) => {
       setApiError(null);
       console.log("🌐 [API Call] POST /accounts/login/");
       const res = await loginDriver({ email: email.trim(), password });
-      console.log("📡 [API Response] POST /accounts/login/ success");
+      console.log("📡 [API Response] POST /accounts/login/ success", res);
+
+      // Check if 2FA / MFA verification is required
+      if (res.mfa_required || (res as any).mfa_enabled || (res as any).require_mfa || (res as any).mfa) {
+        navigation.navigate("MFAVerification", { email: email.trim() });
+        return;
+      }
 
       const accessToken = res.access ?? res.token;
       if (!accessToken) {
@@ -58,7 +64,7 @@ export const LoginScreen = ({ navigation }: Props) => {
       console.error("❌ [API Error] Login failed:", err?.message || err);
       setApiError(err?.message || "Login failed. Please check your credentials.");
     }
-  }, [email, password, isFormValid, isLoggingIn, loginDriver, login]);
+  }, [email, password, isFormValid, isLoggingIn, loginDriver, login, navigation]);
 
   const handleForgotPassword = React.useCallback(() => {
     navigation.navigate("ForgotPassword");

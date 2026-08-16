@@ -158,9 +158,14 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
   const [otpStep, setOtpStep] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
+  const [otpCodeInput, setOtpCodeInput] = useState("");
+  const [otpError, setOtpError] = useState<string | null>(null);
+
   const openEditModal = (field: "name" | "email" | "phone" | "address" | "password") => {
     setEditingField(field);
     setOtpStep(false);
+    setOtpCodeInput("");
+    setOtpError(null);
     setCurrentPassword("");
     setNewPassword("");
     setConfirmPassword("");
@@ -194,35 +199,74 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
       } catch (err) {
         console.warn("⚠️ Failed to update address on backend:", err);
       }
-    } else if (editingField === "email" || editingField === "phone" || editingField === "password") {
+    } else if (editingField === "email" || editingField === "phone") {
+      setOtpError(null);
       setOtpStep(true);
+      // Trigger OTP request for verification
+      try {
+        const userEmail = getUserEmail(user);
+        if (userEmail) {
+          console.log("🌐 [API Call] Requesting OTP for edit:", userEmail);
+          await authService.resendOtp(userEmail);
+        }
+      } catch (err) {
+        console.warn("⚠️ OTP request for edit error:", err);
+      }
+    } else if (editingField === "password") {
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        alert("Please fill in all password fields.");
+        return;
+      }
+      if (newPassword !== confirmPassword) {
+        alert("New passwords do not match.");
+        return;
+      }
+      setOtpError(null);
+      setOtpStep(true);
+      try {
+        const userEmail = getUserEmail(user);
+        if (userEmail) {
+          await authService.resendOtp(userEmail);
+        }
+      } catch (err) {
+        console.warn("⚠️ OTP request for password edit error:", err);
+      }
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = async (codeToVerify: string) => {
     setIsVerifying(true);
-    let payload: Record<string, string> = {};
-    if (editingField === "email") {
-      setEmail(tempValue);
-      updateGlobalUser({ email: tempValue });
-      payload = { email: tempValue };
-    } else if (editingField === "phone") {
-      setPhone(tempValue);
-      updateGlobalUser({ phone_number: tempValue });
-      payload = { phone_number: tempValue, dial_code: selectedCallingCode };
-    }
-
+    setOtpError(null);
     try {
+      console.log("🌐 [API Call] Verifying OTP for edit:", codeToVerify);
+      await authService.verifyOtp(codeToVerify);
+      console.log("✅ OTP verified for edit!");
+
+      let payload: Record<string, string> = {};
+      if (editingField === "email") {
+        setEmail(tempValue);
+        updateGlobalUser({ email: tempValue });
+        payload = { email: tempValue };
+      } else if (editingField === "phone") {
+        setPhone(tempValue);
+        updateGlobalUser({ phone_number: tempValue });
+        payload = { phone_number: tempValue, dial_code: selectedCallingCode };
+      } else if (editingField === "password") {
+        payload = { current_password: currentPassword, password: newPassword, confirm_password: confirmPassword };
+      }
+
       if (Object.keys(payload).length > 0) {
         const res = await authService.updateProfile(payload);
         if (res.data?.data || res.data) setUser(res.data.data || res.data);
       }
-    } catch (err) {
-      console.warn("⚠️ Failed to update profile details on backend:", err);
-    } finally {
-      setIsVerifying(false);
       setEditingField(null);
       setOtpStep(false);
+    } catch (err: any) {
+      console.warn("⚠️ Failed OTP verification or profile update:", err?.response?.data || err?.message);
+      const backendErr = err?.response?.data?.message || err?.response?.data?.detail || err?.response?.data?.otp?.[0] || err?.message || "Invalid OTP verification code.";
+      setOtpError(String(backendErr));
+    } finally {
+      setIsVerifying(false);
     }
   };
 
@@ -408,6 +452,14 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
             <OTPForm
               onComplete={handleVerifyOtp}
               loading={isVerifying}
+              error={otpError || undefined}
+              onResend={async () => {
+                const mail = getUserEmail(user);
+                if (mail) {
+                  await authService.resendOtp(mail);
+                }
+              }}
+              autoFocus={true}
             />
           ) : editingField === "password" ? (
             <View style={{ width: "100%" }}>
