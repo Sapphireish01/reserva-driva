@@ -12,6 +12,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PassengerDetailsModal } from "../../../../components/bookings/PassengerDetailsModal";
 import { spacing } from "../../../../theme/colors";
+import { useDriverBookingsQuery } from "../../../../hooks/useDriverTrips";
+import { DriverBookingItem } from "../../../../api/services/trips";
 
 interface TripDetailsModalProps {
   visible: boolean;
@@ -31,44 +33,37 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
   const insets = useSafeAreaInsets();
   const [selectedPassenger, setSelectedPassenger] = useState<any | null>(null);
 
+  const { data: serverBookings = [] } = useDriverBookingsQuery(
+    trip?.id ? { trip_id: trip.id, status: "confirmed" } : undefined
+  );
+
   if (!trip) return null;
 
   const isPaused = trip.isPaused;
   const isRecurring = trip.isRecurring;
 
-  // Mock passengers if trip doesn't have an explicit list
-  const passengers = trip.passengers || [
-    {
-      id: "p1",
-      passengerName: "Claire Olo",
-      passengerRating: 4.9,
-      passengerAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
-      isVerified: true,
-      memberSince: "2026",
-      completedTrips: 42,
-      reliability: "98%",
-      requestedSeats: 1,
-      frequency: "Mon, Wed • Weekly",
-      endDate: "27 Apr 2026",
-      pickupLocation: "Ajao Estate Police Station",
-      dropoffLocation: "CMS Bustop Alagomeji",
-    },
-    {
-      id: "p2",
-      passengerName: "Edward Prosper",
-      passengerRating: 4.8,
-      passengerAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-      isVerified: true,
-      memberSince: "2025",
-      completedTrips: 28,
-      reliability: "95%",
-      requestedSeats: 2,
-      frequency: "Mon, Wed • Weekly",
-      endDate: "27 Apr 2026",
-      pickupLocation: "Ajao Estate Police Station",
-      dropoffLocation: "CMS Bustop Alagomeji",
-    },
-  ];
+  // Map server bookings or fallback to trip.passengers
+  const passengers = React.useMemo(() => {
+    if (Array.isArray(serverBookings) && serverBookings.length > 0) {
+      return serverBookings.map((b: DriverBookingItem) => ({
+        id: String(b.id),
+        passengerName: b.customer_name || "Passenger",
+        passengerRating: parseFloat(String(b.customer_rating || "5.0")),
+        passengerAvatar: b.customer_profile_image || undefined,
+        isVerified: true,
+        memberSince: "2026",
+        completedTrips: 12,
+        reliability: "98%",
+        requestedSeats: b.seats_requested || 1,
+        frequency: "Scheduled Trip",
+        endDate: b.end_date || "",
+        pickupLocation: b.pickup_location || trip.origin || "Pickup Location",
+        dropoffLocation: b.dropoff_location || trip.destination || "Destination",
+        status: b.status,
+      }));
+    }
+    return trip.passengers || [];
+  }, [serverBookings, trip]);
 
   return (
     <>

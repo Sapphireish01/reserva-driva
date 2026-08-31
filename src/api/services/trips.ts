@@ -347,5 +347,32 @@ export const tripsService = {
   publishTrip: async (tripId: number | string) => {
     return apiClient.put("/drivers/trips/publish/", null, { params: { trip_id: tripId } });
   },
+
+  getDriverBookings: async (params?: { trip_id?: number | string; status?: string }) => {
+    return apiClient.get<{ count?: number; data?: DriverBookingItem[] } | DriverBookingItem[]>("/drivers/bookings/", { params });
+  },
+
+  updateBookingAction: async (bookingId: string, action: string) => {
+    const formData = new FormData();
+    formData.append("action", action);
+    return apiClient.put(`/drivers/bookings/?booking_id=${bookingId}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
+
+export interface DriverBookingItem {
+  id: string;
+  customer_name?: string;
+  customer_profile_image?: string | null;
+  customer_rating?: string | number;
+  pickup_location?: string | null;
+  dropoff_location?: string | null;
+  selected_days?: number[];
+  seats_requested?: number;
+  start_date?: string;
+  end_date?: string;
+  status: string;
+}
+
 

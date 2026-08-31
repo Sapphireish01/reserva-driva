@@ -13,13 +13,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { CheckIcon } from "../../../components/ui";
+import { CheckIcon, StatsGridSkeleton } from "../../../components/ui";
 import {
   getUserAddress,
   getUserAvatar,
   getUserFirstName,
   useAuthStore,
 } from "../../../state/authStore";
+import { useDriverMetricsQuery } from "../../../hooks/useDriverMetrics";
 
 type Props = any;
 
@@ -43,6 +44,9 @@ export const HomeScreen = ({ navigation }: Props) => {
   const address = getUserAddress(user) || "42 Montgomery Road, Yaba";
   const avatarUri = getUserAvatar(user) || DEFAULT_AVATAR;
   const isVerified = user?.is_verified ?? true;
+
+  // Live Driver Metrics Query
+  const { data: metrics, isLoading: isLoadingMetrics } = useDriverMetricsQuery();
 
   // Active Screen & Navigation States
   const [activeState, setActiveState] = useState<ScreenState>("queue");
@@ -344,29 +348,33 @@ export const HomeScreen = ({ navigation }: Props) => {
           )}
 
           {/* 2x2 Stats Grid */}
-          <View style={styles.statsGrid}>
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Total Earnings</Text>
-                <Text style={styles.statValue}>0</Text>
+          {isLoadingMetrics ? (
+            <StatsGridSkeleton />
+          ) : (
+            <View style={styles.statsGrid}>
+              <View style={styles.statsRow}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>Total Earnings</Text>
+                  <Text style={styles.statValue}>{metrics?.total_earnings ?? 0}</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>Active Bookings</Text>
+                  <Text style={styles.statValue}>{metrics?.active_bookings ?? 0}</Text>
+                </View>
               </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Active Bookings</Text>
-                <Text style={styles.statValue}>0</Text>
-              </View>
-            </View>
 
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Upcoming Trips</Text>
-                <Text style={styles.statValue}>{isQueueEmpty ? "0" : "2"}</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Total Completed Trips</Text>
-                <Text style={styles.statValue}>0</Text>
+              <View style={styles.statsRow}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>Upcoming Trips</Text>
+                  <Text style={styles.statValue}>{metrics?.upcoming_trips ?? (isQueueEmpty ? 0 : 2)}</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>Total Completed Trips</Text>
+                  <Text style={styles.statValue}>{metrics?.total_completed_trips ?? 0}</Text>
+                </View>
               </View>
             </View>
-          </View>
+          )}
 
           {/* Trip Queue Section Title */}
           <Text style={styles.sectionTitle}>Trip Queue</Text>

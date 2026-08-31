@@ -334,7 +334,15 @@ export const ProfileDetailsScreen = ({ navigation }: Props) => {
           <Text style={styles.fieldLabel}>Phone Number</Text>
           <TouchableOpacity style={styles.fieldCard} onPress={() => openEditModal("phone")} activeOpacity={0.7}>
             <View style={styles.phoneValueRow}>
-              <Text style={styles.flagEmoji}>{currentFlag}</Text>
+              {currentCountry?.flag && currentCountry.flag.startsWith("http") ? (
+                <Image
+                  source={{ uri: currentCountry.flag }}
+                  style={{ width: 20, height: 20, borderRadius: 10, marginRight: 6 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={styles.flagEmoji}>{getFlagEmoji(currentCountry?.code || "US")}</Text>
+              )}
               <Text style={styles.fieldValue}>{phone}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#94A3B8" />

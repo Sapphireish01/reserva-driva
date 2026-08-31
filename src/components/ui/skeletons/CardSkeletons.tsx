@@ -136,6 +136,56 @@ export const FAQCardSkeleton: React.FC<SkeletonContainerProps> = ({ style }) => 
   );
 };
 
+export const BookingCardSkeleton: React.FC<SkeletonContainerProps> = ({ style }) => {
+  return (
+    <View style={[styles.cardContainer, style]}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 12 }}>
+        <Skeleton width={56} height={56} borderRadius={14} style={{ marginRight: 12 }} />
+        <View style={{ flex: 1, gap: 6 }}>
+          <Skeleton width={140} height={16} borderRadius={4} />
+          <Skeleton width="80%" height={14} borderRadius={4} />
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
+            <Skeleton width={60} height={12} borderRadius={4} />
+            <Skeleton width={50} height={12} borderRadius={4} />
+          </View>
+        </View>
+        <Skeleton width={36} height={18} borderRadius={4} />
+      </View>
+      <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+        <Skeleton width="48%" height={40} borderRadius={12} />
+        <Skeleton width="48%" height={40} borderRadius={12} />
+      </View>
+    </View>
+  );
+};
+
+export const StatsGridSkeleton: React.FC = () => {
+  return (
+    <View style={{ marginBottom: 20 }}>
+      <View style={{ flexDirection: "row", gap: 12, marginBottom: 12 }}>
+        <View style={{ flex: 1, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 16, padding: 16 }}>
+          <Skeleton width={90} height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+          <Skeleton width={60} height={24} borderRadius={4} />
+        </View>
+        <View style={{ flex: 1, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 16, padding: 16 }}>
+          <Skeleton width={100} height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+          <Skeleton width={40} height={24} borderRadius={4} />
+        </View>
+      </View>
+      <View style={{ flexDirection: "row", gap: 12 }}>
+        <View style={{ flex: 1, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 16, padding: 16 }}>
+          <Skeleton width={95} height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+          <Skeleton width={50} height={24} borderRadius={4} />
+        </View>
+        <View style={{ flex: 1, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 16, padding: 16 }}>
+          <Skeleton width={130} height={14} borderRadius={4} style={{ marginBottom: 10 }} />
+          <Skeleton width={40} height={24} borderRadius={4} />
+        </View>
+      </View>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: "#FFFFFF",

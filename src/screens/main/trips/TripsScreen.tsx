@@ -14,6 +14,7 @@ import {
   useDriverTripsQuery,
 } from "../../../hooks/useDriverTrips";
 import { colors, spacing } from "../../../theme/colors";
+import { TripCardSkeleton } from "../../../components/ui";
 import { CancelTripModal } from "./components/CancelTripModal";
 import { SetAvailabilityModal } from "./components/SetAvailabilityModal";
 import { TripActionSheetModal } from "./components/TripActionSheetModal";
@@ -237,7 +238,13 @@ export const TripsScreen = ({ navigation }: any) => {
       </View>
 
       {/* Content */}
-      {filteredTrips.length === 0 ? (
+      {isLoadingTrips ? (
+        <View style={styles.listContent}>
+          <TripCardSkeleton />
+          <TripCardSkeleton />
+          <TripCardSkeleton />
+        </View>
+      ) : filteredTrips.length === 0 ? (
         renderEmptyState()
       ) : (
         <FlatList

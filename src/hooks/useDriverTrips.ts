@@ -94,3 +94,45 @@ export const usePublishTripMutation = () => {
     },
   });
 };
+
+export const BOOKING_KEYS = {
+  all: ["driverBookings"] as const,
+  list: (params?: { status?: string; trip_id?: number | string }) =>
+    [...BOOKING_KEYS.all, "list", params] as const,
+};
+
+export const useDriverBookingsQuery = (params?: {
+  status?: string;
+  trip_id?: number | string;
+}) => {
+  return useQuery({
+    queryKey: BOOKING_KEYS.list(params),
+    queryFn: async () => {
+      const res = await tripsService.getDriverBookings(params);
+      const rawData = res.data;
+      if (Array.isArray(rawData)) {
+        return rawData;
+      }
+      if (rawData && typeof rawData === "object" && "data" in rawData && Array.isArray((rawData as any).data)) {
+        return (rawData as any).data;
+      }
+      if (Array.isArray(res)) {
+        return res;
+      }
+      return [];
+    },
+    staleTime: 1000 * 30, // 30 seconds
+  });
+};
+
+export const useUpdateBookingActionMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ bookingId, action }: { bookingId: string; action: string }) =>
+      tripsService.updateBookingAction(bookingId, action),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: TRIP_KEYS.all });
+    },
+  });
+};

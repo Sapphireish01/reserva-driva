@@ -9,6 +9,7 @@ import React, {
   useState,
 } from "react";
 import {
+  Image,
   Modal,
   ScrollView,
   StyleSheet,
@@ -21,6 +22,38 @@ import {
 } from "react-native";
 import { CountryCodeItem } from "../../api/services/countries";
 import { useCountryCodes } from "../../hooks/useCountryCodes";
+
+const RenderFlag = ({
+  flag,
+  code,
+  size = 20,
+  fontSize = 15,
+}: {
+  flag?: string;
+  code: string;
+  size?: number;
+  fontSize?: number;
+}) => {
+  const [imageError, setImageError] = useState(false);
+  const isUrl = flag && (flag.startsWith("http://") || flag.startsWith("https://"));
+
+  if (isUrl && !imageError) {
+    return (
+      <Image
+        source={{ uri: flag }}
+        style={{ width: size, height: size, borderRadius: size / 2 }}
+        resizeMode="cover"
+        onError={() => setImageError(true)}
+      />
+    );
+  }
+
+  return (
+    <Text style={{ fontSize, textAlign: "center" }}>
+      {flag && !isUrl ? flag : getFlagEmoji(code)}
+    </Text>
+  );
+};
 
 export interface AppPhoneInputProps {
   label?: string;
@@ -163,9 +196,12 @@ export const AppPhoneInput = forwardRef<AppPhoneInputRef, AppPhoneInputProps>(
             onPress={handleOpenDropdown}
           >
             <View style={styles.circularFlagWrapper}>
-              <Text style={styles.flagEmoji}>
-                {selectedCountry.flag || getFlagEmoji(selectedCountry.code)}
-              </Text>
+              <RenderFlag
+                flag={selectedCountry.flag}
+                code={selectedCountry.code}
+                size={22}
+                fontSize={15}
+              />
             </View>
             <Text style={styles.phoneCodeText}>
               {selectedCountry.dialCode || "+1"}
@@ -239,9 +275,12 @@ export const AppPhoneInput = forwardRef<AppPhoneInputRef, AppPhoneInputProps>(
                           onPress={() => handleSelectCountry(item)}
                         >
                           <View style={styles.circularFlagWrapperSmall}>
-                            <Text style={styles.flagEmojiSmall}>
-                              {item.flag || getFlagEmoji(item.code)}
-                            </Text>
+                            <RenderFlag
+                              flag={item.flag}
+                              code={item.code}
+                              size={20}
+                              fontSize={13}
+                            />
                           </View>
                           <Text style={styles.dialCodeText}>{item.dialCode}</Text>
                           <Text style={styles.isoCodeText}>{item.code}</Text>

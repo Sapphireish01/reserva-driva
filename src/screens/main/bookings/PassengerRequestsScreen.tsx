@@ -11,12 +11,15 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PassengerRequest, tripsService } from "../../../api/services/trips";
+import { DriverBookingItem, PassengerRequest } from "../../../api/services/trips";
+import {
+  useDriverBookingsQuery,
+  useUpdateBookingActionMutation,
+} from "../../../hooks/useDriverTrips";
 import { PassengerDetailsModal } from "../../../components/bookings/PassengerDetailsModal";
 import { RoutePassengersModal } from "../../../components/bookings/RoutePassengersModal";
 import { VerifiedBadgeIcon } from "../../../components/ProfileIcons";
-import { AppButton, AppLoader } from "../../../components/ui";
+import { AppButton, AppLoader, BookingCardSkeleton } from "../../../components/ui";
 import { colors, spacing } from "../../../theme/colors";
 
 type Props = any;
@@ -25,7 +28,6 @@ type FilterTab = "pending" | "accepted" | "rejected";
 
 export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
   const insets = useSafeAreaInsets();
-  const queryClient = useQueryClient();
   const filterTripId = route.params?.tripId;
   const [activeTab, setActiveTab] = useState<FilterTab>("pending");
 
@@ -33,47 +35,73 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
   const [selectedPassenger, setSelectedPassenger] = useState<PassengerRequest | null>(null);
   const [selectedRoutePassengers, setSelectedRoutePassengers] = useState<PassengerRequest[] | null>(null);
 
+  const statusParam =
+    activeTab === "pending"
+      ? "pending"
+      : activeTab === "accepted"
+      ? "confirmed"
+      : "rejected";
+
   const {
-    data: requests = [],
+    data: serverBookings = [],
     isLoading,
     refetch,
     isRefetching,
-  } = useQuery({
-    queryKey: ["passengerRequests"],
-    queryFn: tripsService.getPassengerRequests,
+  } = useDriverBookingsQuery({
+    status: statusParam,
+    trip_id: filterTripId,
   });
 
-  const respondMutation = useMutation({
-    mutationFn: ({ id, action }: { id: string; action: "approve" | "decline" }) =>
-      tripsService.respondToRequest(id, action),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["passengerRequests"] });
-      queryClient.invalidateQueries({ queryKey: ["driverTrips"] });
-    },
-  });
+  const respondMutation = useUpdateBookingActionMutation();
+
+  // Normalize server bookings into PassengerRequest interface
+  const requests: PassengerRequest[] = useMemo(() => {
+    if (!Array.isArray(serverBookings)) return [];
+    return serverBookings.map((b: DriverBookingItem) => {
+      let daysString = "";
+      if (b.selected_days && b.selected_days.length > 0) {
+        const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        daysString = b.selected_days.map((d) => dayNames[d] || String(d)).join(", ");
+      } else if (b.start_date) {
+        daysString = `${b.start_date}${b.end_date ? ` - ${b.end_date}` : ""}`;
+      }
+
+      return {
+        id: String(b.id),
+        tripId: String(filterTripId || ""),
+        passengerName: b.customer_name || "Passenger",
+        passengerRating: parseFloat(String(b.customer_rating || "5.0")),
+        passengerAvatar: b.customer_profile_image || undefined,
+        isVerified: true,
+        days: daysString || "Scheduled Trip",
+        frequency: daysString ? `${daysString} • Trip` : "One Time",
+        endDate: b.end_date || "",
+        pickupLocation: b.pickup_location || "Pickup Location",
+        dropoffLocation: b.dropoff_location || "Destination",
+        requestedSeats: b.seats_requested || 1,
+        totalPrice: 0,
+        status: b.status === "confirmed" ? "approved" : b.status === "rejected" ? "declined" : b.status,
+        createdAt: "",
+      } as PassengerRequest;
+    });
+  }, [serverBookings, filterTripId]);
 
   // Calculate pending count for tab badge
   const pendingCount = useMemo(() => {
-    return requests.filter((r) => r.status === "pending").length;
-  }, [requests]);
+    if (activeTab === "pending") return requests.length;
+    return 0;
+  }, [requests, activeTab]);
 
   // Filter requests based on active tab
   const filteredRequests = useMemo(() => {
-    return requests.filter((r) => {
-      if (filterTripId && r.tripId !== filterTripId) return false;
-      if (activeTab === "pending") return r.status === "pending";
-      if (activeTab === "accepted") return r.status === "approved" || (r.status as string) === "accepted";
-      if (activeTab === "rejected") return r.status === "declined" || (r.status as string) === "rejected";
-      return true;
-    });
-  }, [requests, filterTripId, activeTab]);
+    return requests;
+  }, [requests]);
 
   // Group accepted requests by route (Pickup & Destination)
   const groupedAcceptedRoutes = useMemo(() => {
-    const accepted = requests.filter((r) => r.status === "approved" || (r.status as string) === "accepted");
     const map = new Map<string, { pickup: string; destination: string; passengers: PassengerRequest[] }>();
 
-    accepted.forEach((req) => {
+    requests.forEach((req) => {
       const key = `${req.pickupLocation}__${req.dropoffLocation}`;
       if (!map.has(key)) {
         map.set(key, {
@@ -173,7 +201,11 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
       </View>
 
       {isLoading ? (
-        <AppLoader size={36} color="#375DFB" style={{ marginTop: 40, alignSelf: "center" }} />
+        <View style={styles.listContent}>
+          <BookingCardSkeleton />
+          <BookingCardSkeleton />
+          <BookingCardSkeleton />
+        </View>
       ) : activeTab === "accepted" ? (
         /* Accepted Tab View (Mockup 1) */
         groupedAcceptedRoutes.length === 0 ? (
@@ -290,7 +322,7 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
                       style={[styles.actionBtn, styles.declineBtn]}
                       onPress={(e) => {
                         e.stopPropagation();
-                        respondMutation.mutate({ id: item.id, action: "decline" });
+                        respondMutation.mutate({ bookingId: item.id, action: "rejected" });
                       }}
                       disabled={respondMutation.isPending}
                       activeOpacity={0.7}
@@ -302,7 +334,7 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
                       style={[styles.actionBtn, styles.acceptBtn]}
                       onPress={(e) => {
                         e.stopPropagation();
-                        respondMutation.mutate({ id: item.id, action: "approve" });
+                        respondMutation.mutate({ bookingId: item.id, action: "confirmed" });
                       }}
                       disabled={respondMutation.isPending}
                       activeOpacity={0.7}

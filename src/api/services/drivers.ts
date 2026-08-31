@@ -1,6 +1,13 @@
 import { apiClient } from "../client";
 import { SignupStage } from "../../navigation/types";
 
+export interface DriverMetrics {
+  total_earnings: number;
+  active_bookings: number;
+  upcoming_trips: number;
+  total_completed_trips: number;
+}
+
 export const driversService = {
   getSignupStage: (driverId: string) =>
     apiClient.get<{ status: SignupStage }>(`/drivers/${driverId}/signup-stage`),
@@ -19,4 +26,7 @@ export const driversService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
+
+  getMetrics: () => apiClient.get<DriverMetrics>("/drivers/metrics/"),
 };
+
