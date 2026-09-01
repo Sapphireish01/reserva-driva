@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "../../navigation/types";
 import { identityService } from "../../api/services/identity";
-import { colors, spacing, typography } from "../../theme/colors";
+import { formatAuthError } from "../../utils/authErrorHandler";
+import { LicenseCaptureView } from "./LicenseCaptureView";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "LicenseVerifying">;
 
@@ -12,6 +12,7 @@ export const LicenseVerifyingScreen = ({ route, navigation }: Props) => {
   const [status, setStatus] = useState<"uploading" | "pending" | "verified" | "failed">(
     "uploading"
   );
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let poll: ReturnType<typeof setInterval>;
@@ -31,6 +32,9 @@ export const LicenseVerifyingScreen = ({ route, navigation }: Props) => {
             if (data?.status && data.status !== "pending") {
               clearInterval(poll);
               setStatus(data.status);
+              if (data.status === "failed") {
+                setErrorMessage("License verification failed. Please try again with a clearer image.");
+              }
             }
           } catch (pollErr) {
             console.warn("Verification status polling error:", pollErr);
@@ -38,9 +42,9 @@ export const LicenseVerifyingScreen = ({ route, navigation }: Props) => {
             setStatus("verified");
           }
         }, 2500);
-      } catch (err) {
+      } catch (err: any) {
         console.warn("Upload license error:", err);
-        // Graceful fallback for offline / mock testing: transition to verified
+        // Fallback for smooth offline testing
         setStatus("verified");
       }
     };
@@ -50,43 +54,14 @@ export const LicenseVerifyingScreen = ({ route, navigation }: Props) => {
   }, [driverId, frontUri, backUri]);
 
   return (
-    <View style={styles.container}>
-      {status === "verified" ? (
-        <>
-          <Text style={styles.title}>You're all set to continue your booking</Text>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => navigation.navigate("SSN", { driverId })}
-          >
-            <Text style={styles.buttonText}>Continue</Text>
-          </TouchableOpacity>
-        </>
-      ) : status === "failed" ? (
-        <>
-          <Text style={styles.title}>We couldn't verify your license</Text>
-          <TouchableOpacity style={styles.button} onPress={() => navigation.goBack()}>
-            <Text style={styles.buttonText}>Try Again</Text>
-          </TouchableOpacity>
-        </>
-      ) : (
-        <>
-          <Text style={styles.title}>
-            {status === "uploading" ? "Uploading..." : "Verifying your license"}
-          </Text>
-        </>
-      )}
-    </View>
+    <LicenseCaptureView
+      initialPhotoUri={frontUri || backUri}
+      verifyingStatus={status}
+      errorMessage={errorMessage}
+      onContinue={() => navigation.navigate("SSN", { driverId })}
+      onRetry={() => navigation.goBack()}
+      onCancel={() => navigation.goBack()}
+    />
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.navy, justifyContent: "center", padding: spacing.lg },
-  title: { ...typography.h1, color: "#fff", textAlign: "center", marginBottom: spacing.lg },
-  button: {
-    backgroundColor: colors.primary,
-    borderRadius: 8,
-    paddingVertical: spacing.md,
-    alignItems: "center",
-  },
-  buttonText: { color: "#fff", fontWeight: "600" },
-});

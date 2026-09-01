@@ -4,13 +4,15 @@ import React, { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { MailIconItem } from "../../components/ProfileIcons";
 import { AuthStackParamList } from "../../navigation/types";
+import { useAuthToast } from "../../context/AuthToastContext";
 import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "VerificationMethod">;
 
 export const VerificationMethodScreen = ({ route, navigation }: Props) => {
   const { driverId } = route.params;
-  const [method, setMethod] = useState<"sms" | "email">("sms");
+  const { showAuthError } = useAuthToast();
+  const [method, setMethod] = useState<"sms" | "email">("email");
   const [sending, setSending] = useState(false);
 
   const handleContinue = async () => {
@@ -24,6 +26,7 @@ export const VerificationMethodScreen = ({ route, navigation }: Props) => {
       */
     } catch (e) {
       console.warn(e);
+      showAuthError(e, "Failed to request verification code. Please try again.");
     } finally {
       setSending(false);
     }
@@ -36,13 +39,13 @@ export const VerificationMethodScreen = ({ route, navigation }: Props) => {
         Choose how you{"'"}d like to receive your verification code
       </Text>
 
-      <Option
+      {/* <Option
         label="Text Message (SMS)"
         description="Receive a code via text message"
         icon="phone"
         selected={method === "sms"}
         onPress={() => setMethod("sms")}
-      />
+      /> */}
       <Option
         label="Email"
         description="Receive a code in your inbox."

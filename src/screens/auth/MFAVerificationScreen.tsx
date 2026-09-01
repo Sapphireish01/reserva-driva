@@ -5,14 +5,15 @@ import { authService } from "../../api/services/auth";
 import { AppButton, OTPForm } from "../../components/ui";
 import { AuthStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../state/authStore";
+import { useAuthToast } from "../../context/AuthToastContext";
 import { colors, spacing, typography } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "MFAVerification">;
 
 export const MFAVerificationScreen = ({ route, navigation }: Props) => {
   const { email } = route.params || {};
+  const { showAuthError } = useAuthToast();
   const [code, setCode] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const login = useAuthStore((s) => s.login);
 
@@ -23,7 +24,6 @@ export const MFAVerificationScreen = ({ route, navigation }: Props) => {
       if (codeToVerify.length !== 6 || isVerifying) return;
       try {
         setIsVerifying(true);
-        setErrorMessage(null);
         console.log("🌐 [API Call] POST /accounts/2fa/verify/ with mfa_code");
         const res = await authService.verify2FA(codeToVerify);
         console.log("✅ [API Success] 2FA verification response:", res.data);
@@ -37,21 +37,12 @@ export const MFAVerificationScreen = ({ route, navigation }: Props) => {
         await login(accessToken, data?.refresh, data?.user);
       } catch (err: any) {
         console.error("❌ [API Error] verify2FA failed:", err?.response?.data || err?.message);
-        const backendData = err?.response?.data;
-        let msg = "Invalid 2FA PIN. Please try again.";
-        if (typeof backendData === "string") {
-          msg = backendData;
-        } else if (backendData && typeof backendData === "object") {
-          msg = backendData.message || backendData.detail || backendData.error || msg;
-        } else if (err?.message) {
-          msg = err.message;
-        }
-        setErrorMessage(msg);
+        showAuthError(err, "Invalid 2FA code. Please try again.");
       } finally {
         setIsVerifying(false);
       }
     },
-    [isVerifying, login]
+    [isVerifying, login, showAuthError]
   );
 
   return (
@@ -66,10 +57,8 @@ export const MFAVerificationScreen = ({ route, navigation }: Props) => {
       <OTPForm
         onChange={(val) => {
           setCode(val);
-          if (errorMessage) setErrorMessage(null);
         }}
         onComplete={handleVerify2FA}
-        error={errorMessage || undefined}
         autoFocus={true}
       />
 

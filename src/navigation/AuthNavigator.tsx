@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React from "react";
 import { TouchableOpacity } from "react-native";
 import { HeaderBackIconItem } from "../components/ProfileIcons";
+import { AuthToastProvider } from "../context/AuthToastContext";
 import { AccountCreatedScreen } from "../screens/auth/AccountCreatedScreen";
 import { ForgotPasswordOTPScreen } from "../screens/auth/ForgotPasswordOTPScreen";
 import { ForgotPasswordScreen } from "../screens/auth/ForgotPasswordScreen";
@@ -52,49 +53,52 @@ export const AuthNavigator = () => {
   const hasSignedInBefore = useAuthStore((s) => s.hasSignedInBefore);
 
   return (
-    <Stack.Navigator
-      initialRouteName={hasSignedInBefore ? "Login" : "Onboarding"}
-      screenOptions={{
-        headerShown: false,
-        headerTintColor: colors.textMuted,
-        headerShadowVisible: false,
-        headerStyle: {
-          backgroundColor: colors.background,
-        },
-        headerLeft: () => <CustomHeaderBackButton />,
-      }}
-    >
-    <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-    <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: true, title: "" }} />
-    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: true, title: "" }} />
-    <Stack.Screen name="ForgotPasswordOTP" component={ForgotPasswordOTPScreen} options={{ headerShown: true, title: "" }} />
-    <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ headerShown: true, title: "" }} />
-    <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: true, title: "" }} />
-    <Stack.Screen
-      name="VerificationMethod"
-      component={VerificationMethodScreen}
-      options={{ headerShown: true, title: "" }}
-    />
-    <Stack.Screen
-      name="OTPVerification"
-      component={OTPVerificationScreen}
-      options={{ headerShown: true, title: "" }}
-    />
-    <Stack.Screen name="LicenseIntro" component={LicenseIntroScreen} options={{ headerShown: true, title: "" }} />
-    <Stack.Screen name="LicenseFrontCapture" component={LicenseFrontCaptureScreen} />
-    <Stack.Screen name="LicenseBackCapture" component={LicenseBackCaptureScreen} />
-    <Stack.Screen name="LicenseVerifying" component={LicenseVerifyingScreen} />
-    <Stack.Screen name="SSN" component={SSNScreen} options={{ headerShown: true, title: "" }} />
-    <Stack.Screen
-      name="MFAVerification"
-      component={MFAVerificationScreen}
-      options={{ headerShown: true, title: "" }}
-    />
-    <Stack.Screen
-      name="AccountCreated"
-      component={AccountCreatedScreen}
-      options={{ gestureEnabled: false }}
-    />
-  </Stack.Navigator>
-);
+    <AuthToastProvider>
+      <Stack.Navigator
+        initialRouteName={hasSignedInBefore ? "Login" : "Onboarding"}
+        screenOptions={{
+          headerShown: false,
+          headerTintColor: colors.textMuted,
+          headerShadowVisible: false,
+          headerStyle: {
+            backgroundColor: colors.background,
+          },
+          headerLeft: () => <CustomHeaderBackButton />,
+        }}
+      >
+        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="ForgotPasswordOTP" component={ForgotPasswordOTPScreen} options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} options={{ headerShown: true, title: "" }} />
+        <Stack.Screen
+          name="VerificationMethod"
+          component={VerificationMethodScreen}
+          options={{ headerShown: true, title: "" }}
+        />
+        <Stack.Screen
+          name="OTPVerification"
+          component={OTPVerificationScreen}
+          options={{ headerShown: true, title: "" }}
+        />
+        <Stack.Screen name="LicenseIntro" component={LicenseIntroScreen} options={{ headerShown: true, title: "" }} />
+        <Stack.Screen name="LicenseFrontCapture" component={LicenseFrontCaptureScreen} />
+        <Stack.Screen name="LicenseBackCapture" component={LicenseBackCaptureScreen} />
+        <Stack.Screen name="LicenseVerifying" component={LicenseVerifyingScreen} />
+        <Stack.Screen name="SSN" component={SSNScreen} options={{ headerShown: true, title: "" }} />
+        <Stack.Screen
+          name="MFAVerification"
+          component={MFAVerificationScreen}
+          options={{ headerShown: true, title: "" }}
+        />
+        <Stack.Screen
+          name="AccountCreated"
+          component={AccountCreatedScreen}
+          options={{ gestureEnabled: false }}
+        />
+      </Stack.Navigator>
+    </AuthToastProvider>
+  );
 };
+

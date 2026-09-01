@@ -18,12 +18,13 @@ import { SignupPayload } from "../../api/services/auth";
 import { useSignUpMutation } from "../../hooks/useAuth";
 import { AuthStackParamList } from "../../navigation/types";
 import { SignupFormValues, signupSchema } from "../../schemas/signup";
+import { useAuthToast } from "../../context/AuthToastContext";
 import { colors, spacing, typography } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SignUp">;
 
 export const SignUpScreen = ({ navigation }: Props) => {
-  const [apiError, setApiError] = useState<string | null>(null);
+  const { showAuthError } = useAuthToast();
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>("1");
   const phoneInputRef = React.useRef<AppPhoneInputRef>(null);
   const { mutateAsync: signUp, isPending: isSigningUp } = useSignUpMutation();
@@ -45,7 +46,6 @@ export const SignUpScreen = ({ navigation }: Props) => {
   const onSubmit = React.useCallback(
     async (values: SignupFormValues) => {
       try {
-        setApiError(null);
         console.log("🌐 [API Call] POST /accounts/register/ via useSignUpMutation", values);
 
         const callingCode = phoneInputRef.current?.getCallingCode() || selectedCountryCode || "1";
@@ -67,27 +67,10 @@ export const SignUpScreen = ({ navigation }: Props) => {
         navigation.navigate("VerificationMethod", { driverId });
       } catch (err: any) {
         console.error("❌ [API Error] useSignUpMutation failed:", err?.response?.data || err?.message);
-        const backendData = err?.response?.data;
-        let errorMessage = "Failed to create account. Please try again.";
-        if (typeof backendData === "string") {
-          errorMessage = backendData;
-        } else if (backendData && typeof backendData === "object") {
-          const firstKey = Object.keys(backendData)[0];
-          const firstVal = backendData[firstKey];
-          if (Array.isArray(firstVal)) {
-            errorMessage = `${firstKey}: ${firstVal.join(", ")}`;
-          } else if (typeof firstVal === "string") {
-            errorMessage = `${firstKey}: ${firstVal}`;
-          } else {
-            errorMessage = backendData.message || backendData.detail || backendData.error || JSON.stringify(backendData);
-          }
-        } else if (err?.message) {
-          errorMessage = err.message;
-        }
-        setApiError(errorMessage);
+        showAuthError(err, "Failed to create account. Please try again.");
       }
     },
-    [signUp, navigation]
+    [signUp, navigation, selectedCountryCode, showAuthError]
   );
 
   const handleNavigateLogin = React.useCallback(() => {
@@ -120,6 +103,7 @@ export const SignUpScreen = ({ navigation }: Props) => {
               value={field.value}
               onChangeText={field.onChange}
               error={errors.fullName?.message}
+              autoCapitalize="words"
             />
           )}
         />
@@ -132,11 +116,11 @@ export const SignUpScreen = ({ navigation }: Props) => {
             <AppTextInput
               label="Email Address"
               placeholder="e.g JDoe@gmail.com"
-              autoCapitalize="none"
-              keyboardType="email-address"
               value={field.value}
               onChangeText={field.onChange}
               error={errors.email?.message}
+              keyboardType="email-address"
+              autoCapitalize="none"
             />
           )}
         />
@@ -156,7 +140,6 @@ export const SignUpScreen = ({ navigation }: Props) => {
             />
           )}
         />
-
 
         {/* Gender */}
         <Controller
@@ -206,7 +189,7 @@ export const SignUpScreen = ({ navigation }: Props) => {
           )}
         />
 
-        {/* Referral Code */}
+        {/* Referral Code (Optional) */}
         <Controller
           control={control}
           name="referralCode"
@@ -222,7 +205,7 @@ export const SignUpScreen = ({ navigation }: Props) => {
           )}
         />
 
-        {/* Terms Checkbox */}
+        {/* Terms of Service Checkbox */}
         <Controller
           control={control}
           name="agreedToTerms"
@@ -243,8 +226,6 @@ export const SignUpScreen = ({ navigation }: Props) => {
             </View>
           )}
         />
-
-        {apiError ? <Text style={styles.apiErrorText}>{apiError}</Text> : null}
 
         <AppButton
           title="Create Account"
@@ -403,12 +384,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: colors.text,
-  },
-  apiErrorText: {
-    fontFamily: "DM Sans",
-    fontSize: 13,
-    color: colors.error || "#EF4444",
-    textAlign: "center",
-    marginBottom: spacing.xs,
   },
 });

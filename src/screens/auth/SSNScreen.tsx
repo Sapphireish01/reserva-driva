@@ -5,21 +5,21 @@ import { driversService } from "../../api/services/drivers";
 import { AppButton } from "../../components/ui";
 import { AuthStackParamList } from "../../navigation/types";
 import { ssnSchema } from "../../schemas/signup";
+import { useAuthToast } from "../../context/AuthToastContext";
 import { colors, spacing, typography } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SSN">;
 
 export const SSNScreen = ({ route, navigation }: Props) => {
   const { driverId } = route.params;
+  const { showAuthError } = useAuthToast();
   const [ssn, setSsn] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const isValid = ssnSchema.safeParse({ ssn }).success;
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    setError(null);
     try {
       // Submitted once, over TLS, straight to the backend for profile update.
       // `ssn` is never written to SecureStore/AsyncStorage and is discarded
@@ -27,7 +27,7 @@ export const SSNScreen = ({ route, navigation }: Props) => {
       await driversService.uploadSsnProfile(ssn);
       navigation.navigate("AccountCreated");
     } catch (e: any) {
-      setError(e?.message ?? "Couldn't verify your SSN. Please try again.");
+      showAuthError(e, "Couldn't verify your SSN. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -46,11 +46,9 @@ export const SSNScreen = ({ route, navigation }: Props) => {
         placeholder="e.g 000000000"
         keyboardType="number-pad"
         maxLength={9}
-        // secureTextEntry
         value={ssn}
         onChangeText={(text) => setSsn(text.replace(/[^0-9]/g, ""))}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <AppButton
         title="Create Account"
@@ -80,5 +78,4 @@ const styles = StyleSheet.create({
     padding: spacing.sm2,
     paddingLeft: spacing.smlg,
   },
-  error: { ...typography.caption, color: colors.error, marginTop: spacing.xs },
 });

@@ -7,26 +7,25 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
 } from "react-native";
 import { authService } from "../../api/services/auth";
 import { AppButton, AppTextInput } from "../../components/ui";
 import { AuthStackParamList } from "../../navigation/types";
+import { useAuthToast } from "../../context/AuthToastContext";
 import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ForgotPassword">;
 
 export const ForgotPasswordScreen = ({ navigation }: Props) => {
+  const { showAuthError } = useAuthToast();
   const [email, setEmail] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const isEmailValid = email.trim().length > 3 && email.includes("@");
 
   const handleSendCode = async () => {
     if (!isEmailValid || isSending) return;
     setIsSending(true);
-    setApiError(null);
     try {
       console.log("🌐 [API Call] POST /accounts/password-reset/ with email:", email.trim());
       await authService.requestPasswordReset(email.trim());
@@ -34,8 +33,7 @@ export const ForgotPasswordScreen = ({ navigation }: Props) => {
       navigation.navigate("ForgotPasswordOTP", { email: email.trim() });
     } catch (err: any) {
       console.error("❌ [API Error] requestPasswordReset failed:", err?.response?.data || err?.message);
-      const backendErr = err?.response?.data?.message || err?.response?.data?.detail || err?.message || "Failed to send reset code. Please try again.";
-      setApiError(String(backendErr));
+      showAuthError(err, "Failed to send reset code. Please try again.");
     } finally {
       setIsSending(false);
     }
@@ -67,8 +65,6 @@ export const ForgotPasswordScreen = ({ navigation }: Props) => {
           autoFocus={true}
           helperText="Use the email linked to your account."
         />
-
-        {apiError ? <Text style={styles.apiErrorText}>{apiError}</Text> : null}
 
         <AppButton
           title={isSending ? "Sending Code..." : "Send Code"}
@@ -102,10 +98,4 @@ const styles = StyleSheet.create({
   loginRow: { marginTop: 32, alignItems: "center" },
   loginText: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B" },
   loginBold: { fontFamily: "DM Sans Bold", fontSize: 14, fontWeight: "700", color: "#375DFB" },
-  apiErrorText: {
-    fontFamily: "DM Sans",
-    fontSize: 13,
-    color: colors.error || "#EF4444",
-    marginTop: spacing.xs,
-  },
 });

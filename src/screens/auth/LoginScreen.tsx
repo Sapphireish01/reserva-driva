@@ -19,15 +19,16 @@ import { AppButton, AppTextInput } from "../../components/ui";
 import { useLoginMutation } from "../../hooks/useAuth";
 import { AuthStackParamList } from "../../navigation/types";
 import { useAuthStore } from "../../state/authStore";
+import { useAuthToast } from "../../context/AuthToastContext";
 import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
 export const LoginScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const { showAuthError } = useAuthToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const { mutateAsync: loginDriver, isPending: isLoggingIn } = useLoginMutation();
   const login = useAuthStore((s) => s.login);
@@ -43,7 +44,6 @@ export const LoginScreen = ({ navigation }: Props) => {
   const handleLogin = React.useCallback(async () => {
     if (!isFormValid || isLoggingIn) return;
     try {
-      setApiError(null);
       console.log("🌐 [API Call] POST /accounts/login/");
       const res = await loginDriver({ email: email.trim(), password });
       console.log("📡 [API Response] POST /accounts/login/ success", res);
@@ -62,9 +62,9 @@ export const LoginScreen = ({ navigation }: Props) => {
       await login(accessToken, res.refresh, res.user);
     } catch (err: any) {
       console.error("❌ [API Error] Login failed:", err?.message || err);
-      setApiError(err?.message || "Login failed. Please check your credentials.");
+      showAuthError(err, "Invalid email or password. Please try again.");
     }
-  }, [email, password, isFormValid, isLoggingIn, loginDriver, login, navigation]);
+  }, [email, password, isFormValid, isLoggingIn, loginDriver, login, navigation, showAuthError]);
 
   const handleForgotPassword = React.useCallback(() => {
     navigation.navigate("ForgotPassword");
@@ -126,8 +126,6 @@ export const LoginScreen = ({ navigation }: Props) => {
         >
           <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
         </TouchableOpacity>
-
-        {apiError ? <Text style={styles.apiErrorText}>{apiError}</Text> : null}
 
         {/* Login Button */}
         <AppButton

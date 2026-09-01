@@ -1,25 +1,24 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DriverBookingItem, PassengerRequest } from "../../../api/services/trips";
+import { PassengerDetailsModal } from "../../../components/bookings/PassengerDetailsModal";
+import { RoutePassengersModal } from "../../../components/bookings/RoutePassengersModal";
+import { VerifiedBadgeIcon } from "../../../components/ProfileIcons";
+import { AppButton, BookingCardSkeleton } from "../../../components/ui";
 import {
   useDriverBookingsQuery,
   useUpdateBookingActionMutation,
 } from "../../../hooks/useDriverTrips";
-import { PassengerDetailsModal } from "../../../components/bookings/PassengerDetailsModal";
-import { RoutePassengersModal } from "../../../components/bookings/RoutePassengersModal";
-import { VerifiedBadgeIcon } from "../../../components/ProfileIcons";
-import { AppButton, AppLoader, BookingCardSkeleton } from "../../../components/ui";
 import { colors, spacing } from "../../../theme/colors";
 
 type Props = any;
@@ -39,8 +38,8 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
     activeTab === "pending"
       ? "pending"
       : activeTab === "accepted"
-      ? "confirmed"
-      : "rejected";
+        ? "confirmed"
+        : "rejected";
 
   const {
     data: serverBookings = [],
@@ -120,7 +119,7 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
     let title = "";
     let subtitle = "";
     let buttonTitle = "";
-    let onButtonPress = () => {};
+    let onButtonPress = () => { };
 
     if (activeTab === "pending") {
       title = "No Pending Requests";
@@ -394,8 +393,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    // paddingHorizontal: spacing.lg,
+    // paddingVertical: spacing.md,
   },
   backButton: { width: 40, height: 40, justifyContent: "center" },
   headerTitle: {
@@ -412,7 +411,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 8,
     alignItems: "center",
     borderBottomWidth: 2,
     borderBottomColor: "transparent",

@@ -1,20 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { TripCardSkeleton } from "../../../components/ui";
 import {
   useCancelTripMutation,
   useDriverTripsQuery,
 } from "../../../hooks/useDriverTrips";
 import { colors, spacing } from "../../../theme/colors";
-import { TripCardSkeleton } from "../../../components/ui";
 import { CancelTripModal } from "./components/CancelTripModal";
 import { SetAvailabilityModal } from "./components/SetAvailabilityModal";
 import { TripActionSheetModal } from "./components/TripActionSheetModal";
@@ -30,10 +29,10 @@ export const TripsScreen = ({ navigation }: any) => {
     activeTab === "Upcoming"
       ? "scheduled"
       : activeTab === "Completed"
-      ? "completed"
-      : activeTab === "Cancelled"
-      ? "cancelled"
-      : undefined;
+        ? "completed"
+        : activeTab === "Cancelled"
+          ? "cancelled"
+          : undefined;
 
   const { data: serverTrips, isLoading: isLoadingTrips, refetch } = useDriverTripsQuery(
     statusParam ? { status: statusParam } : undefined
@@ -52,8 +51,8 @@ export const TripsScreen = ({ navigation }: any) => {
     const rawList = Array.isArray(serverTrips)
       ? serverTrips
       : (serverTrips as any)?.results && Array.isArray((serverTrips as any).results)
-      ? (serverTrips as any).results
-      : [];
+        ? (serverTrips as any).results
+        : [];
 
     if (rawList.length === 0) return [];
     return rawList.map((t: any) => {
@@ -303,7 +302,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
+    // paddingHorizontal: spacing.md,
     paddingVertical: 14,
     // borderBottomWidth: 1,
     // borderBottomColor: "#F1F5F9",

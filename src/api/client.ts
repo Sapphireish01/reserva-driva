@@ -165,8 +165,7 @@ export const createApiClient = (baseURL: string): AxiosInstance => {
         }
       }
 
-      const message = err?.response?.data?.message ?? err?.message ?? "Something went wrong. Please try again.";
-      return Promise.reject(new Error(message));
+      return Promise.reject(err);
     }
   );
 

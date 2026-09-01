@@ -13,17 +13,18 @@ import { PasswordRuleChecklist } from "../../components/PasswordRuleChecklist";
 import { AppButton, AppTextInput } from "../../components/ui";
 import { usePasswordRules } from "../../hooks/usePasswordRules";
 import { AuthStackParamList } from "../../navigation/types";
+import { useAuthToast } from "../../context/AuthToastContext";
 import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "ResetPassword">;
 
 export const ResetPasswordScreen = ({ route, navigation }: Props) => {
   const { otpCode } = route.params || {};
+  const { showAuthError, showAuthToast } = useAuthToast();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const [isResetSuccess, setIsResetSuccess] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const rules = usePasswordRules(password);
   const allRulesPassed = rules.every((r) => r.passed);
@@ -34,44 +35,18 @@ export const ResetPasswordScreen = ({ route, navigation }: Props) => {
     if (!isFormValid || isResetting || isResetSuccess) return;
 
     setIsResetting(true);
-    setApiError(null);
     try {
       console.log("🌐 [API Call] POST /accounts/password-reset/confirm/?otp_code=", otpCode);
       await authService.confirmPasswordReset(otpCode || "", password);
       console.log("✅ [API Success] Password reset confirmed successfully!");
       setIsResetSuccess(true);
+      showAuthToast("Password successfully reset! You can now log in.", { type: "success" });
       setTimeout(() => {
         navigation.navigate("Login");
       }, 1000);
     } catch (err: any) {
       console.error("❌ [API Error] confirmPasswordReset failed:", err?.response?.data || err?.message);
-      const data = err?.response?.data;
-      let msg = "Failed to reset password. Please try again.";
-      if (typeof data === "string") {
-        msg = data;
-      } else if (data && typeof data === "object") {
-        if (data.message) {
-          msg = String(data.message);
-        } else if (data.detail) {
-          msg = String(data.detail);
-        } else if (data.password && Array.isArray(data.password)) {
-          msg = data.password.join(" ");
-        } else if (data.user_pin && Array.isArray(data.user_pin)) {
-          msg = data.user_pin.join(" ");
-        } else if (data.non_field_errors && Array.isArray(data.non_field_errors)) {
-          msg = data.non_field_errors.join(" ");
-        } else {
-          const firstKey = Object.keys(data)[0];
-          if (firstKey && Array.isArray(data[firstKey])) {
-            msg = data[firstKey].join(" ");
-          } else if (firstKey && typeof data[firstKey] === "string") {
-            msg = data[firstKey];
-          }
-        }
-      } else if (err?.message) {
-        msg = err.message;
-      }
-      setApiError(msg);
+      showAuthError(err, "Failed to reset password. Please try again.");
     } finally {
       setIsResetting(false);
     }
@@ -115,8 +90,6 @@ export const ResetPasswordScreen = ({ route, navigation }: Props) => {
           <PasswordRuleChecklist password={password} />
         </View>
 
-        {apiError ? <Text style={styles.apiErrorText}>{apiError}</Text> : null}
-
         <AppButton
           title={isResetSuccess ? "Password Reset!" : "Reset Password"}
           onPress={handleResetPassword}
@@ -137,10 +110,4 @@ const styles = StyleSheet.create({
   title: { fontFamily: "DM Sans Bold", fontSize: 26, fontWeight: "700", color: "#0F172A" },
   subtitle: { fontFamily: "DM Sans", fontSize: 14, color: "#64748B", marginBottom: 24 },
   checklistWrapper: { marginVertical: 12 },
-  apiErrorText: {
-    fontFamily: "DM Sans",
-    fontSize: 13,
-    color: colors.error || "#EF4444",
-    marginTop: spacing.xs,
-  },
 });

@@ -6,6 +6,7 @@ import { authService } from "../../api/services/auth";
 import { AppButton, OTPForm } from "../../components/ui";
 import { useVerifyOtpMutation } from "../../hooks/useAuth";
 import { AuthStackParamList } from "../../navigation/types";
+import { useAuthToast } from "../../context/AuthToastContext";
 import { colors, spacing, typography } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "OTPVerification">;
@@ -13,8 +14,8 @@ type Props = NativeStackScreenProps<AuthStackParamList, "OTPVerification">;
 export const OTPVerificationScreen = ({ route, navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const { driverId } = route.params;
+  const { showAuthError, showAuthToast } = useAuthToast();
   const [code, setCode] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isVerified, setIsVerified] = useState(false);
   const isCodeComplete = code.length === 6;
 
@@ -24,7 +25,6 @@ export const OTPVerificationScreen = ({ route, navigation }: Props) => {
     async (codeToVerify: string) => {
       if (codeToVerify.length !== 6 || isVerifying) return;
       try {
-        setErrorMessage(null);
         console.log("🌐 [API Call] POST /accounts/verify-otp/ with otp:", codeToVerify);
         await verifyOtp(codeToVerify);
         setIsVerified(true);
@@ -32,36 +32,29 @@ export const OTPVerificationScreen = ({ route, navigation }: Props) => {
         navigation.navigate("LicenseIntro", { driverId });
       } catch (err: any) {
         console.error("❌ [API Error] verifyOtp failed:", err?.response?.data || err?.message);
-        const backendData = err?.response?.data;
-        let msg = "Invalid verification code. Please try again.";
-        if (typeof backendData === "string") {
-          msg = backendData;
-        } else if (backendData && typeof backendData === "object") {
-          msg = backendData.message || backendData.detail || backendData.error || backendData.otp?.[0] || msg;
-        } else if (err?.message) {
-          msg = err.message;
-        }
-        setErrorMessage(msg);
+        showAuthError(err, "Invalid verification code. Please try again.");
       }
     },
-    [driverId, isVerifying, navigation, verifyOtp]
+    [driverId, isVerifying, navigation, verifyOtp, showAuthError]
   );
 
   const handleResend = React.useCallback(async () => {
-    setErrorMessage(null);
     const emailToUse = (route.params as any)?.email;
     if (!emailToUse) {
       console.warn("⚠️ No email passed to OTPVerificationScreen for resend");
+      showAuthToast("Unable to resend code without email address.", { type: "error" });
       return;
     }
     try {
       console.log("🌐 [API Call] POST /accounts/resend-otp/?email=", emailToUse);
       await authService.resendOtp(emailToUse);
       console.log("✅ [API Success] Resent OTP successfully");
+      showAuthToast("A new verification code has been sent to your email.", { type: "info" });
     } catch (err: any) {
       console.error("❌ [API Error] resendOtp failed:", err);
+      showAuthError(err, "Failed to resend verification code.");
     }
-  }, [route.params]);
+  }, [route.params, showAuthToast, showAuthError]);
 
   return (
     <View style={[styles.container]}>
@@ -73,11 +66,9 @@ export const OTPVerificationScreen = ({ route, navigation }: Props) => {
       <OTPForm
         onChange={(val) => {
           setCode(val);
-          if (errorMessage) setErrorMessage(null);
         }}
         onComplete={handleVerify}
         onResend={handleResend}
-        error={errorMessage || undefined}
         autoFocus={true}
       />
 
