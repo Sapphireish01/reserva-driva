@@ -2,14 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   Image,
-  Platform,
   RefreshControl,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatsGridSkeleton, TripCardSkeleton } from "../../../components/ui";
@@ -21,6 +19,7 @@ import {
   getUserFirstName,
   useAuthStore,
 } from "../../../state/authStore";
+import { colors, spacing } from "../../../theme/colors";
 
 type Props = any;
 
@@ -59,20 +58,37 @@ export const HomeScreen = ({ navigation }: Props) => {
     }
   }, [refetchMetrics, refetchTrips]);
 
-  // Normalize scheduled trips array
+  // Normalize scheduled trips array with fallback sample trip for testing
   const scheduledTrips = React.useMemo(() => {
     const rawList = Array.isArray(serverTrips)
       ? serverTrips
       : (serverTrips as any)?.results && Array.isArray((serverTrips as any).results)
-      ? (serverTrips as any).results
-      : [];
-    return rawList;
+        ? (serverTrips as any).results
+        : [];
+
+    if (rawList.length > 0) return rawList;
+
+    // Sample Trip for instant testing of live route & map navigation
+    return [
+      {
+        id: "trip-live-101",
+        pickup_location: "Frebson Fitness Gym, Ikeja",
+        destination: "42, Montgomery Road, Yaba",
+        departure_time_display: "Today • 10:30 AM",
+        available_seats: 1,
+        total_seats: 4,
+        seats_available: 1,
+        seats_remaining: 1,
+        is_recurring: false,
+        status: "scheduled",
+      },
+    ];
   }, [serverTrips]);
 
   const showBanner = !isVerified || !user?.profile?.address_line_1;
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
@@ -252,9 +268,9 @@ export const HomeScreen = ({ navigation }: Props) => {
                     <TouchableOpacity
                       style={styles.startTripButton}
                       activeOpacity={0.8}
-                      onPress={() => navigation.navigate("TripsTab")}
+                      onPress={() => navigation.navigate("ActiveTrip", { tripId: trip.id, trip })}
                     >
-                      <Text style={styles.startTripText}>View Trip Details</Text>
+                      <Text style={styles.startTripText}>View Live Route & Map</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -270,23 +286,25 @@ export const HomeScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) + 4 : 0,
+    backgroundColor: colors.background,
   },
-  container: { flex: 1, backgroundColor: "#FFFFFF" },
-  contentContainer: { paddingHorizontal: 16, paddingBottom: 32 },
+  container: { flex: 1, backgroundColor: colors.background },
+  contentContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+  },
 
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 12,
+    paddingVertical: 12,
     marginBottom: 16,
   },
   headerLeft: { flex: 1 },
-  greetingTitle: { fontFamily: "DM Sans Bold", fontSize: 22, fontWeight: "700", color: "#0F172A" },
+  greetingTitle: { fontFamily: "DM Sans Bold", fontSize: 16, fontWeight: "600", color: "#0F172A" },
   locationRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
-  locationText: { fontFamily: "DM Sans", fontSize: 13, color: "#64748B", fontWeight: "400" },
+  locationText: { fontFamily: "DM Sans", fontSize: 10, color: "#64748B", fontWeight: "400" },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 12 },
   bellButton: { width: 38, height: 38, justifyContent: "center", alignItems: "center" },
   avatarContainer: {
@@ -332,26 +350,40 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 48,
-    paddingHorizontal: 16,
+    paddingVertical: 32,
+    paddingHorizontal: spacing.lg,
   },
-  emptyTitle: { fontFamily: "DM Sans Bold", fontSize: 18, fontWeight: "700", color: "#0F172A", marginBottom: 8 },
+  emptyTitle: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 14,
+    lineHeight: 17,
+    fontWeight: "500",
+    color: colors.dark,
+    marginBottom: 8,
+    textAlign: "center",
+  },
   emptySubtitle: {
     fontFamily: "DM Sans",
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: 12,
+    color: colors.grey,
     textAlign: "center",
-    marginBottom: 24,
-    lineHeight: 20,
-    maxWidth: 320,
+    lineHeight: 18,
+    marginBottom: 12,
+    maxWidth: 328,
   },
   scheduleButton: {
-    backgroundColor: "#375DFB",
-    paddingHorizontal: 36,
-    paddingVertical: 14,
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
   },
-  scheduleButtonText: { fontFamily: "DM Sans Bold", color: "#FFFFFF", fontWeight: "700", fontSize: 15 },
+  scheduleButtonText: {
+    fontFamily: "DM Sans Bold",
+    color: "#FFFFFF",
+    fontWeight: "500",
+    fontSize: 14,
+  },
 
   queueContainer: { gap: 14 },
   tripCard: {

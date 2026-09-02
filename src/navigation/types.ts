@@ -60,6 +60,7 @@ export type MainStackParamList = {
   EditName: { currentName: string };
   EditEmail: { currentEmail: string };
   EditPhone: { currentPhone: string };
+  ActiveTrip: { tripId?: string; trip?: any } | undefined;
 };
 
 

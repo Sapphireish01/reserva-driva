@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontFamily: "DM Sans Bold",
     fontSize: 20,
-    fontWeight: "700",
+    fontWeight: "600",
     color: colors.dark,
   },
   container: {

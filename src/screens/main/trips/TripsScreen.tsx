@@ -93,7 +93,9 @@ export const TripsScreen = ({ navigation }: any) => {
   };
 
   const handleStartTrip = (tripId: string) => {
-    // start trip action logic
+    setShowActionSheet(false);
+    setShowDetailsModal(false);
+    navigation.navigate("ActiveTrip", { tripId, trip: selectedTrip });
   };
 
   const handleTogglePause = (tripId: string) => {
@@ -211,13 +213,14 @@ export const TripsScreen = ({ navigation }: any) => {
       {/* Top Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          style={styles.backBtn}
+          onPress={() => navigation.canGoBack() && navigation.goBack()}
+          activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={22} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color={colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Trips</Text>
-        <View style={{ width: 22 }} />
+        <View style={{ width: 32 }} />
       </View>
 
       {/* Tabs Row */}
@@ -296,22 +299,23 @@ export const TripsScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    // paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    // borderBottomWidth: 1,
-    // borderBottomColor: "#F1F5F9",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  backBtn: {
+    padding: 4,
   },
   headerTitle: {
     fontFamily: "DM Sans Bold",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 20,
+    fontWeight: "600",
+    color: colors.dark,
   },
   tabsRow: {
     flexDirection: "row",

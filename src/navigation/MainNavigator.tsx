@@ -18,7 +18,7 @@ import {
   TwoFactorAuthScreen,
   VehiclesScreen,
 } from "../screens/main/profile";
-import { CreateTripScreen, TripsScreen } from "../screens/main/trips";
+import { ActiveTripScreen, CreateTripScreen, TripsScreen } from "../screens/main/trips";
 import { EarningsScreen, TransactionDetailsScreen } from "../screens/main/wallet";
 import { colors } from "../theme/colors";
 import { MainStackParamList, MainTabParamList } from "./types";
@@ -170,6 +170,11 @@ export const MainNavigator = () => (
     <Stack.Screen
       name="TransactionDetails"
       component={TransactionDetailsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="ActiveTrip"
+      component={ActiveTripScreen}
       options={{ headerShown: false }}
     />
   </Stack.Navigator>

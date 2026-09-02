@@ -9,12 +9,12 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { DriverBookingItem, PassengerRequest } from "../../../api/services/trips";
 import { PassengerDetailsModal } from "../../../components/bookings/PassengerDetailsModal";
 import { RoutePassengersModal } from "../../../components/bookings/RoutePassengersModal";
 import { VerifiedBadgeIcon } from "../../../components/ProfileIcons";
-import { AppButton, BookingCardSkeleton } from "../../../components/ui";
+import { BookingCardSkeleton } from "../../../components/ui";
 import {
   useDriverBookingsQuery,
   useUpdateBookingActionMutation,
@@ -26,7 +26,6 @@ type Props = any;
 type FilterTab = "pending" | "accepted" | "rejected";
 
 export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
-  const insets = useSafeAreaInsets();
   const filterTripId = route.params?.tripId;
   const [activeTab, setActiveTab] = useState<FilterTab>("pending");
 
@@ -142,12 +141,13 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyTitle}>{title}</Text>
         <Text style={styles.emptySub}>{subtitle}</Text>
-        <AppButton
-          title={buttonTitle}
-          onPress={onButtonPress}
-          fullWidth={false}
+        <TouchableOpacity
           style={styles.emptyBtn}
-        />
+          onPress={onButtonPress}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.emptyBtnText}>{buttonTitle}</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -159,18 +159,18 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
   ];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <SafeAreaView style={styles.safeArea}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          style={styles.backBtn}
+          onPress={() => navigation.canGoBack() && navigation.goBack()}
           activeOpacity={0.7}
         >
-          <Ionicons name="arrow-back" size={24} color="#0F172A" />
+          <Ionicons name="arrow-back" size={24} color={colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Bookings</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ width: 32 }} />
       </View>
 
       {/* Tabs Row */}
@@ -383,25 +383,31 @@ export const PassengerRequestsScreen = ({ route, navigation }: Props) => {
         passenger={selectedPassenger}
         onClose={() => setSelectedPassenger(null)}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: { flex: 1, backgroundColor: "#FFFFFF" },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    // paddingHorizontal: spacing.lg,
-    // paddingVertical: spacing.md,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
-  backButton: { width: 40, height: 40, justifyContent: "center" },
+  backBtn: {
+    padding: 4,
+  },
   headerTitle: {
     fontFamily: "DM Sans Bold",
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 20,
+    fontWeight: "600",
+    color: colors.dark,
   },
   tabsRow: {
     flexDirection: "row",
@@ -411,7 +417,7 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: 8,
+    paddingVertical: 4,
     alignItems: "center",
     borderBottomWidth: 2,
     borderBottomColor: "transparent",
@@ -424,7 +430,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontFamily: "DM Sans",
-    fontSize: 14,
+    fontSize: 12,
     color: "#94A3B8",
   },
   activeTabText: {
@@ -449,27 +455,38 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: spacing.lg,
   },
   emptyTitle: {
     fontFamily: "DM Sans Bold",
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#0F172A",
-    textAlign: "center",
+    fontSize: 14,
+    lineHeight: 17,
+    fontWeight: "500",
+    color: colors.dark,
     marginBottom: 8,
+    textAlign: "center",
   },
   emptySub: {
     fontFamily: "DM Sans",
-    fontSize: 14,
-    color: "#64748B",
+    fontSize: 12,
+    color: colors.grey,
     textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 24,
+    lineHeight: 18,
+    marginBottom: 12,
+    maxWidth: 328,
   },
   emptyBtn: {
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    backgroundColor: colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  emptyBtnText: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#FFFFFF",
   },
 
   listContent: { padding: spacing.md, gap: 12 },
