@@ -26,15 +26,20 @@ export type MainTabParamList = {
 
 export interface TransactionItem {
   id: string;
-  pickup: string;
-  destination: string;
-  seatsBooked: number;
+  reference_id?: string;
+  pickup?: string;
+  destination?: string;
+  seatsBooked?: number;
   amount: string;
-  status: "Pending" | "Completed" | "Failed";
-  dateTime: string;
-  bookingDate: string;
+  currency?: string;
+  status: "Pending" | "Completed" | "Failed" | string;
+  dateTime?: string;
+  date?: string;
+  time?: string;
+  bookingDate?: string;
   transactionId: string;
-  customerName: string;
+  customerName?: string;
+  resolution_notes?: string | null;
 }
 
 export type MainStackParamList = {

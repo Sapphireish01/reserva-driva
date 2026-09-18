@@ -188,6 +188,7 @@ interface AuthState {
   fetchProfile: () => Promise<UserData | null>;
   login: (accessToken: string, refreshToken?: string, user?: any) => Promise<void>;
   logout: () => Promise<void>;
+  deactivateAccount: () => Promise<{ message?: string }>;
   setUser: (user: any) => Promise<void>;
   setHasSignedInBefore: (val: boolean) => Promise<void>;
 }
@@ -277,6 +278,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (err) {
       console.warn("⚠️ Server logout endpoint warning/failed, proceeding with local token wipe:", err);
+    } finally {
+      await clearStoredTokens();
+      set({ isAuthenticated: false, user: null });
+    }
+  },
+
+  deactivateAccount: async () => {
+    clearProactiveRefreshTimer();
+    try {
+      console.log("🌐 [API Call] POST /accounts/deactivate/...");
+      const res = await authService.deactivateAccount();
+      console.log("✅ [API Call] Account deactivated successfully:", res.data);
+      return res.data;
     } finally {
       await clearStoredTokens();
       set({ isAuthenticated: false, user: null });

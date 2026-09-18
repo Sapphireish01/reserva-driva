@@ -24,9 +24,24 @@ export const TransactionDetailsScreen: React.FC<Props> = ({ route, navigation })
 
   const [showDisputeModal, setShowDisputeModal] = useState(false);
 
+  const txRef = transaction.reference_id || transaction.transactionId || transaction.id;
+  const normStatus = (transaction.status || "").toLowerCase();
+  const displayStatus =
+    normStatus === "completed" ? "Completed" : normStatus === "failed" ? "Failed" : "Pending";
+
+  const formatCurrency = (val: string | number) => {
+    if (typeof val === "string" && val.startsWith("$")) return val;
+    const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
+    if (isNaN(num)) return `$${val}`;
+    return `$${num.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
   const handleCopyTransactionId = () => {
-    Clipboard.setString(transaction.transactionId);
-    Alert.alert("Copied!", "Transaction ID copied to clipboard.");
+    Clipboard.setString(txRef);
+    Alert.alert("Copied!", "Transaction reference copied to clipboard.");
   };
 
   const handleDownloadReceipt = () => {
@@ -34,18 +49,23 @@ export const TransactionDetailsScreen: React.FC<Props> = ({ route, navigation })
   };
 
   const statusBadgeStyle =
-    transaction.status === "Completed"
+    displayStatus === "Completed"
       ? styles.badgeCompleted
-      : transaction.status === "Pending"
+      : displayStatus === "Pending"
       ? styles.badgePending
       : styles.badgeFailed;
 
   const statusTextStyle =
-    transaction.status === "Completed"
+    displayStatus === "Completed"
       ? styles.badgeTextCompleted
-      : transaction.status === "Pending"
+      : displayStatus === "Pending"
       ? styles.badgeTextPending
       : styles.badgeTextFailed;
+
+  const displayDate =
+    transaction.date && transaction.time
+      ? `${transaction.date} • ${transaction.time}`
+      : transaction.bookingDate || transaction.dateTime || "N/A";
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -61,10 +81,10 @@ export const TransactionDetailsScreen: React.FC<Props> = ({ route, navigation })
 
         <View style={styles.headerTitleRow}>
           <Text style={styles.headerTitle} numberOfLines={1}>
-            {transaction.pickup}
+            {transaction.pickup || `Transaction #${txRef}`}
           </Text>
           <View style={[styles.badge, statusBadgeStyle]}>
-            <Text style={[styles.badgeText, statusTextStyle]}>{transaction.status}</Text>
+            <Text style={[styles.badgeText, statusTextStyle]}>{displayStatus}</Text>
           </View>
         </View>
 
@@ -75,48 +95,61 @@ export const TransactionDetailsScreen: React.FC<Props> = ({ route, navigation })
         {/* Earnings Hero Card */}
         <View style={styles.heroCard}>
           <Text style={styles.heroLabel}>Earnings</Text>
-          <Text style={styles.heroAmount}>{transaction.amount}</Text>
+          <Text style={styles.heroAmount}>{formatCurrency(transaction.amount)}</Text>
         </View>
 
         {/* Transaction Detail Rows */}
         <View style={styles.detailsGroup}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailKey}>Pickup Location</Text>
-            <Text style={styles.detailValue}>{transaction.pickup}</Text>
-          </View>
+          {transaction.pickup ? (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailKey}>Pickup Location</Text>
+              <Text style={styles.detailValue}>{transaction.pickup}</Text>
+            </View>
+          ) : null}
+
+          {transaction.destination ? (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailKey}>Destination</Text>
+              <Text style={styles.detailValue}>{transaction.destination}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailKey}>Destination</Text>
-            <Text style={styles.detailValue}>{transaction.destination}</Text>
-          </View>
-
-          <View style={styles.detailRow}>
-            <Text style={styles.detailKey}>Transaction ID</Text>
+            <Text style={styles.detailKey}>Reference ID</Text>
             <TouchableOpacity
               style={styles.copyValueRow}
               onPress={handleCopyTransactionId}
               activeOpacity={0.7}
             >
-              <Text style={styles.detailValue}>{transaction.transactionId}</Text>
+              <Text style={styles.detailValue}>{txRef}</Text>
               <CopyIconItem color={colors.grey} size={18} />
             </TouchableOpacity>
           </View>
 
           <View style={styles.detailRow}>
-            <Text style={styles.detailKey}>Booking Dates</Text>
-            <Text style={styles.detailValue}>{transaction.bookingDate}</Text>
+            <Text style={styles.detailKey}>Date & Time</Text>
+            <Text style={styles.detailValue}>{displayDate}</Text>
           </View>
 
-          <View style={styles.detailRow}>
-            <Text style={styles.detailKey}>Customer Name</Text>
-            <Text style={styles.detailValue}>{transaction.customerName}</Text>
-          </View>
+          {transaction.seatsBooked ? (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailKey}>Booked Seats</Text>
+              <Text style={styles.detailValue}>{transaction.seatsBooked}</Text>
+            </View>
+          ) : null}
+
+          {transaction.customerName ? (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailKey}>Customer Name</Text>
+              <Text style={styles.detailValue}>{transaction.customerName}</Text>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
       {/* Bottom Action Footer */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        {transaction.status === "Completed" ? (
+        {displayStatus === "Completed" ? (
           <>
             <TouchableOpacity
               style={styles.disputeOutlinedBtn}
@@ -148,9 +181,10 @@ export const TransactionDetailsScreen: React.FC<Props> = ({ route, navigation })
       {/* Raise Dispute Modal */}
       <RaiseDisputeModal
         visible={showDisputeModal}
+        reference={txRef}
         onClose={() => setShowDisputeModal(false)}
         onSubmit={(reason) => {
-          console.log("Dispute raised for transaction:", transaction.id, reason);
+          console.log("Dispute submitted for transaction:", txRef, reason);
         }}
       />
     </View>

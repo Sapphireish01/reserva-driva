@@ -107,7 +107,7 @@ export const HomeScreen = ({ navigation }: Props) => {
                 <Text style={styles.locationText} numberOfLines={1}>{address}</Text>
               </View>
             ) : (
-              <Text style={styles.locationText}>Welcome to Reserva Driver</Text>
+              <Text style={styles.locationText}>Welcome to Rezarva Driver</Text>
             )}
           </View>
 

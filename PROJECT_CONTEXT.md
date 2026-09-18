@@ -1,7 +1,7 @@
-# Project Context: Reserva Driver (`reserva-driver`)
+# Project Context: Rezarva Driver (`reserva-driver`)
 
 ## 📱 Project Overview
-**Reserva Driver** is a cross-platform React Native / Expo mobile application built for drivers. It allows drivers to manage trip availability, accept/decline passenger booking requests, track earnings and transaction history, manage vehicles and compliance documentation, and configure driver account preferences.
+**Rezarva Driver** is a cross-platform React Native / Expo mobile application built for drivers. It allows drivers to manage trip availability, accept/decline passenger booking requests, track earnings and transaction history, manage vehicles and compliance documentation, and configure driver account preferences.
 
 ---
 

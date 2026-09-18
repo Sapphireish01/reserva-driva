@@ -186,6 +186,98 @@ export const StatsGridSkeleton: React.FC = () => {
   );
 };
 
+export const WalletSummarySkeleton: React.FC = () => {
+  return (
+    <View style={{ flexDirection: "row", gap: 12, marginBottom: 16 }}>
+      <View
+        style={{
+          flex: 1,
+          borderWidth: 1,
+          borderColor: "#E2E4E9",
+          borderRadius: 10,
+          padding: 12,
+        }}
+      >
+        <Skeleton width={80} height={12} borderRadius={4} style={{ marginBottom: 6 }} />
+        <Skeleton width={70} height={18} borderRadius={4} />
+      </View>
+      <View
+        style={{
+          flex: 1,
+          borderWidth: 1,
+          borderColor: "#E2E4E9",
+          borderRadius: 10,
+          padding: 12,
+        }}
+      >
+        <Skeleton width={110} height={12} borderRadius={4} style={{ marginBottom: 6 }} />
+        <Skeleton width={60} height={18} borderRadius={4} />
+      </View>
+    </View>
+  );
+};
+
+export const TransactionCardSkeleton: React.FC<SkeletonContainerProps> = ({ style }) => {
+  return (
+    <View
+      style={[
+        {
+          borderWidth: 1,
+          borderColor: "#E2E4E9",
+          borderRadius: 16,
+          padding: 16,
+          marginBottom: 14,
+          backgroundColor: "#FFFFFF",
+        },
+        style,
+      ]}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 14,
+        }}
+      >
+        <Skeleton width={90} height={14} borderRadius={4} />
+        <Skeleton width={70} height={22} borderRadius={11} />
+      </View>
+
+      <View style={{ gap: 10, marginBottom: 14 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Skeleton width={8} height={8} borderRadius={4} />
+            <Skeleton width={70} height={12} borderRadius={4} />
+          </View>
+          <Skeleton width={130} height={14} borderRadius={4} />
+        </View>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Skeleton width={8} height={8} borderRadius={4} />
+            <Skeleton width={70} height={12} borderRadius={4} />
+          </View>
+          <Skeleton width={150} height={14} borderRadius={4} />
+        </View>
+      </View>
+
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingTop: 10,
+          borderTopWidth: 1,
+          borderTopColor: "#F1F5F9",
+        }}
+      >
+        <Skeleton width={90} height={14} borderRadius={4} />
+        <Skeleton width={75} height={18} borderRadius={4} />
+      </View>
+    </View>
+  );
+};
+
 const styles = StyleSheet.create({
   cardContainer: {
     backgroundColor: "#FFFFFF",

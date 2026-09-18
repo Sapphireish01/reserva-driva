@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,67 +16,127 @@ import {
   SearchIconItem,
   UsersIconItem,
 } from "../../../components/ProfileIcons";
+import {
+  TransactionCardSkeleton,
+  WalletSummarySkeleton,
+} from "../../../components/ui";
+import { useWalletTransactionsQuery } from "../../../hooks/useWallet";
 import { TransactionItem } from "../../../navigation/types";
 import { colors, palette } from "../../../theme/colors";
 
 type Props = any;
+type StatusFilter = "all" | "completed" | "pending" | "failed";
 
-const MOCK_TRANSACTIONS: TransactionItem[] = [
-  {
-    id: "tx-1",
-    pickup: "Frebson Fitness Gym",
-    destination: "42, Montgomery Road Yaba",
-    seatsBooked: 4,
-    amount: "N12,500",
-    status: "Pending",
-    dateTime: "Jul 14 • 8:30AM",
-    bookingDate: "30 Mar 2025",
-    transactionId: "AB123-DRIX543-LLY",
-    customerName: "Jane Doe",
-  },
-  {
-    id: "tx-2",
-    pickup: "Frebson Fitness Gym",
-    destination: "42, Montgomery Road Yaba",
-    seatsBooked: 4,
-    amount: "N12,500",
-    status: "Completed",
-    dateTime: "Jul 14 • 8:30AM",
-    bookingDate: "30 Mar 2025",
-    transactionId: "AB123-DRIX543-LLY",
-    customerName: "Jane Doe",
-  },
-  {
-    id: "tx-3",
-    pickup: "Frebson Fitness Gym",
-    destination: "42, Montgomery Road Yaba",
-    seatsBooked: 4,
-    amount: "N12,500",
-    status: "Failed",
-    dateTime: "Jul 14 • 8:30AM",
-    bookingDate: "30 Mar 2025",
-    transactionId: "AB123-DRIX543-LLY",
-    customerName: "Jane Doe",
-  },
-];
+const formatCurrency = (val: string | number): string => {
+  if (typeof val === "string" && val.startsWith("$")) return val;
+  const num = typeof val === "string" ? parseFloat(val.replace(/[^0-9.-]+/g, "")) : val;
+  if (isNaN(num)) return `$${val}`;
+  return `$${num.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
 
 export const EarningsScreen = ({ navigation }: Props) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterActive, setFilterActive] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<StatusFilter>("all");
 
-  const filteredTransactions = MOCK_TRANSACTIONS.filter((tx) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      tx.pickup.toLowerCase().includes(q) ||
-      tx.destination.toLowerCase().includes(q) ||
-      tx.dateTime.toLowerCase().includes(q) ||
-      tx.status.toLowerCase().includes(q) ||
-      tx.amount.toLowerCase().includes(q)
-    );
-  });
+  const {
+    data: rawTransactions,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useWalletTransactionsQuery();
+
+  // Normalize backend transactions to TransactionItem structure
+  const transactions: TransactionItem[] = useMemo(() => {
+    if (!rawTransactions || !Array.isArray(rawTransactions)) return [];
+    return rawTransactions.map((tx, index) => {
+      const refId = tx.reference_id || String(tx.id || `tx-${index}`);
+      const normStatus = (tx.status || "pending").toLowerCase();
+      const displayStatus =
+        normStatus === "completed"
+          ? "Completed"
+          : normStatus === "failed"
+          ? "Failed"
+          : "Pending";
+
+      return {
+        id: refId,
+        reference_id: tx.reference_id || refId,
+        transactionId: tx.reference_id || refId,
+        amount: tx.amount,
+        currency: tx.currency || "NGN",
+        status: displayStatus,
+        date: tx.date,
+        time: tx.time,
+        dateTime:
+          tx.date && tx.time ? `${tx.date} • ${tx.time}` : (tx.dateTime as string) || "Recent",
+        pickup: tx.pickup as string | undefined,
+        destination: tx.destination as string | undefined,
+        seatsBooked: tx.seatsBooked as number | undefined,
+        bookingDate: (tx.bookingDate as string) || tx.date,
+        customerName: tx.customerName as string | undefined,
+        resolution_notes: tx.resolution_notes as string | null | undefined,
+      };
+    });
+  }, [rawTransactions]);
+
+  // Compute metrics dynamically from transactions
+  const { totalEarnings, totalPending } = useMemo(() => {
+    let completedSum = 0;
+    let pendingSum = 0;
+
+    transactions.forEach((tx) => {
+      const amt = parseFloat(String(tx.amount).replace(/[^0-9.-]+/g, "")) || 0;
+      if (tx.status === "Completed") {
+        completedSum += amt;
+      } else if (tx.status === "Pending") {
+        pendingSum += amt;
+      }
+    });
+
+    return {
+      totalEarnings: formatCurrency(completedSum),
+      totalPending: formatCurrency(pendingSum),
+    };
+  }, [transactions]);
+
+  // Filter transactions based on search query and status filter
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      // Status filter
+      if (selectedStatus !== "all") {
+        if (tx.status.toLowerCase() !== selectedStatus.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // Search query filter
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.toLowerCase().trim();
+      const refMatch = (tx.reference_id || tx.transactionId || "").toLowerCase().includes(q);
+      const amountMatch = (tx.amount || "").toLowerCase().includes(q);
+      const statusMatch = (tx.status || "").toLowerCase().includes(q);
+      const dateMatch = (tx.dateTime || tx.date || "").toLowerCase().includes(q);
+      const pickupMatch = (tx.pickup || "").toLowerCase().includes(q);
+      const destMatch = (tx.destination || "").toLowerCase().includes(q);
+
+      return refMatch || amountMatch || statusMatch || dateMatch || pickupMatch || destMatch;
+    });
+  }, [transactions, selectedStatus, searchQuery]);
 
   const handleTransactionPress = (transaction: TransactionItem) => {
     navigation.navigate("TransactionDetails", { transaction });
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery("");
+    setSelectedStatus("all");
+    setFilterActive(false);
   };
 
   return (
@@ -93,7 +154,19 @@ export const EarningsScreen = ({ navigation }: Props) => {
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetch}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
         {/* Bank Banner Alert */}
         <TouchableOpacity
           style={styles.bankBanner}
@@ -107,17 +180,21 @@ export const EarningsScreen = ({ navigation }: Props) => {
         </TouchableOpacity>
 
         {/* Summary Cards Row */}
-        <View style={styles.summaryRow}>
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Earnings</Text>
-            <Text style={styles.summaryAmount}>$100.00</Text>
-          </View>
+        {isLoading && !rawTransactions ? (
+          <WalletSummarySkeleton />
+        ) : (
+          <View style={styles.summaryRow}>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Total Earnings</Text>
+              <Text style={styles.summaryAmount}>{totalEarnings}</Text>
+            </View>
 
-          <View style={styles.summaryCard}>
-            <Text style={styles.summaryLabel}>Total Pending Payments</Text>
-            <Text style={styles.summaryAmount}>$0.00</Text>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Total Pending Payments</Text>
+              <Text style={styles.summaryAmount}>{totalPending}</Text>
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Search & Filter Row */}
         <View style={styles.searchRow}>
@@ -125,7 +202,7 @@ export const EarningsScreen = ({ navigation }: Props) => {
             <SearchIconItem size={20} color={colors.grey} />
             <TextInput
               style={styles.searchInput}
-              placeholder="Search..."
+              placeholder="Search reference, amount, date..."
               placeholderTextColor={colors.grey}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -138,83 +215,173 @@ export const EarningsScreen = ({ navigation }: Props) => {
           </View>
 
           <TouchableOpacity
-            style={[styles.filterBtn, filterActive && styles.filterBtnActive]}
+            style={[styles.filterBtn, (filterActive || selectedStatus !== "all") && styles.filterBtnActive]}
             onPress={() => setFilterActive((prev) => !prev)}
             activeOpacity={0.8}
           >
-            <FilterIconItem size={20} color={filterActive ? colors.primary : "#868C98"} />
+            <FilterIconItem
+              size={20}
+              color={filterActive || selectedStatus !== "all" ? colors.primary : "#868C98"}
+            />
           </TouchableOpacity>
         </View>
 
+        {/* Filter Chips Bar (Shown when filter is toggled) */}
+        {filterActive && (
+          <View style={styles.filterChipsRow}>
+            {(["all", "completed", "pending", "failed"] as StatusFilter[]).map((status) => {
+              const isSelected = selectedStatus === status;
+              const label =
+                status === "all"
+                  ? "All"
+                  : status.charAt(0).toUpperCase() + status.slice(1);
+
+              return (
+                <TouchableOpacity
+                  key={status}
+                  style={[styles.chip, isSelected && styles.chipActive]}
+                  onPress={() => setSelectedStatus(status)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Error State */}
+        {isError && (
+          <View style={styles.errorCard}>
+            <Ionicons name="alert-circle-outline" size={24} color={colors.error} />
+            <Text style={styles.errorTitle}>Could not load transactions</Text>
+            <Text style={styles.errorSubtitle}>
+              {(error as any)?.message || "Please check your network and try again."}
+            </Text>
+            <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()} activeOpacity={0.8}>
+              <Text style={styles.retryBtnText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Transactions List */}
         <View style={styles.transactionsList}>
-          {filteredTransactions.map((tx) => {
-            const badgeStyle =
-              tx.status === "Completed"
-                ? styles.badgeCompleted
-                : tx.status === "Pending"
+          {isLoading && !rawTransactions ? (
+            <>
+              <TransactionCardSkeleton />
+              <TransactionCardSkeleton />
+              <TransactionCardSkeleton />
+            </>
+          ) : filteredTransactions.length === 0 ? (
+            /* Empty State */
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconCircle}>
+                <Ionicons name="receipt-outline" size={32} color={palette.slate[400]} />
+              </View>
+              <Text style={styles.emptyTitle}>No Transactions Found</Text>
+              <Text style={styles.emptySubtitle}>
+                {searchQuery || selectedStatus !== "all"
+                  ? "No transactions match your current search or filter criteria."
+                  : "You don't have any wallet transactions recorded yet."}
+              </Text>
+              {(searchQuery || selectedStatus !== "all") && (
+                <TouchableOpacity
+                  style={styles.clearFilterBtn}
+                  onPress={handleClearFilters}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.clearFilterText}>Reset Filters</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            filteredTransactions.map((tx) => {
+              const badgeStyle =
+                tx.status === "Completed"
+                  ? styles.badgeCompleted
+                  : tx.status === "Pending"
                   ? styles.badgePending
                   : styles.badgeFailed;
 
-            const badgeTextStyle =
-              tx.status === "Completed"
-                ? styles.badgeTextCompleted
-                : tx.status === "Pending"
+              const badgeTextStyle =
+                tx.status === "Completed"
+                  ? styles.badgeTextCompleted
+                  : tx.status === "Pending"
                   ? styles.badgeTextPending
                   : styles.badgeTextFailed;
 
-            return (
-              <TouchableOpacity
-                key={tx.id}
-                style={styles.txCard}
-                onPress={() => handleTransactionPress(tx)}
-                activeOpacity={0.85}
-              >
-                {/* Header line: Date & Status */}
-                <View style={styles.txHeader}>
-                  <Text style={styles.txDate}>{tx.dateTime}</Text>
-                  <View style={[styles.badge, badgeStyle]}>
-                    <Text style={[styles.badgeText, badgeTextStyle]}>{tx.status}</Text>
-                  </View>
-                </View>
+              const hasLocations = Boolean(tx.pickup && tx.destination);
 
-                {/* Locations: Pickup & Destination with vertical line connector */}
-                <View style={styles.locationContainer}>
-                  {/* Pickup Row */}
-                  <View style={styles.locationRow}>
-                    <View style={styles.locationLeft}>
-                      <View style={styles.dotOutline} />
-                      <Text style={styles.locationKey}>Pick up point</Text>
+              return (
+                <TouchableOpacity
+                  key={tx.id}
+                  style={styles.txCard}
+                  onPress={() => handleTransactionPress(tx)}
+                  activeOpacity={0.85}
+                >
+                  {/* Header line: Date & Status */}
+                  <View style={styles.txHeader}>
+                    <Text style={styles.txDate}>{tx.dateTime}</Text>
+                    <View style={[styles.badge, badgeStyle]}>
+                      <Text style={[styles.badgeText, badgeTextStyle]}>{tx.status}</Text>
                     </View>
-                    <Text style={styles.locationVal}>{tx.pickup}</Text>
                   </View>
 
-                  {/* Vertical Connector Line */}
-                  <View style={styles.connectorLine}>
-                    <DottedConnectorLineItem color="#E2E4E9" />
-                  </View>
+                  {/* Locations or Reference ID */}
+                  {hasLocations ? (
+                    <View style={styles.locationContainer}>
+                      {/* Pickup Row */}
+                      <View style={styles.locationRow}>
+                        <View style={styles.locationLeft}>
+                          <View style={styles.dotOutline} />
+                          <Text style={styles.locationKey}>Pick up point</Text>
+                        </View>
+                        <Text style={styles.locationVal}>{tx.pickup}</Text>
+                      </View>
 
-                  {/* Destination Row */}
-                  <View style={styles.locationRow}>
-                    <View style={styles.locationLeft}>
-                      <View style={styles.dotFilled} />
-                      <Text style={styles.locationKey}>Destination</Text>
+                      {/* Vertical Connector Line */}
+                      <View style={styles.connectorLine}>
+                        <DottedConnectorLineItem color="#E2E4E9" />
+                      </View>
+
+                      {/* Destination Row */}
+                      <View style={styles.locationRow}>
+                        <View style={styles.locationLeft}>
+                          <View style={styles.dotFilled} />
+                          <Text style={styles.locationKey}>Destination</Text>
+                        </View>
+                        <Text style={styles.locationVal}>{tx.destination}</Text>
+                      </View>
                     </View>
-                    <Text style={styles.locationVal}>{tx.destination}</Text>
-                  </View>
-                </View>
+                  ) : (
+                    <View style={styles.refContainer}>
+                      <View style={styles.locationRow}>
+                        <Text style={styles.locationKey}>Reference ID</Text>
+                        <Text style={styles.refIdVal}>{tx.reference_id || tx.transactionId}</Text>
+                      </View>
+                    </View>
+                  )}
 
-                {/* Footer line: Seats Booked & Amount */}
-                <View style={styles.txFooter}>
-                  <View style={styles.seatsRow}>
-                    <UsersIconItem color={colors.grey} size={16} />
-                    <Text style={styles.seatsText}>{tx.seatsBooked} Booked Seats</Text>
+                  {/* Footer line: Seats / Reference & Amount */}
+                  <View style={styles.txFooter}>
+                    {tx.seatsBooked ? (
+                      <View style={styles.seatsRow}>
+                        <UsersIconItem color={colors.grey} size={16} />
+                        <Text style={styles.seatsText}>{tx.seatsBooked} Booked Seats</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.subtleTimeText}>
+                        {tx.time ? `${tx.time}` : "Wallet Transaction"}
+                      </Text>
+                    )}
+                    <Text style={styles.txAmount}>{formatCurrency(tx.amount)}</Text>
                   </View>
-                  <Text style={styles.txAmount}>{tx.amount}</Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+                </TouchableOpacity>
+              );
+            })
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -274,7 +441,6 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
-    // backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: "#E2E4E9",
     borderRadius: 10,
@@ -295,7 +461,7 @@ const styles = StyleSheet.create({
   searchRow: {
     flexDirection: "row",
     gap: 10,
-    marginBottom: 18,
+    marginBottom: 12,
   },
   searchBar: {
     flex: 1,
@@ -309,7 +475,6 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 12,
   },
-  searchIcon: {},
   searchInput: {
     flex: 1,
     height: "100%",
@@ -333,11 +498,73 @@ const styles = StyleSheet.create({
     borderColor: colors.primary,
     backgroundColor: "#EFF6FF",
   },
+  filterChipsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 14,
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: "#F1F5F9",
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  chipActive: {
+    backgroundColor: "#EFF6FF",
+    borderColor: colors.primary,
+  },
+  chipText: {
+    fontFamily: "DM Sans",
+    fontSize: 12,
+    color: palette.slate[600],
+  },
+  chipTextActive: {
+    fontFamily: "DM Sans Bold",
+    color: colors.primary,
+    fontWeight: "600",
+  },
+  errorCard: {
+    backgroundColor: "#FEF2F2",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    padding: 16,
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 14,
+    color: colors.error,
+    marginTop: 6,
+    fontWeight: "600",
+  },
+  errorSubtitle: {
+    fontFamily: "DM Sans",
+    fontSize: 12,
+    color: palette.slate[600],
+    textAlign: "center",
+    marginVertical: 4,
+  },
+  retryBtn: {
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    backgroundColor: colors.error,
+    borderRadius: 8,
+  },
+  retryBtnText: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 12,
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
   transactionsList: {
     gap: 14,
   },
   txCard: {
-    // backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.border2,
     borderRadius: 16,
@@ -380,7 +607,6 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   badgeTextCompleted: {
-    // color: "#7BF1A8",
     color: "#00A63E",
   },
   badgeTextPending: {
@@ -391,6 +617,9 @@ const styles = StyleSheet.create({
   },
   locationContainer: {
     marginBottom: 6,
+  },
+  refContainer: {
+    marginBottom: 10,
   },
   locationRow: {
     flexDirection: "row",
@@ -430,11 +659,16 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: colors.dark,
   },
+  refIdVal: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.dark,
+  },
   txFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    // paddingTop: 12,
   },
   seatsRow: {
     flexDirection: "row",
@@ -446,10 +680,57 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.grey,
   },
+  subtleTimeText: {
+    fontFamily: "DM Sans",
+    fontSize: 12,
+    color: colors.grey,
+  },
   txAmount: {
     fontFamily: "DM Sans Bold",
     fontSize: 14,
     fontWeight: "500",
     color: colors.dark,
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40,
+    paddingHorizontal: 24,
+  },
+  emptyIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 16,
+    fontWeight: "600",
+    color: colors.dark,
+    marginBottom: 6,
+  },
+  emptySubtitle: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: colors.grey,
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  clearFilterBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "#EFF6FF",
+    borderRadius: 10,
+  },
+  clearFilterText: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 13,
+    color: colors.primary,
+    fontWeight: "600",
   },
 });

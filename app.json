@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "rezarva-driver",
+    "name": "Rezarva Driver",
     "slug": "rezarva-driver",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,13 +9,25 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
+      "bundleIdentifier": "com.rezarva.driver",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Rezarva Driver requires camera access to capture your driver's license and vehicle documents for account verification.",
+        "NSPhotoLibraryUsageDescription": "Rezarva Driver requires access to your photo library to select and upload document photos."
+      },
       "config": {
         "googleMapsApiKey": "AIzaSyCsS8_vpksMH8am-80GESDs44YOtjjCtLw"
       }
     },
     "android": {
       "package": "com.rezarva.driver",
+      "versionCode": 1,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -36,6 +48,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Rezarva Driver requires camera access to capture your driver's license and vehicle documents for account verification."
+        }
+      ],
       [
         "expo-splash-screen",
         {

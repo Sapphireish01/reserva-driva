@@ -1,28 +1,26 @@
 import React, { useState } from "react";
-import {
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { AppBottomSheet, AppLoader, CheckIcon } from "../../../../components/ui";
 import { colors, palette } from "../../../../theme/colors";
+import { useCreateDisputeMutation } from "../../../../hooks/useWallet";
 
 interface RaiseDisputeModalProps {
   visible: boolean;
+  reference: string;
   onClose: () => void;
   onSubmit?: (reason: string) => void;
 }
 
 export const RaiseDisputeModal: React.FC<RaiseDisputeModalProps> = ({
   visible,
+  reference,
   onClose,
   onSubmit,
 }) => {
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const createDisputeMutation = useCreateDisputeMutation();
 
   const handleClose = () => {
     setReason("");
@@ -31,20 +29,33 @@ export const RaiseDisputeModal: React.FC<RaiseDisputeModalProps> = ({
     onClose();
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!reason.trim() || isSubmitting || isSubmitted) return;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await createDisputeMutation.mutateAsync({
+        reference,
+        reason: reason.trim(),
+      });
       setIsSubmitted(true);
-      if (onSubmit) onSubmit(reason);
+      if (onSubmit) onSubmit(reason.trim());
       setTimeout(() => {
         handleClose();
       }, 1500);
-    }, 1200);
+    } catch (err: any) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        (typeof err?.response?.data === "string" ? err.response.data : null) ||
+        err?.message ||
+        "An error occurred while submitting the dispute. Please try again.";
+      Alert.alert("Dispute Error", errorMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const isButtonDisabled = !reason.trim() && !isSubmitting && !isSubmitted;
+  const isButtonDisabled = !reason.trim() || isSubmitting || isSubmitted;
 
   return (
     <AppBottomSheet

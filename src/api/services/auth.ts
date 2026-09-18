@@ -359,6 +359,13 @@ export const authService = {
       }
     );
   },
+
+  deactivateAccount: () => {
+    const body = new FormData();
+    return apiClient.post<{ message?: string }>("/accounts/deactivate/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 

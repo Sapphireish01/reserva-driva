@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
-import { Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { AppLoader } from "../../../components/ui";
 import {
   BankDetailsIconItem,
   ChatSupportIconItem,
@@ -60,6 +61,7 @@ const SettingItem = ({ icon, label, badge, onPress, destructive }: SettingItemPr
 export const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const logout = useAuthStore((state) => state.logout);
+  const deactivateAccount = useAuthStore((state) => state.deactivateAccount);
   const user = useAuthStore((state) => state.user);
 
   const fullName = getUserFullName(user) || "Driver Account";
@@ -69,10 +71,49 @@ export const SettingsScreen = ({ navigation }: Props) => {
   const [showDeactivateModal, setShowDeactivateModal] = React.useState(false);
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [hasActiveBookings, setHasActiveBookings] = React.useState(false);
+  const [isDeactivating, setIsDeactivating] = React.useState(false);
+  const [deactivateError, setDeactivateError] = React.useState<string | null>(null);
 
   const handleLogout = async () => {
     setShowLogoutModal(false);
     await logout();
+  };
+
+  const handleCloseDeactivate = () => {
+    if (isDeactivating) return;
+    setShowDeactivateModal(false);
+    setDeactivateError(null);
+    setHasActiveBookings(false);
+  };
+
+  const handleDeactivate = async () => {
+    setIsDeactivating(true);
+    setDeactivateError(null);
+    try {
+      const res = await deactivateAccount();
+      setShowDeactivateModal(false);
+      Alert.alert(
+        "Account Deactivated",
+        res?.message || "Your account has been deactivated successfully."
+      );
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        (typeof err?.response?.data === "string" ? err.response.data : null) ||
+        err?.message ||
+        "Could not deactivate account. Please ensure all active bookings are completed.";
+      if (
+        msg.toLowerCase().includes("booking") ||
+        msg.toLowerCase().includes("trip") ||
+        msg.toLowerCase().includes("active")
+      ) {
+        setHasActiveBookings(true);
+      }
+      setDeactivateError(msg);
+    } finally {
+      setIsDeactivating(false);
+    }
   };
 
   return (
@@ -196,18 +237,19 @@ export const SettingsScreen = ({ navigation }: Props) => {
         <View style={styles.sheetOverlay}>
           <TouchableOpacity
             style={styles.sheetBackdrop}
-            onPress={() => setShowDeactivateModal(false)}
+            onPress={handleCloseDeactivate}
+            disabled={isDeactivating}
           />
           <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>Deactivate Account?</Text>
-              <TouchableOpacity onPress={() => setShowDeactivateModal(false)}>
+              <TouchableOpacity onPress={handleCloseDeactivate} disabled={isDeactivating}>
                 <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
               </TouchableOpacity>
             </View>
 
             <Text style={styles.sheetSubtitle}>
-              Are you sure you want to <Text style={styles.boldText}>deactivate</Text> this account, you will no longer have access to Rezarva
+              Are you sure you want to <Text style={styles.boldText}>deactivate</Text> this account? You will no longer have access to Rezarva.
             </Text>
 
             {/* Alert Banner */}
@@ -222,11 +264,27 @@ export const SettingsScreen = ({ navigation }: Props) => {
               </Text>
             </View>
 
+            {deactivateError ? (
+              <View
+                style={[
+                  styles.alertBanner,
+                  { backgroundColor: "#FEF2F2", borderColor: "#FFA2A2", borderWidth: 1 },
+                ]}
+              >
+                <View style={{ marginRight: 8 }}>
+                  <WarningIconItem color="#E7000B" size={18} />
+                </View>
+                <Text style={[styles.alertText, { color: "#E7000B" }]}>
+                  {deactivateError}
+                </Text>
+              </View>
+            ) : null}
+
             {hasActiveBookings ? (
               <TouchableOpacity
                 style={styles.blueBtn}
                 onPress={() => {
-                  setShowDeactivateModal(false);
+                  handleCloseDeactivate();
                   navigation.navigate("BookingsTab");
                 }}
                 activeOpacity={0.8}
@@ -236,16 +294,22 @@ export const SettingsScreen = ({ navigation }: Props) => {
             ) : (
               <>
                 <TouchableOpacity
-                  style={styles.redBtn}
-                  onPress={() => setHasActiveBookings(true)}
+                  style={[styles.redBtn, isDeactivating && { opacity: 0.7 }]}
+                  onPress={handleDeactivate}
+                  disabled={isDeactivating}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.redBtnText}>Deactivate</Text>
+                  {isDeactivating ? (
+                    <AppLoader />
+                  ) : (
+                    <Text style={styles.redBtnText}>Deactivate</Text>
+                  )}
                 </TouchableOpacity>
 
                 <TouchableOpacity
                   style={styles.outlineBtn}
-                  onPress={() => setShowDeactivateModal(false)}
+                  onPress={handleCloseDeactivate}
+                  disabled={isDeactivating}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.outlineBtnText}>Cancel</Text>

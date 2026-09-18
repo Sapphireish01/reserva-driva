@@ -79,50 +79,89 @@ const getImageSource = (img: any) => {
 interface SlideItemProps {
   item: Slide;
   index: number;
-  activeIndex: number;
-  insetsTop: number;
-  insetsBottom: number;
-  onGetStarted: () => void;
+  scrollX: Animated.Value;
 }
 
 const OnboardingSlideItem = React.memo<SlideItemProps>(
-  ({ item, activeIndex, insetsTop, insetsBottom, onGetStarted }) => {
-    return (
-      <View
-        style={[
-          styles.slide,
-          {
-            paddingTop: Math.max(insetsTop, 16),
-            paddingBottom: Math.max(insetsBottom, 20),
-          },
-        ]}
-      >
-        {/* Header / SubLogo */}
-        <View style={styles.header}>
-          <Text style={styles.subLogo}>Rezarva</Text>
-        </View>
+  ({ item, index, scrollX }) => {
+    const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
 
-        {/* Dynamic Image Container for Long Screens */}
-        <View style={styles.imageContainer}>
+    const imageScale = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.92, 1, 0.92],
+      extrapolate: "clamp",
+    });
+
+    const contentOpacity = scrollX.interpolate({
+      inputRange,
+      outputRange: [0.35, 1, 0.35],
+      extrapolate: "clamp",
+    });
+
+    const contentTranslateY = scrollX.interpolate({
+      inputRange,
+      outputRange: [12, 0, 12],
+      extrapolate: "clamp",
+    });
+
+    return (
+      <View style={styles.slide}>
+        {/* Dynamic Image Container with smooth scale */}
+        <Animated.View
+          style={[
+            styles.imageContainer,
+            { transform: [{ scale: imageScale }] },
+          ]}
+        >
           <Image
             source={getImageSource(item.image)}
             style={styles.image}
             resizeMode="cover"
           />
-        </View>
+        </Animated.View>
 
         {/* Bottom Content Container */}
         <View style={styles.content}>
           <View style={styles.dots}>
-            {SLIDES.map((s, i) => (
-              <View
-                key={s.key}
-                style={[styles.dot, i === activeIndex && styles.dotActive]}
-              />
-            ))}
+            {SLIDES.map((_, i) => {
+              const dotWidth = scrollX.interpolate({
+                inputRange: [(i - 1) * width, i * width, (i + 1) * width],
+                outputRange: [6, 22, 6],
+                extrapolate: "clamp",
+              });
+
+              const dotOpacity = scrollX.interpolate({
+                inputRange: [(i - 1) * width, i * width, (i + 1) * width],
+                outputRange: [0.25, 1, 0.25],
+                extrapolate: "clamp",
+              });
+
+              return (
+                <Animated.View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    {
+                      width: dotWidth,
+                      opacity: dotOpacity,
+                      backgroundColor: colors.text,
+                    },
+                  ]}
+                />
+              );
+            })}
           </View>
 
-          <View style={styles.textContainer}>
+          {/* Text Container with smooth fade and float */}
+          <Animated.View
+            style={[
+              styles.textContainer,
+              {
+                opacity: contentOpacity,
+                transform: [{ translateY: contentTranslateY }],
+              },
+            ]}
+          >
             <Text style={styles.title}>{item.title}</Text>
             <Text style={styles.body}>
               {item.bodyParts.map((part: BodyPart, idx: number) => (
@@ -134,15 +173,7 @@ const OnboardingSlideItem = React.memo<SlideItemProps>(
                 </Text>
               ))}
             </Text>
-          </View>
-
-          <AppButton
-            title="Get Started"
-            onPress={onGetStarted}
-            size="lg"
-            style={styles.buttonOverride}
-            textStyle={styles.buttonTextOverride}
-          />
+          </Animated.View>
         </View>
       </View>
     );
@@ -159,6 +190,7 @@ export const OnboardingScreen = ({ navigation }: Props) => {
   const listRef = useRef<FlatList<Slide>>(null);
   const insets = useSafeAreaInsets();
 
+  const scrollX = useRef(new Animated.Value(0)).current;
   const welcomeAnim = useRef(new Animated.Value(0)).current;
 
   // Calculate target translation from screen center to top header position
@@ -199,6 +231,22 @@ export const OnboardingScreen = ({ navigation }: Props) => {
     return () => clearTimeout(timer);
   }, [welcomeAnim]);
 
+  // Auto-slide every 3 seconds (resets timer on manual swipe)
+  useEffect(() => {
+    if (showWelcome) return;
+
+    const timer = setTimeout(() => {
+      const nextIndex = (activeIndex + 1) % SLIDES.length;
+      listRef.current?.scrollToOffset({
+        offset: nextIndex * width,
+        animated: true,
+      });
+      setActiveIndex(nextIndex);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [activeIndex, showWelcome]);
+
   const handleGetStarted = useCallback(() => {
     navigation.navigate("SignUp");
   }, [navigation]);
@@ -206,7 +254,9 @@ export const OnboardingScreen = ({ navigation }: Props) => {
   const handleMomentumScrollEnd = useCallback(
     (e: any) => {
       const nextIndex = Math.round(e.nativeEvent.contentOffset.x / width);
-      setActiveIndex(nextIndex);
+      if (nextIndex >= 0 && nextIndex < SLIDES.length) {
+        setActiveIndex(nextIndex);
+      }
     },
     []
   );
@@ -227,31 +277,58 @@ export const OnboardingScreen = ({ navigation }: Props) => {
       <OnboardingSlideItem
         item={item}
         index={index}
-        activeIndex={activeIndex}
-        insetsTop={insets.top}
-        insetsBottom={insets.bottom}
-        onGetStarted={handleGetStarted}
+        scrollX={scrollX}
       />
     ),
-    [activeIndex, insets.top, insets.bottom, handleGetStarted]
+    [scrollX]
   );
 
   return (
     <View style={styles.container}>
-      <FlatList
+      {/* Fixed Header */}
+      <View style={[styles.header, { paddingTop: Math.max(insets.top, 16) }]}>
+        <Text style={styles.subLogo}>Rezarva</Text>
+      </View>
+
+      {/* Sliding Images and Content */}
+      <Animated.FlatList
         ref={listRef}
         data={SLIDES}
         horizontal
         pagingEnabled
+        decelerationRate="fast"
+        bounces={false}
         showsHorizontalScrollIndicator={false}
         keyExtractor={keyExtractor}
         getItemLayout={getItemLayout}
         onMomentumScrollEnd={handleMomentumScrollEnd}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
         renderItem={renderItem}
         initialNumToRender={1}
         maxToRenderPerBatch={2}
         windowSize={3}
+        style={styles.list}
       />
+
+      {/* Fixed Bottom Container with Get Started Button */}
+      <View
+        style={[
+          styles.bottomContainer,
+          { paddingBottom: Math.max(insets.bottom, 20) },
+        ]}
+      >
+        <AppButton
+          title="Get Started"
+          onPress={handleGetStarted}
+          size="lg"
+          style={styles.buttonOverride}
+          textStyle={styles.buttonTextOverride}
+        />
+      </View>
 
       {showWelcome && (
         <Animated.View
@@ -296,9 +373,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  list: {
+    flex: 1,
+  },
   slide: {
     width,
-    height: "100%",
+    flex: 1,
     paddingHorizontal: spacing.lg,
     justifyContent: "space-between",
   },
@@ -326,12 +406,13 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: "100%",
-    maxHeight: height * 0.48,
+    maxHeight: height * 0.46,
     borderRadius: 20,
   },
   content: {
     width: "100%",
-    gap: 18,
+    gap: 16,
+    marginBottom: spacing.md,
   },
   dots: {
     flexDirection: "row",
@@ -342,16 +423,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   dot: {
-    width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.border,
-  },
-  dotActive: {
-    width: 22,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.text,
   },
   textContainer: {
     width: "100%",
@@ -380,11 +453,14 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontWeight: "400",
   },
+  bottomContainer: {
+    width: "100%",
+    paddingHorizontal: spacing.lg,
+  },
   buttonOverride: {
     backgroundColor: colors.primary,
     borderRadius: 12,
     height: 52,
-    marginTop: spacing.xs,
   },
   buttonTextOverride: {
     fontFamily: "DM Sans",
