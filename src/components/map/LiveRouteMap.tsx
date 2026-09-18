@@ -5,11 +5,12 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useColorScheme,
   View,
 } from "react-native";
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE, PROVIDER_DEFAULT } from "react-native-maps";
 import { ActiveTripData, TripWaypoint } from "../../mock/activeTripMock";
-import { colors } from "../../theme/colors";
+import { CarIcon } from "./CarIcon";
 
 // Dark night mode style JSON matching the design screenshot
 const NIGHT_MAP_STYLE = [
@@ -82,9 +83,81 @@ const NIGHT_MAP_STYLE = [
   },
 ];
 
+// Clean daylight style JSON
+const LIGHT_MAP_STYLE = [
+  {
+    elementType: "geometry",
+    stylers: [{ color: "#F8FAFC" }],
+  },
+  {
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#64748B" }],
+  },
+  {
+    elementType: "labels.text.stroke",
+    stylers: [{ color: "#FFFFFF" }],
+  },
+  {
+    featureType: "administrative",
+    elementType: "geometry",
+    stylers: [{ color: "#CBD5E1" }],
+  },
+  {
+    featureType: "poi",
+    elementType: "geometry",
+    stylers: [{ color: "#EEF2F6" }],
+  },
+  {
+    featureType: "poi",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#64748B" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [{ color: "#FFFFFF" }],
+  },
+  {
+    featureType: "road",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#E2E8F0" }],
+  },
+  {
+    featureType: "road",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#334155" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry",
+    stylers: [{ color: "#E2E8F0" }],
+  },
+  {
+    featureType: "road.highway",
+    elementType: "geometry.stroke",
+    stylers: [{ color: "#CBD5E1" }],
+  },
+  {
+    featureType: "transit",
+    elementType: "geometry",
+    stylers: [{ color: "#E2E8F0" }],
+  },
+  {
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [{ color: "#BAE6FD" }],
+  },
+  {
+    featureType: "water",
+    elementType: "labels.text.fill",
+    stylers: [{ color: "#0284C7" }],
+  },
+];
+
 interface LiveRouteMapProps {
   tripData: ActiveTripData;
   activeWaypointIndex?: number;
+  theme?: "light" | "dark" | "system";
   onSelectWaypoint?: (waypoint: TripWaypoint) => void;
   onReportIncident?: () => void;
   onSearchPress?: () => void;
@@ -93,10 +166,14 @@ interface LiveRouteMapProps {
 export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
   tripData,
   activeWaypointIndex = 1,
+  theme = "system",
   onSelectWaypoint,
   onReportIncident,
   onSearchPress,
 }) => {
+  const systemScheme = useColorScheme();
+  const isDark = theme === "system" ? systemScheme === "dark" : theme === "dark";
+
   const mapRef = useRef<MapView | null>(null);
   const [isMuted, setIsMuted] = useState(false);
 
@@ -140,6 +217,9 @@ export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
     return () => clearTimeout(timer);
   }, [tripData.id]);
 
+  const polylineGlowColor = isDark ? "rgba(0, 229, 255, 0.35)" : "rgba(48, 92, 255, 0.22)";
+  const polylinePrimaryColor = isDark ? "#00E5FF" : "#305CFF";
+
   return (
     <View style={styles.container}>
       <MapView
@@ -147,7 +227,7 @@ export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
         style={styles.map}
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : PROVIDER_DEFAULT}
         initialRegion={initialRegion}
-        customMapStyle={NIGHT_MAP_STYLE}
+        customMapStyle={isDark ? NIGHT_MAP_STYLE : LIGHT_MAP_STYLE}
         showsCompass={false}
         showsTraffic={false}
         showsUserLocation={false}
@@ -155,16 +235,16 @@ export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
         {/* Glow / Casing Route Polyline */}
         <Polyline
           coordinates={tripData.routeCoordinates}
-          strokeColor="rgba(0, 229, 255, 0.35)"
+          strokeColor={polylineGlowColor}
           strokeWidth={8}
           lineCap="round"
           lineJoin="round"
         />
 
-        {/* Primary Neon Cyan Route Polyline */}
+        {/* Primary Route Polyline */}
         <Polyline
           coordinates={tripData.routeCoordinates}
-          strokeColor="#00E5FF"
+          strokeColor={polylinePrimaryColor}
           strokeWidth={4.5}
           lineCap="round"
           lineJoin="round"
@@ -172,8 +252,8 @@ export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
 
         {/* Target Destination Marker */}
         <Marker coordinate={tripData.destinationCoordinates} title="Destination">
-          <View style={styles.targetDestinationPin}>
-            <View style={styles.targetInnerDot} />
+          <View style={[styles.targetDestinationPin, !isDark && styles.targetDestinationPinLight]}>
+            <View style={[styles.targetInnerDot, !isDark && styles.targetInnerDotLight]} />
           </View>
         </Marker>
 
@@ -182,12 +262,12 @@ export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
           coordinate={tripData.passengers[0].pickupCoordinates}
           title={tripData.passengers[0].pickupLocation}
         >
-          <View style={styles.targetPickupPin}>
-            <View style={styles.targetPickupInnerDot} />
+          <View style={[styles.targetPickupPin, !isDark && styles.targetPickupPinLight]}>
+            <View style={[styles.targetPickupInnerDot, !isDark && styles.targetPickupInnerDotLight]} />
           </View>
         </Marker>
 
-        {/* 3D Car Vehicle Marker with Headlights */}
+        {/* Moving Car Vehicle Marker */}
         <Marker
           coordinate={{
             latitude: tripData.driverLocation.latitude,
@@ -198,62 +278,73 @@ export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
           rotation={tripData.driverLocation.heading}
           title="Vehicle"
         >
-          <View style={styles.carMarkerContainer}>
-            <View style={styles.headlightBeam} />
-            <View style={styles.carBody}>
-              {/* Windshield & Roof */}
-              <View style={styles.windshield} />
-              <View style={styles.tailLightsRow}>
-                <View style={styles.tailLight} />
-                <View style={styles.tailLight} />
-              </View>
-            </View>
+          <View style={styles.carMarkerWrapper}>
+            {/* Front Headlight Projection Beam */}
+            <View
+              style={[
+                styles.headlightCone,
+                isDark ? styles.headlightConeDark : styles.headlightConeLight,
+              ]}
+            />
+
+            {/* Soft Shadow / Halo for Contrast */}
+            <View
+              style={[
+                styles.carShadowHalo,
+                isDark ? styles.carShadowHaloDark : styles.carShadowHaloLight,
+              ]}
+            />
+
+            {/* Exact SVG Car Graphic from assets/icons/car_icon.svg */}
+            <CarIcon size={44} />
           </View>
         </Marker>
       </MapView>
 
-      {/* Floating Right Map Controls (Screenshot Match) */}
+      {/* Floating Right Map Controls */}
       <View style={styles.rightControlsContainer}>
         {/* Compass Widget */}
         <TouchableOpacity
-          style={styles.circleDarkBtn}
+          style={[styles.circleBtn, isDark ? styles.circleBtnDark : styles.circleBtnLight]}
           onPress={recenterDriver}
           activeOpacity={0.8}
         >
           <View style={styles.compassNeedleNorth} />
-          <View style={styles.compassNeedleSouth} />
+          <View style={[styles.compassNeedleSouth, !isDark && styles.compassNeedleSouthLight]} />
         </TouchableOpacity>
 
-        {/* Search / Zoom Button */}
+        {/* Search / Fit Route Bounds Button */}
         <TouchableOpacity
-          style={styles.circleDarkBtn}
+          style={[styles.circleBtn, isDark ? styles.circleBtnDark : styles.circleBtnLight]}
           onPress={onSearchPress || fitRouteBounds}
           activeOpacity={0.8}
         >
-          <Ionicons name="search" size={20} color="#FFFFFF" />
+          <Ionicons name="search" size={20} color={isDark ? "#FFFFFF" : "#0F172A"} />
         </TouchableOpacity>
 
         {/* Mute Audio Toggle */}
         <TouchableOpacity
-          style={styles.circleDarkBtn}
+          style={[styles.circleBtn, isDark ? styles.circleBtnDark : styles.circleBtnLight]}
           onPress={() => setIsMuted((prev) => !prev)}
           activeOpacity={0.8}
         >
           <Ionicons
             name={isMuted ? "volume-mute" : "volume-mute-outline"}
             size={20}
-            color={isMuted ? "#EF4444" : "#FFFFFF"}
+            color={isMuted ? "#EF4444" : isDark ? "#FFFFFF" : "#0F172A"}
           />
         </TouchableOpacity>
 
         {/* Report Hazard Pill Button */}
         <TouchableOpacity
-          style={styles.reportPillBtn}
+          style={[styles.reportPillBtn, isDark ? styles.reportPillBtnDark : styles.reportPillBtnLight]}
           onPress={onReportIncident}
           activeOpacity={0.8}
         >
           <Ionicons name="warning" size={16} color="#F59E0B" />
-          <Text style={styles.reportBtnText}>Report</Text>
+          <Text style={[styles.reportBtnText, isDark ? styles.reportBtnTextDark : styles.reportBtnTextLight]}>
+            Report
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -277,11 +368,18 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#00E5FF",
   },
+  targetDestinationPinLight: {
+    backgroundColor: "rgba(48, 92, 255, 0.25)",
+    borderColor: "#305CFF",
+  },
   targetInnerDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: "#00E5FF",
+  },
+  targetInnerDotLight: {
+    backgroundColor: "#305CFF",
   },
   targetPickupPin: {
     width: 24,
@@ -293,63 +391,62 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#FFFFFF",
   },
+  targetPickupPinLight: {
+    backgroundColor: "rgba(15, 23, 42, 0.15)",
+    borderColor: "#0F172A",
+  },
   targetPickupInnerDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: "#0F172A",
   },
+  targetPickupInnerDotLight: {
+    backgroundColor: "#0F172A",
+  },
 
-  // 3D Styled Vehicle Marker
-  carMarkerContainer: {
-    width: 48,
-    height: 48,
+  // Vehicle Car Marker
+  carMarkerWrapper: {
+    width: 54,
+    height: 54,
     justifyContent: "center",
     alignItems: "center",
   },
-  headlightBeam: {
+  headlightCone: {
     position: "absolute",
-    top: 2,
-    width: 24,
-    height: 16,
-    backgroundColor: "rgba(0, 229, 255, 0.25)",
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    top: 0,
+    width: 28,
+    height: 20,
+    borderTopLeftRadius: 14,
+    borderTopRightRadius: 14,
   },
-  carBody: {
-    width: 22,
-    height: 34,
-    borderRadius: 6,
-    backgroundColor: "#0F172A",
-    borderWidth: 1.5,
-    borderColor: "#38BDF8",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingVertical: 3,
+  headlightConeDark: {
+    backgroundColor: "rgba(0, 229, 255, 0.25)",
+  },
+  headlightConeLight: {
+    backgroundColor: "rgba(48, 92, 255, 0.2)",
+  },
+  carShadowHalo: {
+    position: "absolute",
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+  },
+  carShadowHaloDark: {
+    backgroundColor: "rgba(0, 229, 255, 0.12)",
     shadowColor: "#00E5FF",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  carShadowHaloLight: {
+    backgroundColor: "rgba(15, 23, 42, 0.08)",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
     shadowRadius: 6,
-    elevation: 6,
-  },
-  windshield: {
-    width: 14,
-    height: 8,
-    borderRadius: 2,
-    backgroundColor: "#38BDF8",
-    opacity: 0.8,
-  },
-  tailLightsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: 16,
-    paddingHorizontal: 1,
-  },
-  tailLight: {
-    width: 4,
-    height: 2.5,
-    borderRadius: 1,
-    backgroundColor: "#EF4444",
+    elevation: 4,
   },
 
   // Right Floating Controls Stack
@@ -360,20 +457,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
-  circleDarkBtn: {
+  circleBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "#1E293B",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 6,
+  },
+  circleBtnDark: {
+    backgroundColor: "#1E293B",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  circleBtnLight: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   compassNeedleNorth: {
     width: 0,
@@ -395,26 +499,41 @@ const styles = StyleSheet.create({
     borderRightColor: "transparent",
     borderTopColor: "#FFFFFF",
   },
+  compassNeedleSouthLight: {
+    borderTopColor: "#64748B",
+  },
   reportPillBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#1E293B",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 6,
+  },
+  reportPillBtnDark: {
+    backgroundColor: "#1E293B",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  reportPillBtnLight: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   reportBtnText: {
     fontFamily: "DM Sans Bold",
     fontSize: 13,
     fontWeight: "700",
+  },
+  reportBtnTextDark: {
     color: "#FFFFFF",
+  },
+  reportBtnTextLight: {
+    color: "#0F172A",
   },
 });

@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useColorScheme,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -30,8 +31,28 @@ type NavState =
   | "driving_to_dropoff"
   | "driving_to_destination";
 
+function calculateBearing(
+  start: { latitude: number; longitude: number },
+  end: { latitude: number; longitude: number }
+): number {
+  const startLat = (start.latitude * Math.PI) / 180;
+  const startLng = (start.longitude * Math.PI) / 180;
+  const endLat = (end.latitude * Math.PI) / 180;
+  const endLng = (end.longitude * Math.PI) / 180;
+  const dLng = endLng - startLng;
+  const y = Math.sin(dLng) * Math.cos(endLat);
+  const x =
+    Math.cos(startLat) * Math.sin(endLat) -
+    Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
+  let brng = (Math.atan2(y, x) * 180) / Math.PI;
+  return (brng + 360) % 360;
+}
+
 export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === "dark";
+
   const [tripData, setTripData] = useState<ActiveTripData>(MOCK_ACTIVE_TRIP);
   const [navState, setNavState] = useState<NavState>("driving_to_pickup");
   const [countdownSeconds, setCountdownSeconds] = useState(270); // 4 mins 30s
@@ -39,6 +60,65 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
   const [sheetExpanded, setSheetExpanded] = useState(false);
 
   const activePassenger = tripData.passengers[0]; // Prosper Edward
+
+  // Moving driver along route coordinates simulation
+  const segmentRef = useRef(0);
+  const progressRef = useRef(0);
+
+  useEffect(() => {
+    const isMoving =
+      navState === "driving_to_pickup" ||
+      navState === "leave_passenger" ||
+      navState === "driving_to_dropoff" ||
+      navState === "driving_to_destination";
+
+    if (!isMoving) return;
+
+    const interval = setInterval(() => {
+      const coords = tripData.routeCoordinates;
+      if (!coords || coords.length < 2) return;
+
+      const maxSegment =
+        navState === "driving_to_pickup"
+          ? 1
+          : coords.length - 2;
+
+      let seg = segmentRef.current;
+      let prog = progressRef.current + 0.05;
+
+      if (prog >= 1) {
+        if (seg < maxSegment) {
+          seg += 1;
+          prog = 0;
+        } else {
+          prog = 1;
+        }
+      }
+
+      segmentRef.current = seg;
+      progressRef.current = prog;
+
+      const p1 = coords[seg];
+      const p2 = coords[Math.min(seg + 1, coords.length - 1)];
+
+      const lat = p1.latitude + (p2.latitude - p1.latitude) * prog;
+      const lng = p1.longitude + (p2.longitude - p1.longitude) * prog;
+      const heading = calculateBearing(p1, p2);
+
+      setTripData((prev) => ({
+        ...prev,
+        driverLocation: {
+          ...prev.driverLocation,
+          latitude: lat,
+          longitude: lng,
+          heading: Math.round(heading),
+          speedKmH: 38,
+        },
+      }));
+    }, 700);
+
+    return () => clearInterval(interval);
+  }, [navState, tripData.routeCoordinates]);
 
   // Countdown simulation
   useEffect(() => {
@@ -140,8 +220,8 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
   const isLeavingCountdown = navState === "arrived_waiting";
 
   return (
-    <View style={styles.container}>
-      {/* Night-Themed Map Layer */}
+    <View style={[styles.container, { backgroundColor: isDark ? "#0B192C" : "#F8FAFC" }]}>
+      {/* Dynamic Themed Map Layer */}
       <LiveRouteMap
         tripData={tripData}
         onReportIncident={handleReportIncident}
