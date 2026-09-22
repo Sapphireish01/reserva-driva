@@ -28,19 +28,26 @@ export const identityService = {
       `/drivers/${driverId}/identity/status`
     ),
 
-  uploadDriversLicense: (file: { uri: string; name?: string; type?: string } | FormData) => {
-    let form: FormData;
-    if (file instanceof FormData) {
-      form = file;
-    } else {
-      form = new FormData();
-      form.append("driver_license", {
-        uri: file.uri,
-        name: file.name || "driver_license.jpg",
-        type: file.type || "image/jpeg",
+  uploadDriversLicense: (
+    email: string,
+    frontUri: string,
+    rearUri?: string
+  ) => {
+    const form = new FormData();
+    form.append("drivers_license", {
+      uri: frontUri,
+      name: "driver_license.jpg",
+      type: "image/jpeg",
+    } as any);
+    if (rearUri) {
+      form.append("drivers_license_rear", {
+        uri: rearUri,
+        name: "driver_license_rear.jpg",
+        type: "image/jpeg",
       } as any);
     }
-    return apiClient.put("/accounts/profile/", form, {
+    return apiClient.post<{ message: string }>("/accounts/upload/license/", form, {
+      params: { email },
       headers: { "Content-Type": "multipart/form-data" },
     });
   },

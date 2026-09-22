@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -12,15 +12,21 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { PassengerToRate } from "../../../../api/services/trips";
+import {
+  usePassengersToRateQuery,
+  useRatePassengerMutation,
+} from "../../../../hooks/useDriverTrips";
 import { TripPassenger } from "../../../../mock/activeTripMock";
 import { colors, palette } from "../../../../theme/colors";
 
 interface RatePassengersModalProps {
   visible: boolean;
   onClose: () => void;
-  passengers: TripPassenger[];
-  origin: string;
-  destination: string;
+  tripId?: number | string;
+  passengers?: TripPassenger[];
+  origin?: string;
+  destination?: string;
   onFinishAllRatings: () => void;
 }
 
@@ -29,19 +35,42 @@ type SubmitStatus = "idle" | "loading" | "submitted";
 export const RatePassengersModal: React.FC<RatePassengersModalProps> = ({
   visible,
   onClose,
-  passengers,
-  origin,
-  destination,
+  tripId,
+  passengers: fallbackPassengers = [],
+  origin = "Origin",
+  destination = "Destination",
   onFinishAllRatings,
 }) => {
   const insets = useSafeAreaInsets();
-  const [selectedPassenger, setSelectedPassenger] = useState<TripPassenger | null>(null);
+  const [selectedPassenger, setSelectedPassenger] = useState<PassengerToRate | null>(null);
   const [ratedPassengerIds, setRatedPassengerIds] = useState<Record<string, boolean>>({});
-  const [rating, setRating] = useState<number>(0);
+  const [rating, setRating] = useState<number>(5);
   const [feedback, setFeedback] = useState<string>("");
   const [submitStatus, setSubmitStatus] = useState<SubmitStatus>("idle");
 
-  const handleSelectPassenger = (p: TripPassenger) => {
+  // Live Query for Passengers to Rate
+  const { data: serverPassengers, isLoading } = usePassengersToRateQuery(
+    tripId || "",
+    visible && Boolean(tripId)
+  );
+
+  // Mutation for Rating Passenger
+  const rateMutation = useRatePassengerMutation();
+
+  // Normalize passengers from server or fallback
+  const passengersList: PassengerToRate[] = useMemo(() => {
+    if (serverPassengers && serverPassengers.length > 0) {
+      return serverPassengers;
+    }
+    return fallbackPassengers.map((p) => ({
+      booking_id: String(p.id),
+      full_name: p.name,
+      is_verified: true,
+      profile_picture: p.avatar || null,
+    }));
+  }, [serverPassengers, fallbackPassengers]);
+
+  const handleSelectPassenger = (p: PassengerToRate) => {
     setSelectedPassenger(p);
     setRating(5);
     setFeedback("");
@@ -53,25 +82,34 @@ export const RatePassengersModal: React.FC<RatePassengersModalProps> = ({
     setSubmitStatus("idle");
   };
 
-  const handleSubmitRating = () => {
-    if (!selectedPassenger || rating === 0) return;
+  const handleSubmitRating = async () => {
+    if (!selectedPassenger || rating === 0 || submitStatus === "loading") return;
 
     setSubmitStatus("loading");
-    setTimeout(() => {
+    try {
+      await rateMutation.mutateAsync({
+        booking_id: selectedPassenger.booking_id,
+        stars: rating,
+        feedback: feedback.trim() || undefined,
+      });
+
       setSubmitStatus("submitted");
-      setRatedPassengerIds((prev) => ({ ...prev, [selectedPassenger.id]: true }));
+      const nextRated = { ...ratedPassengerIds, [selectedPassenger.booking_id]: true };
+      setRatedPassengerIds(nextRated);
 
       setTimeout(() => {
         setSelectedPassenger(null);
         setSubmitStatus("idle");
 
-        // If all passengers rated, auto-complete
-        const newRated = { ...ratedPassengerIds, [selectedPassenger.id]: true };
-        if (passengers.every((p) => newRated[p.id])) {
+        // If all passengers are rated, auto-complete the flow
+        if (passengersList.every((p) => nextRated[p.booking_id])) {
           onFinishAllRatings();
         }
       }, 1000);
-    }, 1200);
+    } catch (err) {
+      console.warn("❌ Failed to rate passenger:", err);
+      setSubmitStatus("idle");
+    }
   };
 
   return (
@@ -122,44 +160,68 @@ export const RatePassengersModal: React.FC<RatePassengersModalProps> = ({
                 </Text>
               </View>
 
-              {/* Passenger Cards */}
-              {passengers.map((passenger) => {
-                const isRated = ratedPassengerIds[passenger.id];
-                return (
-                  <TouchableOpacity
-                    key={passenger.id}
-                    style={[styles.passengerCard, isRated && styles.passengerCardRated]}
-                    onPress={() => handleSelectPassenger(passenger)}
-                    activeOpacity={0.7}
-                  >
-                    <Image
-                      source={{
-                        uri:
-                          passenger.avatar ||
-                          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
-                      }}
-                      style={styles.avatarImage}
-                    />
+              {/* Loading indicator */}
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#3B66FF" />
+                  <Text style={styles.loadingText}>Loading passengers...</Text>
+                </View>
+              ) : passengersList.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="people-outline" size={40} color="#94A3B8" />
+                  <Text style={styles.emptyText}>No passengers to rate for this trip.</Text>
+                </View>
+              ) : (
+                passengersList.map((passenger) => {
+                  const isRated = ratedPassengerIds[passenger.booking_id];
+                  const avatarUri =
+                    passenger.profile_picture ||
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200";
 
-                    <View style={styles.nameRow}>
-                      <Text style={styles.passengerName}>{passenger.name}</Text>
-                      <Ionicons name="checkmark-circle" size={18} color="#2563EB" />
-                    </View>
+                  return (
+                    <TouchableOpacity
+                      key={passenger.booking_id}
+                      style={[styles.passengerCard, isRated && styles.passengerCardRated]}
+                      onPress={() => handleSelectPassenger(passenger)}
+                      activeOpacity={0.7}
+                    >
+                      <Image source={{ uri: avatarUri }} style={styles.avatarImage} />
 
-                    {isRated ? (
-                      <View style={styles.ratedPill}>
-                        <Text style={styles.ratedText}>Rated</Text>
+                      <View style={styles.nameRow}>
+                        <Text style={styles.passengerName}>{passenger.full_name}</Text>
+                        {passenger.is_verified && (
+                          <Ionicons name="checkmark-circle" size={18} color="#2563EB" />
+                        )}
                       </View>
-                    ) : (
-                      <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+
+                      {isRated ? (
+                        <View style={styles.ratedPill}>
+                          <Text style={styles.ratedText}>Rated</Text>
+                        </View>
+                      ) : (
+                        <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })
+              )}
             </ScrollView>
           ) : (
             /* View 2: Individual Rating & Feedback Screen */
             <View style={styles.ratingFormContent}>
+              {/* Selected Passenger Info */}
+              <View style={styles.selectedPassengerHeader}>
+                <Image
+                  source={{
+                    uri:
+                      selectedPassenger.profile_picture ||
+                      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200",
+                  }}
+                  style={styles.selectedAvatar}
+                />
+                <Text style={styles.selectedName}>{selectedPassenger.full_name}</Text>
+              </View>
+
               {/* 5-Star Rating Bar */}
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((star) => (
@@ -171,8 +233,8 @@ export const RatePassengersModal: React.FC<RatePassengersModalProps> = ({
                   >
                     <Ionicons
                       name={rating >= star ? "star" : "star-outline"}
-                      size={28}
-                      color={rating >= star ? "#CBD5E1" : "#E2E8F0"}
+                      size={32}
+                      color={rating >= star ? "#F59E0B" : "#CBD5E1"}
                     />
                   </TouchableOpacity>
                 ))}
@@ -184,7 +246,7 @@ export const RatePassengersModal: React.FC<RatePassengersModalProps> = ({
               <View style={styles.textareaContainer}>
                 <TextInput
                   style={styles.textareaInput}
-                  placeholder="Tell us about your passenger"
+                  placeholder="Tell us about your passenger (optional)"
                   placeholderTextColor="#94A3B8"
                   value={feedback}
                   onChangeText={(t) => setFeedback(t.slice(0, 200))}
@@ -194,7 +256,7 @@ export const RatePassengersModal: React.FC<RatePassengersModalProps> = ({
                 <Text style={styles.charCountText}>{feedback.length}/200</Text>
               </View>
 
-              {/* Dynamic 4-State Submit Button */}
+              {/* Dynamic Submit Button */}
               <TouchableOpacity
                 style={[
                   styles.submitBtn,
@@ -202,17 +264,17 @@ export const RatePassengersModal: React.FC<RatePassengersModalProps> = ({
                     ? styles.submitBtnActive
                     : submitStatus === "loading"
                     ? styles.submitBtnActive
-                    : feedback.trim().length > 0 || rating > 0
+                    : rating > 0
                     ? styles.submitBtnActive
                     : styles.submitBtnDisabled,
                 ]}
-                disabled={submitStatus !== "idle" && submitStatus !== "submitted"}
+                disabled={submitStatus === "loading" || rating === 0}
                 onPress={handleSubmitRating}
                 activeOpacity={0.8}
               >
                 {submitStatus === "loading" ? (
                   <View style={styles.submitLoadingRow}>
-                    <Text style={styles.submitBtnTextActive}>Submit</Text>
+                    <Text style={styles.submitBtnTextActive}>Submitting...</Text>
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   </View>
                 ) : submitStatus === "submitted" ? (
@@ -221,15 +283,7 @@ export const RatePassengersModal: React.FC<RatePassengersModalProps> = ({
                     <Ionicons name="checkmark-circle" size={18} color="#22C55E" />
                   </View>
                 ) : (
-                  <Text
-                    style={
-                      feedback.trim().length > 0 || rating > 0
-                        ? styles.submitBtnTextActive
-                        : styles.submitBtnTextDisabled
-                    }
-                  >
-                    Submit
-                  </Text>
+                  <Text style={styles.submitBtnTextActive}>Submit</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -303,6 +357,28 @@ const styles = StyleSheet.create({
     color: "#64748B",
     maxWidth: "42%",
   },
+  loadingContainer: {
+    padding: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  loadingText: {
+    fontFamily: "DM Sans",
+    fontSize: 13,
+    color: "#64748B",
+  },
+  emptyContainer: {
+    padding: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  emptyText: {
+    fontFamily: "DM Sans",
+    fontSize: 14,
+    color: "#64748B",
+  },
   passengerCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -353,11 +429,27 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 20,
   },
+  selectedPassengerHeader: {
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  selectedAvatar: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginBottom: 8,
+  },
+  selectedName: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.dark,
+  },
   starsRow: {
     flexDirection: "row",
     justifyContent: "center",
-    gap: 10,
-    marginBottom: 28,
+    gap: 12,
+    marginBottom: 24,
   },
   feedbackTitle: {
     fontFamily: "DM Sans Bold",
@@ -372,9 +464,9 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
     borderRadius: 16,
     padding: 16,
-    minHeight: 180,
+    minHeight: 140,
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   textareaInput: {
     fontFamily: "DM Sans",
@@ -407,12 +499,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 4,
-  },
-  submitBtnTextDisabled: {
-    fontFamily: "DM Sans Bold",
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#CBD5E1",
   },
   submitBtnTextActive: {
     fontFamily: "DM Sans Bold",

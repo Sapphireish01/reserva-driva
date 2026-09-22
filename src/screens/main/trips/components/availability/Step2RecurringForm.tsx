@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thur", "Fri", "Sat", "Sun"];
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 interface Step2RecurringFormProps {
   frequency: "Daily" | "Weekly" | "Monthly" | "";
@@ -78,7 +78,7 @@ export const Step2RecurringForm: React.FC<Step2RecurringFormProps> = ({
                 <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
                   {isSelected && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
                 </View>
-                <Text style={styles.dayPillText}>{day}</Text>
+                <Text style={[styles.dayPillText, isSelected && styles.dayPillTextSelected]}>{day}</Text>
               </TouchableOpacity>
             );
           })}
@@ -206,15 +206,22 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 16,
     paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   dayPillSelected: {
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#EFF6FF",
+    borderColor: "#375DFB",
   },
   dayPillText: {
     fontFamily: "DM Sans",
     fontSize: 15,
     color: "#0F172A",
     fontWeight: "500",
+  },
+  dayPillTextSelected: {
+    color: "#1E40AF",
+    fontWeight: "600",
   },
   continueBtn: {
     backgroundColor: "#375DFB",

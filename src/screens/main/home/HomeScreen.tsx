@@ -13,6 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { StatsGridSkeleton, TripCardSkeleton } from "../../../components/ui";
 import { useDriverMetricsQuery } from "../../../hooks/useDriverMetrics";
 import { useDriverTripsQuery } from "../../../hooks/useDriverTrips";
+import { useNotificationsQuery } from "../../../hooks/useNotifications";
 import {
   getUserAddress,
   getUserAvatar,
@@ -47,16 +48,19 @@ export const HomeScreen = ({ navigation }: Props) => {
     refetch: refetchTrips,
   } = useDriverTripsQuery({ status: "scheduled" });
 
+  // Notifications Query for unread badge
+  const { unreadCount, refetch: refetchNotifications } = useNotificationsQuery();
+
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([refetchMetrics(), refetchTrips()]);
+      await Promise.all([refetchMetrics(), refetchTrips(), refetchNotifications()]);
     } finally {
       setRefreshing(false);
     }
-  }, [refetchMetrics, refetchTrips]);
+  }, [refetchMetrics, refetchTrips, refetchNotifications]);
 
   // Normalize scheduled trips array with fallback sample trip for testing
   const scheduledTrips = React.useMemo(() => {
@@ -118,6 +122,13 @@ export const HomeScreen = ({ navigation }: Props) => {
               activeOpacity={0.7}
             >
               <Ionicons name="notifications-outline" size={24} color="#0F172A" />
+              {unreadCount > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadBadgeText}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -306,7 +317,34 @@ const styles = StyleSheet.create({
   locationRow: { flexDirection: "row", alignItems: "center", marginTop: 4 },
   locationText: { fontFamily: "DM Sans", fontSize: 10, color: "#64748B", fontWeight: "400" },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 12 },
-  bellButton: { width: 38, height: 38, justifyContent: "center", alignItems: "center" },
+  bellButton: {
+    width: 38,
+    height: 38,
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  unreadBadge: {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#EF4444",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+  },
+  unreadBadgeText: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 9,
+    fontWeight: "700",
+    color: "#FFFFFF",
+    lineHeight: 11,
+  },
   avatarContainer: {
     width: 40,
     height: 40,

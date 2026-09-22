@@ -13,7 +13,7 @@ type Props = NativeStackScreenProps<AuthStackParamList, "OTPVerification">;
 
 export const OTPVerificationScreen = ({ route, navigation }: Props) => {
   const insets = useSafeAreaInsets();
-  const { driverId } = route.params;
+  const { driverId, email } = route.params;
   const { showAuthError, showAuthToast } = useAuthToast();
   const [code, setCode] = useState("");
   const [isVerified, setIsVerified] = useState(false);
@@ -29,13 +29,13 @@ export const OTPVerificationScreen = ({ route, navigation }: Props) => {
         await verifyOtp(codeToVerify);
         setIsVerified(true);
         console.log("✅ [API Success] OTP verified successfully!");
-        navigation.navigate("LicenseIntro", { driverId });
+        navigation.navigate("LicenseIntro", { driverId, email });
       } catch (err: any) {
         console.error("❌ [API Error] verifyOtp failed:", err?.response?.data || err?.message);
         showAuthError(err, "Invalid verification code. Please try again.");
       }
     },
-    [driverId, isVerifying, navigation, verifyOtp, showAuthError]
+    [driverId, email, isVerifying, navigation, verifyOtp, showAuthError]
   );
 
   const handleResend = React.useCallback(async () => {

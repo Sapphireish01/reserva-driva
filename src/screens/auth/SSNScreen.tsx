@@ -6,12 +6,16 @@ import { AppButton } from "../../components/ui";
 import { AuthStackParamList } from "../../navigation/types";
 import { ssnSchema } from "../../schemas/signup";
 import { useAuthToast } from "../../context/AuthToastContext";
+import { useAuthStore } from "../../state/authStore";
 import { colors, spacing, typography } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "SSN">;
 
 export const SSNScreen = ({ route, navigation }: Props) => {
-  const { driverId } = route.params;
+  const { driverId, email } = route.params;
+  const user = useAuthStore((s) => s.user);
+  const resolvedEmail = email || user?.email || "";
+
   const { showAuthError } = useAuthToast();
   const [ssn, setSsn] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -24,7 +28,7 @@ export const SSNScreen = ({ route, navigation }: Props) => {
       // Submitted once, over TLS, straight to the backend for profile update.
       // `ssn` is never written to SecureStore/AsyncStorage and is discarded
       // from component state as soon as this screen unmounts.
-      await driversService.uploadSsnProfile(ssn);
+      await driversService.uploadSsn(resolvedEmail, ssn);
       navigation.navigate("AccountCreated");
     } catch (e: any) {
       showAuthError(e, "Couldn't verify your SSN. Please try again.");

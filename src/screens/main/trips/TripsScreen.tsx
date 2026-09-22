@@ -26,13 +26,11 @@ export const TripsScreen = ({ navigation }: any) => {
 
   // Live API query for trips
   const statusParam =
-    activeTab === "Upcoming"
-      ? "scheduled"
-      : activeTab === "Completed"
-        ? "completed"
-        : activeTab === "Cancelled"
-          ? "cancelled"
-          : undefined;
+    activeTab === "Completed"
+      ? "completed"
+      : activeTab === "Cancelled"
+        ? "cancelled"
+        : undefined;
 
   const { data: serverTrips, isLoading: isLoadingTrips, refetch } = useDriverTripsQuery(
     statusParam ? { status: statusParam } : undefined
@@ -60,14 +58,39 @@ export const TripsScreen = ({ navigation }: any) => {
         t.recurrence_frequency || (t.recurrence_days && t.recurrence_days.length > 0)
       );
 
+      const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      const parseDayName = (d: any): string => {
+        if (typeof d === "number" && d >= 0 && d < DAY_NAMES.length) {
+          return DAY_NAMES[d];
+        }
+        if (typeof d === "string") {
+          const num = parseInt(d, 10);
+          if (!isNaN(num) && num >= 0 && num < DAY_NAMES.length) {
+            return DAY_NAMES[num];
+          }
+          return d.substring(0, 3);
+        }
+        return String(d);
+      };
+
       let formattedFreq = "";
+      const freqLower = (t.recurrence_frequency || "").toLowerCase();
+      const freqLabel =
+        freqLower === "daily"
+          ? "Daily"
+          : freqLower === "custom"
+            ? "Custom"
+            : t.recurrence_frequency || "Weekly";
+
       if (t.recurrence_days && t.recurrence_days.length > 0) {
-        const shortDays = t.recurrence_days
-          .map((d: string) => (typeof d === "string" ? d.substring(0, 3) : String(d)))
-          .join(", ");
-        formattedFreq = `${shortDays} • ${t.recurrence_frequency || "Weekly"}`;
+        if (t.recurrence_days.length === 7 || freqLower === "daily") {
+          formattedFreq = "Mon - Sun • Daily";
+        } else {
+          const shortDays = t.recurrence_days.map(parseDayName).join(", ");
+          formattedFreq = `${shortDays} • ${freqLabel}`;
+        }
       } else if (t.recurrence_frequency) {
-        formattedFreq = t.recurrence_frequency;
+        formattedFreq = freqLabel;
       }
 
       return {
@@ -92,10 +115,15 @@ export const TripsScreen = ({ navigation }: any) => {
     refetch();
   };
 
-  const handleStartTrip = (tripId: string) => {
+  const handleStartTrip = (tripId: string, tripObj?: any, bookings?: any[], stops?: any[]) => {
     setShowActionSheet(false);
     setShowDetailsModal(false);
-    navigation.navigate("ActiveTrip", { tripId, trip: selectedTrip });
+    navigation.navigate("ActiveTrip", {
+      tripId,
+      trip: tripObj || selectedTrip,
+      bookings,
+      stops,
+    });
   };
 
   const handleTogglePause = (tripId: string) => {
@@ -114,8 +142,13 @@ export const TripsScreen = ({ navigation }: any) => {
 
   // Filter trips per tab
   const filteredTrips = trips.filter((t: any) => {
-    if (activeTab === "Upcoming") return (t.status === "scheduled" || t.status === "ongoing") && !t.isRecurring;
-    if (activeTab === "Recurring") return t.isRecurring && (t.status === "scheduled" || t.status === "ongoing");
+    const isUpcomingOrScheduled =
+      t.status === "scheduled" ||
+      t.status === "upcoming" ||
+      t.status === "ongoing";
+
+    if (activeTab === "Upcoming") return isUpcomingOrScheduled && !t.isRecurring;
+    if (activeTab === "Recurring") return t.isRecurring && isUpcomingOrScheduled;
     if (activeTab === "Completed") return t.status === "completed";
     if (activeTab === "Cancelled") return t.status === "cancelled";
     return false;
@@ -220,7 +253,14 @@ export const TripsScreen = ({ navigation }: any) => {
           <Ionicons name="arrow-back" size={24} color={colors.dark} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Trips</Text>
-        <View style={{ width: 32 }} />
+        <TouchableOpacity
+          style={styles.headerAddBtn}
+          onPress={() => setShowAvailabilityModal(true)}
+          activeOpacity={0.7}
+          accessibilityLabel="Set Availability"
+        >
+          <Ionicons name="add" size={24} color={colors.primary} />
+        </TouchableOpacity>
       </View>
 
       {/* Tabs Row */}
@@ -282,7 +322,9 @@ export const TripsScreen = ({ navigation }: any) => {
         visible={showDetailsModal}
         onClose={() => setShowDetailsModal(false)}
         trip={selectedTrip}
-        onStartTrip={() => selectedTrip && handleStartTrip(selectedTrip.id)}
+        onStartTrip={(tripObj, bookings, stops) =>
+          selectedTrip && handleStartTrip(selectedTrip.id, tripObj, bookings, stops)
+        }
         onTogglePause={() => selectedTrip && handleTogglePause(selectedTrip.id)}
       />
 
@@ -310,6 +352,14 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     padding: 4,
+  },
+  headerAddBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#EFF6FF",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontFamily: "DM Sans Bold",

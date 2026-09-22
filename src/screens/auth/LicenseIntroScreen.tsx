@@ -35,7 +35,7 @@ const LicenseCardIllustration = () => (
 );
 
 export const LicenseIntroScreen = ({ route, navigation }: Props) => {
-  const { driverId } = route.params;
+  const { driverId, email } = route.params;
 
   return (
     <View style={styles.container}>
@@ -71,7 +71,7 @@ export const LicenseIntroScreen = ({ route, navigation }: Props) => {
       </Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("LicenseFrontCapture", { driverId })}
+        onPress={() => navigation.navigate("LicenseFrontCapture", { driverId, email })}
         activeOpacity={0.8}
       >
         <Text style={styles.buttonText}>Scan License</Text>

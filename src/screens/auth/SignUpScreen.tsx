@@ -64,7 +64,7 @@ export const SignUpScreen = ({ navigation }: Props) => {
         console.log("📡 [API Response] POST /auth/signup payload:", data);
 
         const driverId = (data as any)?.driverId ?? (data as any)?.id ?? "mock-driver-123";
-        navigation.navigate("VerificationMethod", { driverId });
+        navigation.navigate("VerificationMethod", { driverId, email: values.email });
       } catch (err: any) {
         console.error("❌ [API Error] useSignUpMutation failed:", err?.response?.data || err?.message);
         showAuthError(err, "Failed to create account. Please try again.");

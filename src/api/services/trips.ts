@@ -359,7 +359,75 @@ export const tripsService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
+
+  getPassengersToRate: async (tripId: number | string) => {
+    return apiClient.get<PassengerToRate[]>("/drivers/trips/passengers-to-rate/", {
+      params: { trip_id: tripId },
+    });
+  },
+
+  ratePassenger: async (payload: RatePassengerPayload) => {
+    const formData = new FormData();
+    formData.append("booking_id", payload.booking_id);
+    formData.append("stars", String(payload.stars));
+    if (payload.feedback && payload.feedback.trim()) {
+      formData.append("feedback", payload.feedback.trim());
+    }
+    return apiClient.post<RatePassengerResponse>("/drivers/trips/rate-passenger/", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  getTripStops: async (tripId: number | string) => {
+    return apiClient.get<TripStop[]>("/drivers/trip-stops/", {
+      params: { trip_id: tripId },
+    });
+  },
+
+  addTripStop: async (payload: AddTripStopPayload) => {
+    const formData = new FormData();
+    formData.append("stop_type", payload.stop_type);
+    formData.append("name", payload.name);
+    return apiClient.post<TripStop>("/drivers/trip-stops/", formData, {
+      params: { trip_id: payload.trip_id },
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
+
+export interface TripStop {
+  id: number | string;
+  stop_type: "pickup" | "dropoff";
+  name: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  created_at?: string;
+}
+
+export interface AddTripStopPayload {
+  trip_id: number | string;
+  stop_type: "pickup" | "dropoff";
+  name: string;
+}
+
+export interface PassengerToRate {
+  booking_id: string;
+  full_name: string;
+  is_verified: boolean;
+  profile_picture: string | null;
+}
+
+export interface RatePassengerPayload {
+  booking_id: string;
+  stars: number;
+  feedback?: string;
+}
+
+export interface RatePassengerResponse {
+  message: string;
+  booking_id: string;
+  stars: number;
+}
 
 export interface DriverBookingItem {
   id: string;

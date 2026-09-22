@@ -10,16 +10,20 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DriverBookingItem, TripStop } from "../../../../api/services/trips";
 import { PassengerDetailsModal } from "../../../../components/bookings/PassengerDetailsModal";
-import { spacing } from "../../../../theme/colors";
-import { useDriverBookingsQuery } from "../../../../hooks/useDriverTrips";
-import { DriverBookingItem } from "../../../../api/services/trips";
+import {
+  useDriverBookingsQuery,
+  useTripStopsQuery,
+} from "../../../../hooks/useDriverTrips";
+import { colors, spacing } from "../../../../theme/colors";
+import { AddTripStopModal } from "./AddTripStopModal";
 
 interface TripDetailsModalProps {
   visible: boolean;
   onClose: () => void;
   trip: any;
-  onStartTrip: () => void;
+  onStartTrip: (trip?: any, bookings?: DriverBookingItem[], stops?: TripStop[]) => void;
   onTogglePause: () => void;
 }
 
@@ -32,9 +36,15 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const [selectedPassenger, setSelectedPassenger] = useState<any | null>(null);
+  const [showAddStopModal, setShowAddStopModal] = useState(false);
 
   const { data: serverBookings = [] } = useDriverBookingsQuery(
     trip?.id ? { trip_id: trip.id, status: "confirmed" } : undefined
+  );
+
+  const { data: serverStops = [] } = useTripStopsQuery(
+    trip?.id,
+    Boolean(trip?.id)
   );
 
   if (!trip) return null;
@@ -103,23 +113,57 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
               </View>
 
               {/* Route Section */}
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionHeaderText}>Route</Text>
+              <View style={styles.routeHeaderContainer}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionHeaderText}>Route</Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.addStopHeaderBtn}
+                  onPress={() => setShowAddStopModal(true)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="add" size={15} color={colors.primary} />
+                  <Text style={styles.addStopHeaderText}>Add Stop</Text>
+                </TouchableOpacity>
               </View>
+
+              {/* Pickup Location */}
               <View style={styles.detailRow}>
                 <View style={styles.locationLabelRow}>
                   <View style={styles.hollowCircle} />
                   <Text style={styles.detailLabel}>Pickup Location</Text>
                 </View>
-                <Text style={styles.detailValue}>{trip.origin || "Frebson Fitness Gym"}</Text>
+                <Text style={styles.detailValue}>{trip.origin || "Pickup Location"}</Text>
               </View>
 
+              {/* Intermediate Stops */}
+              {serverStops.map((stop: TripStop, index: number) => {
+                const isPickup = stop.stop_type === "pickup";
+                return (
+                  <View key={stop.id || index} style={styles.detailRow}>
+                    <View style={styles.locationLabelRow}>
+                      <View
+                        style={[
+                          styles.stopDot,
+                          { backgroundColor: isPickup ? colors.primary : "#EF4444" },
+                        ]}
+                      />
+                      <Text style={styles.detailLabel}>
+                        {isPickup ? "Pickup Stop" : "Dropoff Stop"}
+                      </Text>
+                    </View>
+                    <Text style={styles.detailValue}>{stop.name}</Text>
+                  </View>
+                );
+              })}
+
+              {/* Destination */}
               <View style={styles.detailRow}>
                 <View style={styles.locationLabelRow}>
                   <View style={styles.solidDot} />
                   <Text style={styles.detailLabel}>Destination</Text>
                 </View>
-                <Text style={styles.detailValue}>{trip.destination || "42, Montgomery Road Yaba"}</Text>
+                <Text style={styles.detailValue}>{trip.destination || "Destination"}</Text>
               </View>
 
               {/* Pricing Section */}
@@ -194,7 +238,7 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
                 style={styles.startTripBtn}
                 onPress={() => {
                   onClose();
-                  onStartTrip();
+                  onStartTrip(trip, serverBookings, serverStops);
                 }}
                 activeOpacity={0.8}
               >
@@ -210,6 +254,13 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
         visible={Boolean(selectedPassenger)}
         onClose={() => setSelectedPassenger(null)}
         passenger={selectedPassenger}
+      />
+
+      {/* Add Route Stop Modal */}
+      <AddTripStopModal
+        visible={showAddStopModal}
+        onClose={() => setShowAddStopModal(false)}
+        tripId={trip.id}
       />
     </>
   );
@@ -315,7 +366,34 @@ const styles = StyleSheet.create({
     marginHorizontal: -spacing.lg,
     marginVertical: 10,
   },
+  routeHeaderContainer: {
+    position: "relative",
+  },
+  addStopHeaderBtn: {
+    position: "absolute",
+    right: 0,
+    top: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#EFF6FF",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  addStopHeaderText: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.primary,
+  },
+  stopDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
   sectionHeaderText: {
+    paddingHorizontal: 12,
     fontFamily: "DM Sans Bold",
     fontSize: 12,
     color: "#868C98",

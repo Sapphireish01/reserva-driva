@@ -7,4 +7,4 @@ export * from "./services/trips";
 export * from "./services/vehicles";
 export * from "./services/banks";
 export * from "./services/wallet";
-
+export * from "./services/notifications";

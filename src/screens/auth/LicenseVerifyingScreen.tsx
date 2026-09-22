@@ -2,13 +2,16 @@ import React, { useEffect, useState } from "react";
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "../../navigation/types";
 import { identityService } from "../../api/services/identity";
-import { formatAuthError } from "../../utils/authErrorHandler";
+import { useAuthStore } from "../../state/authStore";
 import { LicenseCaptureView } from "./LicenseCaptureView";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "LicenseVerifying">;
 
 export const LicenseVerifyingScreen = ({ route, navigation }: Props) => {
-  const { driverId, frontUri, backUri } = route.params;
+  const { driverId, frontUri, backUri, email } = route.params;
+  const user = useAuthStore((s) => s.user);
+  const resolvedEmail = email || user?.email || "";
+
   const [status, setStatus] = useState<"uploading" | "pending" | "verified" | "failed">(
     "uploading"
   );
@@ -19,11 +22,7 @@ export const LicenseVerifyingScreen = ({ route, navigation }: Props) => {
 
     const run = async () => {
       try {
-        await identityService.uploadDriversLicense({
-          uri: frontUri,
-          name: "driver_license.jpg",
-          type: "image/jpeg",
-        });
+        await identityService.uploadDriversLicense(resolvedEmail, frontUri, backUri);
         setStatus("pending");
 
         poll = setInterval(async () => {
@@ -51,14 +50,14 @@ export const LicenseVerifyingScreen = ({ route, navigation }: Props) => {
 
     run();
     return () => clearInterval(poll);
-  }, [driverId, frontUri, backUri]);
+  }, [driverId, frontUri, backUri, resolvedEmail]);
 
   return (
     <LicenseCaptureView
       initialPhotoUri={frontUri || backUri}
       verifyingStatus={status}
       errorMessage={errorMessage}
-      onContinue={() => navigation.navigate("SSN", { driverId })}
+      onContinue={() => navigation.navigate("SSN", { driverId, email: resolvedEmail })}
       onRetry={() => navigation.goBack()}
       onCancel={() => navigation.goBack()}
     />

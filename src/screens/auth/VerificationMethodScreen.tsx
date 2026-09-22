@@ -10,7 +10,7 @@ import { colors, spacing } from "../../theme/colors";
 type Props = NativeStackScreenProps<AuthStackParamList, "VerificationMethod">;
 
 export const VerificationMethodScreen = ({ route, navigation }: Props) => {
-  const { driverId } = route.params;
+  const { driverId, email } = route.params;
   const { showAuthError } = useAuthToast();
   const [method, setMethod] = useState<"sms" | "email">("email");
   const [sending, setSending] = useState(false);
@@ -19,7 +19,7 @@ export const VerificationMethodScreen = ({ route, navigation }: Props) => {
     setSending(true);
     try {
       // Bypassing real API call for local testing / mock flow
-      navigation.navigate("OTPVerification", { driverId, method });
+      navigation.navigate("OTPVerification", { driverId, method, email });
       /* Original API call:
       await authService.requestOtp(driverId, method);
       navigation.navigate("OTPVerification", { driverId, method });

@@ -13,13 +13,19 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DriverBookingItem, TripStop } from "../../../api/services/trips";
 import { LiveRouteMap } from "../../../components/map/LiveRouteMap";
+import {
+  useDriverBookingsQuery,
+  useTripStopsQuery,
+} from "../../../hooks/useDriverTrips";
 import {
   ActiveTripData,
   MOCK_ACTIVE_TRIP,
 } from "../../../mock/activeTripMock";
 import { MainStackParamList } from "../../../navigation/types";
 import { colors, palette } from "../../../theme/colors";
+import { buildActiveTripData } from "../../../utils/tripRouteResolver";
 import { RatePassengersModal } from "./components/RatePassengersModal";
 
 type Props = NativeStackScreenProps<MainStackParamList, "ActiveTrip">;
@@ -48,18 +54,70 @@ function calculateBearing(
   return (brng + 360) % 360;
 }
 
-export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
+export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
 
-  const [tripData, setTripData] = useState<ActiveTripData>(MOCK_ACTIVE_TRIP);
+  const rawTrip = route.params?.trip;
+  const currentTripId = route.params?.tripId || rawTrip?.id || 18;
+
+  // Stabilize query params to prevent re-querying and new object creation on every render
+  const bookingsParams = React.useMemo(() => {
+    return currentTripId ? { trip_id: currentTripId, status: "confirmed" } : undefined;
+  }, [currentTripId]);
+
+  // Live queries for intermediate stops & confirmed bookings
+  const { data: serverStops = [] } = useTripStopsQuery(
+    currentTripId,
+    Boolean(currentTripId)
+  );
+
+  const { data: serverBookings = [] } = useDriverBookingsQuery(bookingsParams);
+
+  // Compute active trip data dynamically from real trip parameters
+  const baseTripData = React.useMemo(() => {
+    const stopsToUse =
+      Array.isArray(serverStops) && serverStops.length > 0
+        ? serverStops
+        : Array.isArray(route.params?.stops)
+          ? (route.params.stops as TripStop[])
+          : [];
+
+    const bookingsToUse =
+      Array.isArray(serverBookings) && serverBookings.length > 0
+        ? serverBookings
+        : Array.isArray(route.params?.bookings)
+          ? (route.params.bookings as DriverBookingItem[])
+          : [];
+
+    if (rawTrip) {
+      return buildActiveTripData(rawTrip, stopsToUse, bookingsToUse);
+    }
+
+    return MOCK_ACTIVE_TRIP;
+  }, [rawTrip, serverStops, serverBookings, route.params?.stops, route.params?.bookings]);
+
+  // Driver dynamic simulated location state
+  const [driverLocation, setDriverLocation] = useState(baseTripData.driverLocation);
+
+  // Reset driverLocation when trip changes
+  useEffect(() => {
+    setDriverLocation(baseTripData.driverLocation);
+  }, [baseTripData.id, baseTripData.originCoordinates.latitude, baseTripData.originCoordinates.longitude]);
+
   const [navState, setNavState] = useState<NavState>("driving_to_pickup");
   const [countdownSeconds, setCountdownSeconds] = useState(270); // 4 mins 30s
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [sheetExpanded, setSheetExpanded] = useState(false);
 
-  const activePassenger = tripData.passengers[0]; // Prosper Edward
+  // Combined tripData with live animated driver location
+  const tripData: ActiveTripData = React.useMemo(() => ({
+    ...baseTripData,
+    driverLocation,
+  }), [baseTripData, driverLocation]);
+
+  const activePassenger = tripData.passengers[0];
 
   // Moving driver along route coordinates simulation
   const segmentRef = useRef(0);
@@ -74,10 +132,10 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
 
     if (!isMoving) return;
 
-    const interval = setInterval(() => {
-      const coords = tripData.routeCoordinates;
-      if (!coords || coords.length < 2) return;
+    const coords = baseTripData.routeCoordinates;
+    if (!coords || coords.length < 2) return;
 
+    const interval = setInterval(() => {
       const maxSegment =
         navState === "driving_to_pickup"
           ? 1
@@ -105,20 +163,17 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
       const lng = p1.longitude + (p2.longitude - p1.longitude) * prog;
       const heading = calculateBearing(p1, p2);
 
-      setTripData((prev) => ({
+      setDriverLocation((prev) => ({
         ...prev,
-        driverLocation: {
-          ...prev.driverLocation,
-          latitude: lat,
-          longitude: lng,
-          heading: Math.round(heading),
-          speedKmH: 38,
-        },
+        latitude: lat,
+        longitude: lng,
+        heading: Math.round(heading),
+        speedKmH: 38,
       }));
     }, 700);
 
     return () => clearInterval(interval);
-  }, [navState, tripData.routeCoordinates]);
+  }, [navState, baseTripData.routeCoordinates]);
 
   // Countdown simulation
   useEffect(() => {
@@ -194,14 +249,16 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
+  const passengerFirstName = activePassenger?.name ? activePassenger.name.split(" ")[0] : "Passenger";
+
   const getStateTitle = () => {
     switch (navState) {
       case "driving_to_pickup":
       case "arrived_waiting":
       case "leave_passenger":
-        return "Driving to pickup Prosper";
+        return `Driving to pickup ${passengerFirstName}`;
       case "driving_to_dropoff":
-        return "Driving to drop-off Prosper";
+        return `Driving to drop-off ${passengerFirstName}`;
       case "driving_to_destination":
         return "Driving to destination";
       default:
@@ -211,9 +268,9 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
 
   const getStateAddress = () => {
     if (navState === "driving_to_destination") {
-      return "CMS Bustop Alagomedji";
+      return tripData.destination;
     }
-    return "10 Obe Street";
+    return activePassenger?.pickupLocation || tripData.origin;
   };
 
   const isDestinationState = navState === "driving_to_destination";
@@ -323,7 +380,7 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
                 {/* Secondary Call Button: White background with crisp blue border */}
                 <TouchableOpacity
                   style={styles.callSquareBtn}
-                  onPress={() => handleCall(activePassenger.phone)}
+                  onPress={() => activePassenger?.phone && handleCall(activePassenger.phone)}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="call-outline" size={22} color="#305CFF" />
@@ -332,7 +389,7 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
                 {/* Secondary Message Button: Light ice-blue background with NO border */}
                 <TouchableOpacity
                   style={styles.messageSquareBtn}
-                  onPress={() => handleMessage(activePassenger.phone)}
+                  onPress={() => activePassenger?.phone && handleMessage(activePassenger.phone)}
                   activeOpacity={0.7}
                 >
                   <Ionicons name="mail-outline" size={22} color="#305CFF" />
@@ -350,49 +407,34 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
               </View>
 
               <View style={styles.queueContainer}>
-                {/* Prosper Edward */}
-                <View style={styles.queueItem}>
-                  <View style={styles.timelineDotFilled} />
-                  <View style={styles.queueItemBody}>
-                    <View style={styles.queueItemHeader}>
-                      <Text style={styles.passengerTitle}>Prosper Edward</Text>
-                      <View style={styles.checkedInPill}>
-                        <Text style={styles.checkedInText}>Checked-In</Text>
+                {tripData.passengers.map((passenger, index) => {
+                  const isFirst = index === 0;
+                  const isLast = index === tripData.passengers.length - 1;
+                  return (
+                    <React.Fragment key={passenger.id || index}>
+                      <View style={styles.queueItem}>
+                        <View style={isFirst ? styles.timelineDotFilled : styles.timelineDotEmpty} />
+                        <View style={styles.queueItemBody}>
+                          <View style={styles.queueItemHeader}>
+                            <Text style={styles.passengerTitle}>{passenger.name}</Text>
+                            {isFirst && (
+                              <View style={styles.checkedInPill}>
+                                <Text style={styles.checkedInText}>Checked-In</Text>
+                              </View>
+                            )}
+                          </View>
+                          <Text style={styles.landmarkText}>
+                            {isFirst ? "Drop Off" : "Pickup"} Landmark : {passenger.dropoffLandmark || passenger.pickupLandmark || "Underbridge"}
+                          </Text>
+                          <Text style={[styles.landmarkText, { color: "#64748B", marginTop: 1 }]} numberOfLines={1}>
+                            {passenger.pickupLocation}
+                          </Text>
+                        </View>
                       </View>
-                    </View>
-                    <Text style={styles.landmarkText}>Drop Off Landmark : Underbridge</Text>
-                  </View>
-                </View>
-                <View style={styles.dashedConnector} />
-
-                {/* Claire Olo */}
-                <View style={styles.queueItem}>
-                  <View style={styles.timelineDotEmpty} />
-                  <View style={styles.queueItemBody}>
-                    <Text style={styles.passengerTitle}>Claire Olo</Text>
-                    <Text style={styles.landmarkText}>Pickup Landmark : Underbridge</Text>
-                  </View>
-                </View>
-                <View style={styles.dashedConnector} />
-
-                {/* Juniper Lee */}
-                <View style={styles.queueItem}>
-                  <View style={styles.timelineDotEmpty} />
-                  <View style={styles.queueItemBody}>
-                    <Text style={styles.passengerTitle}>Juniper Lee</Text>
-                    <Text style={styles.landmarkText}>Pickup Landmark : Underbridge</Text>
-                  </View>
-                </View>
-                <View style={styles.dashedConnector} />
-
-                {/* Jesse Nwachukwu */}
-                <View style={styles.queueItem}>
-                  <View style={styles.timelineDotEmpty} />
-                  <View style={styles.queueItemBody}>
-                    <Text style={styles.passengerTitle}>Jesse Nwachukwu</Text>
-                    <Text style={styles.landmarkText}>Pickup Landmark : Underbridge</Text>
-                  </View>
-                </View>
+                      {!isLast && <View style={styles.dashedConnector} />}
+                    </React.Fragment>
+                  );
+                })}
               </View>
 
               {/* 2. Trip Timeline Section Header Strip */}
@@ -401,34 +443,38 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
               </View>
 
               <View style={styles.timelineContainer}>
-                <View style={styles.timelineRow}>
-                  <View style={styles.timelineDotFilled} />
-                  <Text style={styles.timelineStepName}>Trip Started</Text>
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={20}
-                    color="#22C55E"
-                    style={{ marginLeft: "auto" }}
-                  />
-                </View>
-                <View style={styles.dashedConnectorShort} />
+                {tripData.waypoints.map((wp, index) => {
+                  const isCompleted =
+                    wp.type === "origin" ||
+                    (navState !== "driving_to_pickup" && wp.type === "pickup") ||
+                    (navState === "driving_to_destination" && wp.type === "destination");
+                  const isLast = index === tripData.waypoints.length - 1;
 
-                <View style={styles.timelineRow}>
-                  <View style={styles.timelineDotEmpty} />
-                  <Text style={styles.timelineStepNameInactive}>Pickup</Text>
-                </View>
-                <View style={styles.dashedConnectorShort} />
-
-                <View style={styles.timelineRow}>
-                  <View style={styles.timelineDotEmpty} />
-                  <Text style={styles.timelineStepNameInactive}>Destination</Text>
-                </View>
-                <View style={styles.dashedConnectorShort} />
-
-                <View style={styles.timelineRow}>
-                  <View style={styles.timelineDotEmpty} />
-                  <Text style={styles.timelineStepNameInactive}>Complete Trip</Text>
-                </View>
+                  return (
+                    <React.Fragment key={wp.id || index}>
+                      <View style={styles.timelineRow}>
+                        <View style={isCompleted ? styles.timelineDotFilled : styles.timelineDotEmpty} />
+                        <View style={{ flex: 1, paddingRight: 8 }}>
+                          <Text style={isCompleted ? styles.timelineStepName : styles.timelineStepNameInactive}>
+                            {wp.title}
+                          </Text>
+                          <Text style={[styles.landmarkText, { marginTop: 1 }]} numberOfLines={1}>
+                            {wp.subtitle}
+                          </Text>
+                        </View>
+                        {isCompleted && (
+                          <Ionicons
+                            name="checkmark-circle-outline"
+                            size={18}
+                            color="#22C55E"
+                            style={{ marginLeft: "auto" }}
+                          />
+                        )}
+                      </View>
+                      {!isLast && <View style={styles.dashedConnectorShort} />}
+                    </React.Fragment>
+                  );
+                })}
               </View>
             </View>
           )}
@@ -438,6 +484,7 @@ export const ActiveTripScreen: React.FC<Props> = ({ navigation }) => {
       {/* Post-Trip Passenger Rating Flow Modal */}
       <RatePassengersModal
         visible={showRatingModal}
+        tripId={currentTripId}
         onClose={() => {
           setShowRatingModal(false);
           navigation.navigate("MainTabs");

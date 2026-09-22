@@ -3,6 +3,7 @@ export * from "./ChatWithSupportScreen";
 export * from "./ContactUsScreen";
 export * from "./EmergencyContactsScreen";
 export * from "./FAQsScreen";
+export * from "./NotificationSettingsScreen";
 export * from "./PreferencesScreen";
 export * from "./ProfileDetailsScreen";
 export * from "./ReferralsScreen";

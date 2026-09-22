@@ -13,7 +13,7 @@ interface DatePickerModalProps {
 
 const MONTH_NAMES = [
   "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
-  "JUL", "AUG", "SEPT", "OCT", "NOV", "DEC"
+  "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
 ];
 
 const WEEKDAYS = ["MON", "TUE", "WED", "THUR", "FRI", "SAT", "SUN"];
@@ -30,6 +30,15 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
   const [selectedDay, setSelectedDay] = useState<number | null>(
     initialDate ? initialDate.getDate() : today.getDate()
   );
+
+  React.useEffect(() => {
+    if (visible) {
+      const target = initialDate || new Date();
+      setCurrentYear(target.getFullYear());
+      setCurrentMonth(target.getMonth());
+      setSelectedDay(target.getDate());
+    }
+  }, [visible, initialDate]);
 
   const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month + 1, 0).getDate();
@@ -50,6 +59,15 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
     currentMonth === 0 ? currentYear - 1 : currentYear
   );
 
+  const handlePrevMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear((y) => y - 1);
+    } else {
+      setCurrentMonth((m) => m - 1);
+    }
+  };
+
   const handleNextMonth = () => {
     if (currentMonth === 11) {
       setCurrentMonth(0);
@@ -59,12 +77,19 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
     }
   };
 
+  const handlePrevYear = () => {
+    setCurrentYear((y) => y - 1);
+  };
+
   const handleNextYear = () => {
     setCurrentYear((y) => y + 1);
   };
 
   const handleClear = () => {
-    setSelectedDay(null);
+    const now = new Date();
+    setCurrentYear(now.getFullYear());
+    setCurrentMonth(now.getMonth());
+    setSelectedDay(now.getDate());
   };
 
   const handleContinue = () => {
@@ -117,15 +142,47 @@ export const DatePickerModal: React.FC<DatePickerModalProps> = ({
       <View style={styles.contentContainer}>
         {/* Month / Year Controls */}
         <View style={styles.controlsRow}>
-          <TouchableOpacity style={styles.dropdownPill} onPress={handleNextMonth} activeOpacity={0.7}>
+          {/* Month pill with backward and forward arrows */}
+          <View style={styles.dropdownPill}>
+            <TouchableOpacity
+              onPress={handlePrevMonth}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              activeOpacity={0.7}
+              accessibilityLabel="Previous month"
+            >
+              <Ionicons name="chevron-back" size={16} color={palette.slate[600]} />
+            </TouchableOpacity>
             <Text style={styles.dropdownText}>{MONTH_NAMES[currentMonth]}</Text>
-            <Ionicons name="chevron-forward" size={14} color={palette.slate[400]} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleNextMonth}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              activeOpacity={0.7}
+              accessibilityLabel="Next month"
+            >
+              <Ionicons name="chevron-forward" size={16} color={palette.slate[600]} />
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.dropdownPill} onPress={handleNextYear} activeOpacity={0.7}>
+          {/* Year pill with backward and forward arrows */}
+          <View style={styles.dropdownPill}>
+            <TouchableOpacity
+              onPress={handlePrevYear}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              activeOpacity={0.7}
+              accessibilityLabel="Previous year"
+            >
+              <Ionicons name="chevron-back" size={16} color={palette.slate[600]} />
+            </TouchableOpacity>
             <Text style={styles.dropdownText}>{currentYear}</Text>
-            <Ionicons name="chevron-forward" size={14} color={palette.slate[400]} />
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleNextYear}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              activeOpacity={0.7}
+              accessibilityLabel="Next year"
+            >
+              <Ionicons name="chevron-forward" size={16} color={palette.slate[600]} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Weekday headers */}
@@ -208,19 +265,23 @@ const styles = StyleSheet.create({
   dropdownPill: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: palette.slate[200],
     borderRadius: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 10,
-    gap: 8,
+    gap: 10,
+    minWidth: 112,
   },
   dropdownText: {
     fontFamily: "DM Sans",
     fontSize: 14,
-    fontWeight: "500",
-    color: palette.slate[600],
+    fontWeight: "600",
+    color: palette.slate[700],
+    textAlign: "center",
+    minWidth: 38,
   },
   weekdayRow: {
     flexDirection: "row",

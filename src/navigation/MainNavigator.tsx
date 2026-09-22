@@ -10,6 +10,7 @@ import {
   ContactUsScreen,
   EmergencyContactsScreen,
   FAQsScreen,
+  NotificationSettingsScreen,
   PreferencesScreen,
   ProfileDetailsScreen,
   ReferralsScreen,
@@ -100,6 +101,11 @@ export const MainNavigator = () => (
     <Stack.Screen
       name="Notifications"
       component={NotificationsScreen}
+      options={{ headerShown: false }}
+    />
+    <Stack.Screen
+      name="NotificationSettings"
+      component={NotificationSettingsScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen

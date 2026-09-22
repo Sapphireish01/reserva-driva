@@ -5,13 +5,13 @@ export type AuthStackParamList = {
   ForgotPasswordOTP: { email: string };
   ResetPassword: { email: string; otpCode: string };
   SignUp: undefined;
-  VerificationMethod: { driverId: string };
-  OTPVerification: { driverId: string; method: "sms" | "email" };
-  LicenseIntro: { driverId: string };
-  LicenseFrontCapture: { driverId: string };
-  LicenseBackCapture: { driverId: string; frontUri: string };
-  LicenseVerifying: { driverId: string; frontUri: string; backUri: string };
-  SSN: { driverId: string };
+  VerificationMethod: { driverId: string; email?: string };
+  OTPVerification: { driverId: string; method: "sms" | "email"; email?: string };
+  LicenseIntro: { driverId: string; email?: string };
+  LicenseFrontCapture: { driverId: string; email?: string };
+  LicenseBackCapture: { driverId: string; frontUri: string; email?: string };
+  LicenseVerifying: { driverId: string; frontUri: string; backUri: string; email?: string };
+  SSN: { driverId: string; email?: string };
   MFAVerification: { email?: string };
   AccountCreated: undefined;
 };
@@ -52,6 +52,7 @@ export type MainStackParamList = {
   Settings: undefined;
   ProfileDetails: undefined;
   Notifications: undefined;
+  NotificationSettings: undefined;
   EmergencyContacts: undefined;
   ReportProblem: undefined;
   TwoFactorAuth: undefined;
@@ -65,7 +66,7 @@ export type MainStackParamList = {
   EditName: { currentName: string };
   EditEmail: { currentEmail: string };
   EditPhone: { currentPhone: string };
-  ActiveTrip: { tripId?: string; trip?: any } | undefined;
+  ActiveTrip: { tripId?: string; trip?: any; bookings?: any[]; stops?: any[] } | undefined;
 };
 
 

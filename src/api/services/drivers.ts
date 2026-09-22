@@ -19,6 +19,16 @@ export const driversService = {
     // than the lifetime of this request.
     apiClient.post(`/drivers/${driverId}/ssn`, { ssn }),
 
+  uploadSsn: (email: string, ssn: string) => {
+    const formData = new FormData();
+    formData.append("ssn", ssn);
+    formData.append("ssn_number", ssn);
+    return apiClient.post<{ message: string }>("/accounts/upload/ssn/", formData, {
+      params: { email },
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
   uploadSsnProfile: (ssnNumber: string) => {
     const formData = new FormData();
     formData.append("ssn_number", ssnNumber);

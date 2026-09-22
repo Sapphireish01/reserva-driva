@@ -5,6 +5,10 @@ import {
   SetOneOffAvailabilityPayload,
   SetDailyAvailabilityPayload,
   SetCustomAvailabilityPayload,
+  PassengerToRate,
+  RatePassengerPayload,
+  TripStop,
+  AddTripStopPayload,
 } from "../api/services/trips";
 
 export const TRIP_KEYS = {
@@ -132,6 +136,81 @@ export const useUpdateBookingActionMutation = () => {
       tripsService.updateBookingAction(bookingId, action),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BOOKING_KEYS.all });
+      queryClient.invalidateQueries({ queryKey: TRIP_KEYS.all });
+    },
+  });
+};
+
+export const PASSENGER_RATE_KEYS = {
+  all: ["passengersToRate"] as const,
+  list: (tripId: number | string) => [...PASSENGER_RATE_KEYS.all, String(tripId)] as const,
+};
+
+export const usePassengersToRateQuery = (
+  tripId: number | string,
+  enabled: boolean = true
+) => {
+  return useQuery<PassengerToRate[]>({
+    queryKey: PASSENGER_RATE_KEYS.list(tripId),
+    queryFn: async () => {
+      console.log(`🌐 [API Call] GET /drivers/trips/passengers-to-rate/?trip_id=${tripId}`);
+      const res = await tripsService.getPassengersToRate(tripId);
+      console.log("📡 [API Response] passengers-to-rate:", res.data);
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    enabled: Boolean(tripId) && enabled,
+    staleTime: 1000 * 60, // 1 minute
+  });
+};
+
+export const useRatePassengerMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: RatePassengerPayload) => {
+      console.log("🌐 [API Call] POST /drivers/trips/rate-passenger/", payload);
+      const res = await tripsService.ratePassenger(payload);
+      console.log("📡 [API Response] rate-passenger:", res.data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PASSENGER_RATE_KEYS.all });
+    },
+  });
+};
+
+export const TRIP_STOP_KEYS = {
+  all: ["tripStops"] as const,
+  list: (tripId: number | string) => [...TRIP_STOP_KEYS.all, String(tripId)] as const,
+};
+
+export const useTripStopsQuery = (
+  tripId: number | string,
+  enabled: boolean = true
+) => {
+  return useQuery<TripStop[]>({
+    queryKey: TRIP_STOP_KEYS.list(tripId),
+    queryFn: async () => {
+      console.log(`🌐 [API Call] GET /drivers/trip-stops/?trip_id=${tripId}`);
+      const res = await tripsService.getTripStops(tripId);
+      console.log("📡 [API Response] trip-stops:", res.data);
+      return Array.isArray(res.data) ? res.data : [];
+    },
+    enabled: Boolean(tripId) && enabled,
+    staleTime: 1000 * 60,
+  });
+};
+
+export const useAddTripStopMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload: AddTripStopPayload) => {
+      console.log(`🌐 [API Call] POST /drivers/trip-stops/?trip_id=${payload.trip_id}`, payload);
+      const res = await tripsService.addTripStop(payload);
+      console.log("📡 [API Response] add trip-stop:", res.data);
+      return res.data;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: TRIP_STOP_KEYS.list(variables.trip_id) });
       queryClient.invalidateQueries({ queryKey: TRIP_KEYS.all });
     },
   });

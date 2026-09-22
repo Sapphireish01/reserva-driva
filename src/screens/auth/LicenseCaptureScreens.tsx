@@ -7,28 +7,28 @@ type FrontProps = NativeStackScreenProps<AuthStackParamList, "LicenseFrontCaptur
 type BackProps = NativeStackScreenProps<AuthStackParamList, "LicenseBackCapture">;
 
 export const LicenseFrontCaptureScreen = ({ route, navigation }: FrontProps) => {
-  const { driverId } = route.params;
+  const { driverId, email } = route.params;
   return (
     <LicenseCaptureView
       step="Step 1 of 2"
       instruction="Capture the front of your license"
       onCancel={() => navigation.goBack()}
       onCapture={(frontUri) =>
-        navigation.navigate("LicenseBackCapture", { driverId, frontUri })
+        navigation.navigate("LicenseBackCapture", { driverId, frontUri, email })
       }
     />
   );
 };
 
 export const LicenseBackCaptureScreen = ({ route, navigation }: BackProps) => {
-  const { driverId, frontUri } = route.params;
+  const { driverId, frontUri, email } = route.params;
   return (
     <LicenseCaptureView
       step="Step 2 of 2"
       instruction="Capture the back of your license"
       onCancel={() => navigation.goBack()}
       onCapture={(backUri) =>
-        navigation.navigate("LicenseVerifying", { driverId, frontUri, backUri })
+        navigation.navigate("LicenseVerifying", { driverId, frontUri, backUri, email })
       }
     />
   );

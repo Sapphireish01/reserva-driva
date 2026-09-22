@@ -149,6 +149,7 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   const [time, setTime] = useState("");
   const [dateFormatted, setDateFormatted] = useState("");
   const [rawDateObj, setRawDateObj] = useState<Date | null>(null);
+  const [rawEndDateObj, setRawEndDateObj] = useState<Date | null>(null);
   const [isRecurring, setIsRecurring] = useState(false);
 
   // Step 2 State
@@ -197,8 +198,8 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   // Validation
   const [dateValidationError, setDateValidationError] = useState<string | null>(null);
 
-  // Reset all state on close
-  const handleClose = () => {
+  // Reset all form state
+  const resetFormState = () => {
     setStep(1);
     setSelectedVehicleId("");
     setPickup("");
@@ -206,6 +207,7 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
     setTime("");
     setDateFormatted("");
     setRawDateObj(null);
+    setRawEndDateObj(null);
     setIsRecurring(false);
     setFrequency("");
     setIsCustomRange(false);
@@ -216,6 +218,10 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
     setShowSeatsPicker(false);
     setPublishStatus("idle");
     setDateValidationError(null);
+  };
+
+  const handleClose = () => {
+    resetFormState();
     onClose();
   };
 
@@ -239,6 +245,7 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
       validateDateAdvance(rawDate);
     } else {
       setEndDateFormatted(formattedDate);
+      setRawEndDateObj(rawDate);
     }
   };
 
@@ -289,7 +296,7 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
       if (!isRecurring) {
         // One-off trip POST /drivers/trips/
         await setOneOffMutation.mutateAsync({
-          vehicle: selectedVehicleId,
+          vehicle: Number(selectedVehicleId) || selectedVehicleId,
           pickup_location: pickup,
           destination,
           trip_date: apiTripDate,
@@ -298,21 +305,29 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
         });
       } else {
         // Recurring trip POST /drivers/trips/recurring/
-        const apiEndDate = formatDateToApi(null, endDateFormatted);
+        const apiEndDate = formatDateToApi(rawEndDateObj, endDateFormatted);
         const freqKey = isCustomRange ? "custom" : (frequency ? (frequency.toLowerCase() as any) : "daily");
 
         if (isCustomRange) {
-          const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+          const mapDayToWeekdayIndex = (day: string): number => {
+            const d = day.trim().toLowerCase();
+            if (d.startsWith("mon")) return 0;
+            if (d.startsWith("tue")) return 1;
+            if (d.startsWith("wed")) return 2;
+            if (d.startsWith("thu")) return 3;
+            if (d.startsWith("fri")) return 4;
+            if (d.startsWith("sat")) return 5;
+            if (d.startsWith("sun")) return 6;
+            return -1;
+          };
+
           const daysIndices = selectedDays
-            .map((day) => {
-              // Map both "Thur" and "Thu" or other variations if any
-              const normalized = day === "Thur" ? "Thu" : day;
-              return WEEKDAYS.indexOf(normalized);
-            })
-            .filter((idx) => idx !== -1);
+            .map(mapDayToWeekdayIndex)
+            .filter((idx) => idx !== -1)
+            .sort((a, b) => a - b);
 
           await setCustomMutation.mutateAsync({
-            vehicle: selectedVehicleId,
+            vehicle: Number(selectedVehicleId) || selectedVehicleId,
             pickup_location: pickup,
             destination,
             departure_time: apiDepartureTime,
@@ -324,7 +339,7 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
           });
         } else {
           await setDailyMutation.mutateAsync({
-            vehicle: selectedVehicleId,
+            vehicle: Number(selectedVehicleId) || selectedVehicleId,
             pickup_location: pickup,
             destination,
             trip_date: apiTripDate,
@@ -355,7 +370,8 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
           pricePerSeat: parseFloat(cleanPrice) || 0,
         });
 
-        handleClose();
+        resetFormState();
+        onClose();
       }, 600);
     } catch (err) {
       console.error("Error publishing trip availability:", err);

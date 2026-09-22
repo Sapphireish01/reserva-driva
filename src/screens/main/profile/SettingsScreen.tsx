@@ -148,8 +148,8 @@ export const SettingsScreen = ({ navigation }: Props) => {
           />
           <SettingItem
             icon={<NotificationIconItem color="#868C98" size={20} />}
-            label="Notifications"
-            onPress={() => navigation.navigate("Notifications")}
+            label="Notification Preferences"
+            onPress={() => navigation.navigate("NotificationSettings")}
           />
           <SettingItem
             icon={<EmergencyContactIconItem color="#868C98" size={20} />}

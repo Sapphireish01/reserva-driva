@@ -277,8 +277,34 @@ export const TransactionCardSkeleton: React.FC<SkeletonContainerProps> = ({ styl
     </View>
   );
 };
+export const NotificationCardSkeleton: React.FC<SkeletonContainerProps> = ({ style }) => {
+  return (
+    <View style={[styles.notificationContainer, style]}>
+      <Skeleton width={42} height={42} borderRadius={21} style={{ marginRight: 14 }} />
+      <View style={{ flex: 1 }}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <Skeleton width={90} height={14} borderRadius={4} />
+          <Skeleton width={8} height={8} borderRadius={4} />
+        </View>
+        <Skeleton width="92%" height={15} borderRadius={4} style={{ marginBottom: 6 }} />
+        <Skeleton width="65%" height={15} borderRadius={4} style={{ marginBottom: 8 }} />
+        <Skeleton width={130} height={12} borderRadius={4} />
+      </View>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
+  notificationContainer: {
+    flexDirection: "row",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    alignItems: "flex-start",
+  },
   cardContainer: {
     backgroundColor: "#FFFFFF",
     borderRadius: 12,

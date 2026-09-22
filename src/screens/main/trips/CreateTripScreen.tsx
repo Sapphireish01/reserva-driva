@@ -17,6 +17,8 @@ import { MainStackParamList } from "../../../navigation/types";
 import { colors, spacing, typography } from "../../../theme/colors";
 import { tripsService } from "../../../api/services/trips";
 
+import { TRIP_KEYS } from "../../../hooks/useDriverTrips";
+
 type Props = any;
 
 export const CreateTripScreen = ({ navigation }: Props) => {
@@ -30,10 +32,22 @@ export const CreateTripScreen = ({ navigation }: Props) => {
   const [notes, setNotes] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
+  const resetForm = () => {
+    setOrigin("");
+    setDestination("");
+    setDepartureTime("");
+    setSeats("3");
+    setPrice("25");
+    setNotes("");
+    setErrorMessage("");
+  };
+
   const createTripMutation = useMutation({
     mutationFn: tripsService.createTrip,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["driverTrips"] });
+      queryClient.invalidateQueries({ queryKey: TRIP_KEYS.all });
+      resetForm();
       navigation.goBack();
     },
     onError: (err: any) => {

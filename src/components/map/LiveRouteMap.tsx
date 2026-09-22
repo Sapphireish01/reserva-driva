@@ -241,7 +241,7 @@ export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
           lineJoin="round"
         />
 
-        {/* Primary Route Polyline */}
+        {/* Primary Route Polyline following established corridor */}
         <Polyline
           coordinates={tripData.routeCoordinates}
           strokeColor={polylinePrimaryColor}
@@ -250,20 +250,58 @@ export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
           lineJoin="round"
         />
 
-        {/* Target Destination Marker */}
-        <Marker coordinate={tripData.destinationCoordinates} title="Destination">
-          <View style={[styles.targetDestinationPin, !isDark && styles.targetDestinationPinLight]}>
-            <View style={[styles.targetInnerDot, !isDark && styles.targetInnerDotLight]} />
+        {/* Start / Origin Marker */}
+        <Marker
+          coordinate={tripData.originCoordinates}
+          title="Trip Origin"
+          description={tripData.origin}
+        >
+          <View style={styles.originMarkerBadge}>
+            <View style={styles.originInnerCircle} />
           </View>
         </Marker>
 
-        {/* Current Pickup Marker */}
-        <Marker
-          coordinate={tripData.passengers[0].pickupCoordinates}
-          title={tripData.passengers[0].pickupLocation}
-        >
-          <View style={[styles.targetPickupPin, !isDark && styles.targetPickupPinLight]}>
-            <View style={[styles.targetPickupInnerDot, !isDark && styles.targetPickupInnerDotLight]} />
+        {/* All Passenger Pickups */}
+        {tripData.passengers.map((passenger, index) => (
+          <Marker
+            key={`pickup-${passenger.id || index}`}
+            coordinate={passenger.pickupCoordinates}
+            title={`Pickup: ${passenger.name}`}
+            description={passenger.pickupLocation}
+          >
+            <View style={styles.pickupMarkerContainer}>
+              <View style={styles.pickupMarkerPin}>
+                <Ionicons name="person" size={12} color="#FFFFFF" />
+              </View>
+              <View style={styles.pickupMarkerCallout}>
+                <Text style={styles.pickupMarkerText} numberOfLines={1}>
+                  {passenger.name.split(" ")[0]}
+                </Text>
+              </View>
+            </View>
+          </Marker>
+        ))}
+
+        {/* Intermediate Route Stops */}
+        {tripData.waypoints
+          .filter((wp) => wp.type !== "origin" && wp.type !== "destination" && !wp.passengerId)
+          .map((stop, index) => (
+            <Marker
+              key={`stop-${stop.id || index}`}
+              coordinate={stop.coordinates}
+              title={stop.title}
+              description={stop.subtitle}
+            >
+              <View style={styles.stopMarkerPin}>
+                <Text style={styles.stopMarkerNumber}>{index + 1}</Text>
+              </View>
+            </Marker>
+          ))}
+
+        {/* Target Destination Marker */}
+        <Marker coordinate={tripData.destinationCoordinates} title="Destination" description={tripData.destination}>
+          <View style={[styles.targetDestinationPin, !isDark && styles.targetDestinationPinLight]}>
+            <View style={[styles.targetInnerDot, !isDark && styles.targetInnerDotLight]} />
           </View>
         </Marker>
 
@@ -358,51 +396,108 @@ const styles = StyleSheet.create({
   map: {
     ...StyleSheet.absoluteFillObject,
   },
-  targetDestinationPin: {
+  originMarkerBadge: {
     width: 22,
     height: 22,
     borderRadius: 11,
+    backgroundColor: "#10B981",
+    borderWidth: 3,
+    borderColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  originInnerCircle: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#FFFFFF",
+  },
+  pickupMarkerContainer: {
+    alignItems: "center",
+  },
+  pickupMarkerPin: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#10B981",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  pickupMarkerCallout: {
+    backgroundColor: "#0F172A",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginTop: 2,
+    maxWidth: 80,
+  },
+  pickupMarkerText: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 10,
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  stopMarkerPin: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "#3B82F6",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#3B82F6",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  stopMarkerNumber: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 11,
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  targetDestinationPin: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: "rgba(0, 229, 255, 0.3)",
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
+    borderWidth: 2,
     borderColor: "#00E5FF",
+    shadowColor: "#00E5FF",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
   },
   targetDestinationPinLight: {
     backgroundColor: "rgba(48, 92, 255, 0.25)",
     borderColor: "#305CFF",
+    shadowColor: "#305CFF",
   },
   targetInnerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: "#00E5FF",
   },
   targetInnerDotLight: {
     backgroundColor: "#305CFF",
-  },
-  targetPickupPin: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-  },
-  targetPickupPinLight: {
-    backgroundColor: "rgba(15, 23, 42, 0.15)",
-    borderColor: "#0F172A",
-  },
-  targetPickupInnerDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#0F172A",
-  },
-  targetPickupInnerDotLight: {
-    backgroundColor: "#0F172A",
   },
 
   // Vehicle Car Marker
