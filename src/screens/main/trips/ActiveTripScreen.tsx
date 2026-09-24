@@ -27,6 +27,8 @@ import { MainStackParamList } from "../../../navigation/types";
 import { colors, palette } from "../../../theme/colors";
 import { buildActiveTripData } from "../../../utils/tripRouteResolver";
 import { RatePassengersModal } from "./components/RatePassengersModal";
+import { mapsService, LatLng } from "@/api/services/maps";
+import * as Location from "expo-location";
 
 type Props = NativeStackScreenProps<MainStackParamList, "ActiveTrip">;
 
@@ -100,10 +102,64 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
 
   // Driver dynamic simulated location state
   const [driverLocation, setDriverLocation] = useState(baseTripData.driverLocation);
+  const [roadPolyline, setRoadPolyline] = useState<LatLng[] | null>(null);
 
-  // Reset driverLocation when trip changes
+  // Fetch real road-following directions polyline from Google Directions API
   useEffect(() => {
-    setDriverLocation(baseTripData.driverLocation);
+    let isMounted = true;
+    const fetchRealRoute = async () => {
+      const origin = baseTripData.originCoordinates;
+      const dest = baseTripData.destinationCoordinates;
+      if (!origin || !dest) return;
+
+      const intermediateWaypoints = baseTripData.waypoints
+        .filter((w) => w.type !== "origin" && w.type !== "destination")
+        .map((w) => w.coordinates);
+
+      const routeResult = await mapsService.getDirectionsRoute(origin, dest, intermediateWaypoints);
+      if (isMounted && routeResult && routeResult.polyline.length > 2) {
+        const poly = routeResult.polyline;
+        setRoadPolyline(poly);
+        // Anchor car to exact start position on the path facing forward
+        const startPt = poly[0];
+        const nextPt = poly[1];
+        const initialBearing = calculateBearing(startPt, nextPt);
+        setDriverLocation({
+          latitude: startPt.latitude,
+          longitude: startPt.longitude,
+          heading: Math.round(initialBearing),
+          speedKmH: 0,
+        });
+      }
+    };
+
+    fetchRealRoute();
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    baseTripData.originCoordinates.latitude,
+    baseTripData.originCoordinates.longitude,
+    baseTripData.destinationCoordinates.latitude,
+    baseTripData.destinationCoordinates.longitude,
+  ]);
+
+  // Pick start position when trip initializes
+  useEffect(() => {
+    const coords = roadPolyline || baseTripData.routeCoordinates;
+    if (coords && coords.length >= 2) {
+      const startPt = coords[0];
+      const nextPt = coords[1];
+      const initialBearing = calculateBearing(startPt, nextPt);
+      setDriverLocation({
+        latitude: startPt.latitude,
+        longitude: startPt.longitude,
+        heading: Math.round(initialBearing),
+        speedKmH: 0,
+      });
+    } else {
+      setDriverLocation(baseTripData.driverLocation);
+    }
   }, [baseTripData.id, baseTripData.originCoordinates.latitude, baseTripData.originCoordinates.longitude]);
 
   const [navState, setNavState] = useState<NavState>("driving_to_pickup");
@@ -111,69 +167,74 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [sheetExpanded, setSheetExpanded] = useState(false);
 
-  // Combined tripData with live animated driver location
+  // Combined tripData with live animated driver location and real road polyline
   const tripData: ActiveTripData = React.useMemo(() => ({
     ...baseTripData,
     driverLocation,
-  }), [baseTripData, driverLocation]);
+    routeCoordinates: roadPolyline || baseTripData.routeCoordinates,
+  }), [baseTripData, driverLocation, roadPolyline]);
 
   const activePassenger = tripData.passengers[0];
 
-  // Moving driver along route coordinates simulation
-  const segmentRef = useRef(0);
-  const progressRef = useRef(0);
-
+  // Live Driver Device GPS Tracking - updates ONLY when user coordinates change
   useEffect(() => {
-    const isMoving =
-      navState === "driving_to_pickup" ||
-      navState === "leave_passenger" ||
-      navState === "driving_to_dropoff" ||
-      navState === "driving_to_destination";
+    let subscription: Location.LocationSubscription | null = null;
+    let isMounted = true;
 
-    if (!isMoving) return;
-
-    const coords = baseTripData.routeCoordinates;
-    if (!coords || coords.length < 2) return;
-
-    const interval = setInterval(() => {
-      const maxSegment =
-        navState === "driving_to_pickup"
-          ? 1
-          : coords.length - 2;
-
-      let seg = segmentRef.current;
-      let prog = progressRef.current + 0.05;
-
-      if (prog >= 1) {
-        if (seg < maxSegment) {
-          seg += 1;
-          prog = 0;
-        } else {
-          prog = 1;
+    const startLocationWatch = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          console.log("Foreground location permission not granted, keeping vehicle at start position");
+          return;
         }
+
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            distanceInterval: 4, // Trigger only when device moves at least 4 meters
+            timeInterval: 1500,  // Throttle updates to at most once per 1.5 seconds
+          },
+          (newLocation) => {
+            if (!isMounted) return;
+            const { latitude, longitude, heading: gpsHeading, speed } = newLocation.coords;
+
+            setDriverLocation((prev) => {
+              // Ensure genuine coordinate change occurred
+              const dLat = Math.abs(latitude - prev.latitude);
+              const dLng = Math.abs(longitude - prev.longitude);
+              if (dLat < 0.00003 && dLng < 0.00003) {
+                return prev;
+              }
+
+              const newHeading =
+                gpsHeading !== null && gpsHeading !== undefined && gpsHeading >= 0
+                  ? Math.round(gpsHeading)
+                  : calculateBearing(prev, { latitude, longitude });
+
+              return {
+                latitude,
+                longitude,
+                heading: Math.round(newHeading) || prev.heading,
+                speedKmH: Math.max(0, Math.round((speed || 0) * 3.6)),
+              };
+            });
+          }
+        );
+      } catch (err) {
+        console.warn("Error subscribing to location updates:", err);
       }
+    };
 
-      segmentRef.current = seg;
-      progressRef.current = prog;
+    startLocationWatch();
 
-      const p1 = coords[seg];
-      const p2 = coords[Math.min(seg + 1, coords.length - 1)];
-
-      const lat = p1.latitude + (p2.latitude - p1.latitude) * prog;
-      const lng = p1.longitude + (p2.longitude - p1.longitude) * prog;
-      const heading = calculateBearing(p1, p2);
-
-      setDriverLocation((prev) => ({
-        ...prev,
-        latitude: lat,
-        longitude: lng,
-        heading: Math.round(heading),
-        speedKmH: 38,
-      }));
-    }, 700);
-
-    return () => clearInterval(interval);
-  }, [navState, baseTripData.routeCoordinates]);
+    return () => {
+      isMounted = false;
+      if (subscription) {
+        subscription.remove();
+      }
+    };
+  }, []);
 
   // Countdown simulation
   useEffect(() => {

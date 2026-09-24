@@ -192,8 +192,20 @@ export function buildActiveTripData(
     trip?.raw?.destination ||
     "Destination";
 
-  const originCoord = resolveAddressCoordinate(originAddress, 0);
-  const destinationCoord = resolveAddressCoordinate(destinationAddress, 2);
+  const originCoord: LatLng =
+    trip?.pickupCoordinates ||
+    trip?.originCoordinates ||
+    trip?.raw?.pickupCoordinates ||
+    (trip?.pickup_latitude && trip?.pickup_longitude
+      ? { latitude: Number(trip.pickup_latitude), longitude: Number(trip.pickup_longitude) }
+      : resolveAddressCoordinate(originAddress, 0));
+
+  const destinationCoord: LatLng =
+    trip?.destinationCoordinates ||
+    trip?.raw?.destinationCoordinates ||
+    (trip?.destination_latitude && trip?.destination_longitude
+      ? { latitude: Number(trip.destination_latitude), longitude: Number(trip.destination_longitude) }
+      : resolveAddressCoordinate(destinationAddress, 2));
 
   const waypoints: TripWaypoint[] = [
     {
@@ -270,11 +282,11 @@ export function buildActiveTripData(
     });
   }
 
-  // If no passenger bookings yet, create default active passenger based on trip
+  // If no passenger bookings yet, create default active passenger along travel vector
   if (passengers.length === 0) {
     const defaultRiderPickupCoord = {
-      latitude: originCoord.latitude + 0.004,
-      longitude: originCoord.longitude + 0.003,
+      latitude: Number((originCoord.latitude + (destinationCoord.latitude - originCoord.latitude) * 0.25).toFixed(5)),
+      longitude: Number((originCoord.longitude + (destinationCoord.longitude - originCoord.longitude) * 0.25).toFixed(5)),
     };
     passengers.push({
       id: "pass-rider-1",
@@ -327,6 +339,29 @@ export function buildActiveTripData(
   const price = Number(trip?.price_per_seat || trip?.pricePerSeat || 15);
   const estimatedEarnings = (price * Math.max(passengers.length, 1)).toFixed(2);
 
+  const initialHeading =
+    accurateRouteCoordinates.length >= 2
+      ? Math.round(
+          (Math.atan2(
+            Math.sin(
+              (accurateRouteCoordinates[1].longitude - accurateRouteCoordinates[0].longitude) *
+                (Math.PI / 180)
+            ) * Math.cos(accurateRouteCoordinates[1].latitude * (Math.PI / 180)),
+            Math.cos(accurateRouteCoordinates[0].latitude * (Math.PI / 180)) *
+              Math.sin(accurateRouteCoordinates[1].latitude * (Math.PI / 180)) -
+              Math.sin(accurateRouteCoordinates[0].latitude * (Math.PI / 180)) *
+                Math.cos(accurateRouteCoordinates[1].latitude * (Math.PI / 180)) *
+                Math.cos(
+                  (accurateRouteCoordinates[1].longitude - accurateRouteCoordinates[0].longitude) *
+                    (Math.PI / 180)
+                )
+          ) *
+            180) /
+            Math.PI +
+            360
+        ) % 360
+      : 0;
+
   return {
     id: String(trip?.id || "trip-live"),
     tripCode: `TRIP-${String(trip?.id || "84920").padStart(5, "0")}-LGS`,
@@ -338,8 +373,8 @@ export function buildActiveTripData(
     driverLocation: {
       latitude: accurateRouteCoordinates[0].latitude,
       longitude: accurateRouteCoordinates[0].longitude,
-      heading: 145,
-      speedKmH: 38,
+      heading: initialHeading,
+      speedKmH: 0,
     },
     departureTime: trip?.departure_time_display || trip?.departure_time || "06:00 AM",
     estimatedEarnings: trip?.estimatedEarnings || estimatedEarnings,

@@ -24,6 +24,8 @@ interface Step1RouteTimeFormProps {
   onChangePickup: (val: string) => void;
   destination: string;
   onChangeDestination: (val: string) => void;
+  onOpenPickupSearch?: () => void;
+  onOpenDestinationSearch?: () => void;
   time: string;
   onOpenTimePicker: () => void;
   dateFormatted: string;
@@ -44,6 +46,8 @@ export const Step1RouteTimeForm: React.FC<Step1RouteTimeFormProps> = ({
   onChangePickup,
   destination,
   onChangeDestination,
+  onOpenPickupSearch,
+  onOpenDestinationSearch,
   time,
   onOpenTimePicker,
   dateFormatted,
@@ -101,25 +105,51 @@ export const Step1RouteTimeForm: React.FC<Step1RouteTimeFormProps> = ({
       {/* Pickup Location */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Pickup Location</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="e.g Ajao Estate Police Station"
-          placeholderTextColor="#94A3B8"
-          value={pickup}
-          onChangeText={onChangePickup}
-        />
+        <TouchableOpacity
+          style={styles.locationSelector}
+          onPress={onOpenPickupSearch}
+          activeOpacity={0.7}
+        >
+          <View style={styles.locationLeftContent}>
+            <View style={[styles.markerIconBadge, { backgroundColor: "#EFF6FF" }]}>
+              <Ionicons name="location" size={16} color="#305CFF" />
+            </View>
+            <Text
+              style={[styles.locationText, !pickup && styles.placeholderText]}
+              numberOfLines={1}
+            >
+              {pickup || "Search pickup landmark or station..."}
+            </Text>
+          </View>
+          <View style={styles.searchBadge}>
+            <Ionicons name="search" size={15} color="#64748B" />
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* Destination */}
       <View style={styles.fieldGroup}>
         <Text style={styles.label}>Destination</Text>
-        <TextInput
-          style={styles.textInput}
-          placeholder="e.g CMS Bus stop"
-          placeholderTextColor="#94A3B8"
-          value={destination}
-          onChangeText={onChangeDestination}
-        />
+        <TouchableOpacity
+          style={styles.locationSelector}
+          onPress={onOpenDestinationSearch}
+          activeOpacity={0.7}
+        >
+          <View style={styles.locationLeftContent}>
+            <View style={[styles.markerIconBadge, { backgroundColor: "#F0FDF4" }]}>
+              <Ionicons name="navigate" size={16} color="#16A34A" />
+            </View>
+            <Text
+              style={[styles.locationText, !destination && styles.placeholderText]}
+              numberOfLines={1}
+            >
+              {destination || "Search drop-off destination..."}
+            </Text>
+          </View>
+          <View style={styles.searchBadge}>
+            <Ionicons name="search" size={15} color="#64748B" />
+          </View>
+        </TouchableOpacity>
       </View>
 
       {/* Time Field */}
@@ -219,6 +249,42 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
     color: "#475569",
     borderColor: "#E2E8F0",
+  },
+  locationSelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+  },
+  locationLeftContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    marginRight: 8,
+  },
+  markerIconBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  locationText: {
+    fontFamily: "DM Sans",
+    fontSize: 14,
+    color: "#0F172A",
+    flex: 1,
+  },
+  searchBadge: {
+    padding: 6,
+    backgroundColor: "#F1F5F9",
+    borderRadius: 8,
   },
   pickerField: {
     flexDirection: "row",

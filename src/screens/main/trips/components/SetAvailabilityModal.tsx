@@ -31,6 +31,8 @@ import {
 import { Step2RecurringForm } from "./availability/Step2RecurringForm";
 import { Step3SeatsPriceForm } from "./availability/Step3SeatsPriceForm";
 import { Step4ReviewSchedule } from "./availability/Step4ReviewSchedule";
+import { PlaceSearchModal } from "@/components/map/PlaceSearchModal";
+import { LatLng, PlaceLocation } from "@/api/services/maps";
 
 interface SetAvailabilityModalProps {
   visible: boolean;
@@ -145,7 +147,10 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   // Step 1 State
   const [selectedVehicleId, setSelectedVehicleId] = useState("");
   const [pickup, setPickup] = useState("");
+  const [pickupCoords, setPickupCoords] = useState<LatLng | null>(null);
   const [destination, setDestination] = useState("");
+  const [destinationCoords, setDestinationCoords] = useState<LatLng | null>(null);
+  const [placeSearchTarget, setPlaceSearchTarget] = useState<"pickup" | "destination" | null>(null);
   const [time, setTime] = useState("");
   const [dateFormatted, setDateFormatted] = useState("");
   const [rawDateObj, setRawDateObj] = useState<Date | null>(null);
@@ -203,7 +208,10 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
     setStep(1);
     setSelectedVehicleId("");
     setPickup("");
+    setPickupCoords(null);
     setDestination("");
+    setDestinationCoords(null);
+    setPlaceSearchTarget(null);
     setTime("");
     setDateFormatted("");
     setRawDateObj(null);
@@ -218,6 +226,17 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
     setShowSeatsPicker(false);
     setPublishStatus("idle");
     setDateValidationError(null);
+  };
+
+  const handlePlaceSelect = (place: PlaceLocation) => {
+    if (placeSearchTarget === "pickup") {
+      setPickup(place.name || place.address);
+      setPickupCoords(place.coordinates);
+    } else if (placeSearchTarget === "destination") {
+      setDestination(place.name || place.address);
+      setDestinationCoords(place.coordinates);
+    }
+    setPlaceSearchTarget(null);
   };
 
   const handleClose = () => {
@@ -359,7 +378,9 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
           vehicleId: selectedVehicleId,
           vehicle: selectedVehicleObj?.label,
           pickupLocation: pickup,
+          pickupCoordinates: pickupCoords || undefined,
           destination,
+          destinationCoordinates: destinationCoords || undefined,
           departureTime: time,
           date: dateFormatted,
           isRecurring,
@@ -452,6 +473,8 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
                   onChangePickup={setPickup}
                   destination={destination}
                   onChangeDestination={setDestination}
+                  onOpenPickupSearch={() => setPlaceSearchTarget("pickup")}
+                  onOpenDestinationSearch={() => setPlaceSearchTarget("destination")}
                   time={time}
                   onOpenTimePicker={() => setShowTimePicker(true)}
                   dateFormatted={dateFormatted}
@@ -547,6 +570,16 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
         visible={showTimePicker}
         onClose={() => setShowTimePicker(false)}
         onSelectTime={(t) => setTime(t)}
+      />
+
+      {/* Place Search Autocomplete Sub-Modal */}
+      <PlaceSearchModal
+        visible={Boolean(placeSearchTarget)}
+        onClose={() => setPlaceSearchTarget(null)}
+        onSelectPlace={handlePlaceSelect}
+        title={placeSearchTarget === "pickup" ? "Select Pickup Location" : "Select Destination"}
+        placeholder={placeSearchTarget === "pickup" ? "Search pickup location in Lagos..." : "Search destination in Lagos..."}
+        initialValue={placeSearchTarget === "pickup" ? pickup : destination}
       />
     </>
   );

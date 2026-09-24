@@ -215,7 +215,7 @@ export const LiveRouteMap: React.FC<LiveRouteMapProps> = ({
       fitRouteBounds();
     }, 500);
     return () => clearTimeout(timer);
-  }, [tripData.id]);
+  }, [tripData.id, tripData.routeCoordinates.length]);
 
   const polylineGlowColor = isDark ? "rgba(0, 229, 255, 0.35)" : "rgba(48, 92, 255, 0.22)";
   const polylinePrimaryColor = isDark ? "#00E5FF" : "#305CFF";
