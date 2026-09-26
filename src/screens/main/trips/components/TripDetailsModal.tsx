@@ -47,13 +47,9 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     Boolean(trip?.id)
   );
 
-  if (!trip) return null;
-
-  const isPaused = trip.isPaused;
-  const isRecurring = trip.isRecurring;
-
-  // Map server bookings or fallback to trip.passengers
+  // Map server bookings or fallback to trip.passengers (unconditional hook)
   const passengers = React.useMemo(() => {
+    if (!trip) return [];
     if (Array.isArray(serverBookings) && serverBookings.length > 0) {
       return serverBookings.map((b: DriverBookingItem) => ({
         id: String(b.id),
@@ -74,6 +70,11 @@ export const TripDetailsModal: React.FC<TripDetailsModalProps> = ({
     }
     return trip.passengers || [];
   }, [serverBookings, trip]);
+
+  if (!trip) return null;
+
+  const isPaused = trip.isPaused;
+  const isRecurring = trip.isRecurring;
 
   return (
     <>

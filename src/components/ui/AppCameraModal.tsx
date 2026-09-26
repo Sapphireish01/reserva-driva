@@ -1,8 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
+  Alert,
+  AppState,
   Image,
+  Linking,
   Modal,
   StyleSheet,
   Text,
@@ -25,10 +28,23 @@ export const AppCameraModal: React.FC<AppCameraModalProps> = ({
   initialFacing = "front",
 }) => {
   const insets = useSafeAreaInsets();
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [cameraPermission, requestCameraPermission, getCameraPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<"front" | "back">(initialFacing);
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const cameraRef = useRef<CameraView>(null);
+
+  // Sync permissions when app comes back to foreground
+  useEffect(() => {
+    if (!visible) return;
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        getCameraPermission();
+      }
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [visible, getCameraPermission]);
 
   const toggleFacing = () => {
     setFacing((prev) => (prev === "back" ? "front" : "back"));
@@ -36,10 +52,20 @@ export const AppCameraModal: React.FC<AppCameraModalProps> = ({
 
   const handleShutter = async () => {
     try {
-      if (!cameraPermission?.granted) {
-        const res = await requestCameraPermission();
-        if (!res.granted) {
-          alert("Permission to access camera is required!");
+      const currentPerm = await getCameraPermission();
+      if (!currentPerm?.granted) {
+        if (currentPerm?.canAskAgain) {
+          const res = await requestCameraPermission();
+          if (!res.granted) return;
+        } else {
+          Alert.alert(
+            "Camera Access Needed",
+            "Please enable camera access in your device settings to take a photo.",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Open Settings", onPress: () => Linking.openSettings() },
+            ]
+          );
           return;
         }
       }

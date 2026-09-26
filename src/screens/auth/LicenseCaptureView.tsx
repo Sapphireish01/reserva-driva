@@ -1,7 +1,17 @@
 import { BlurView } from "expo-blur";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import React, { useEffect, useRef, useState } from "react";
-import { Dimensions, Image, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  AppState,
+  Dimensions,
+  Image,
+  Linking,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, Mask, Path, Rect } from "react-native-svg";
 import { AppLoader, CheckIcon } from "../../components/ui";
@@ -50,13 +60,25 @@ export const LicenseCaptureView = ({
 }: LicenseCaptureViewProps) => {
   const insets = useSafeAreaInsets();
   const { showAuthToast } = useAuthToast();
-  const [permission, requestPermission] = useCameraPermissions();
+  const [permission, requestPermission, getPermission] = useCameraPermissions();
   const [photoUri, setPhotoUri] = useState<string | null>(initialPhotoUri);
   const [flashOn, setFlashOn] = useState(false);
   const cameraRef = useRef<CameraView>(null);
 
   const isVerifyingMode = !!verifyingStatus;
   const activePhotoUri = photoUri || initialPhotoUri;
+
+  // Re-check camera permission when app comes to foreground (e.g. returning from device Settings)
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        getPermission();
+      }
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [getPermission]);
 
   useEffect(() => {
     if (verifyingStatus === "failed") {
@@ -67,17 +89,57 @@ export const LicenseCaptureView = ({
     }
   }, [verifyingStatus, errorMessage, showAuthToast]);
 
-  if (!permission?.granted && !activePhotoUri && !isVerifyingMode) {
+  const handleGrantPermission = async () => {
+    if (permission && !permission.canAskAgain) {
+      Linking.openSettings();
+      return;
+    }
+    const res = await requestPermission();
+    if (res && !res.granted && !res.canAskAgain) {
+      Linking.openSettings();
+    }
+  };
+
+  // 1. Initial permission check is loading
+  if (!permission && !activePhotoUri && !isVerifyingMode) {
+    return (
+      <View style={[styles.permissionContainer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
+        <AppLoader size={28} color="#FFFFFF" />
+      </View>
+    );
+  }
+
+  // 2. Permission has been resolved and is NOT granted
+  if (permission && !permission.granted && !activePhotoUri && !isVerifyingMode) {
+    const isPermanentlyDenied = !permission.canAskAgain;
     return (
       <View style={[styles.permissionContainer, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <StatusBar barStyle="light-content" backgroundColor="#0F172A" />
         <Text style={styles.permissionTitle}>Camera Access Required</Text>
         <Text style={styles.permissionText}>
-          Camera permission is required to capture your driver's license for identity verification.
+          {isPermanentlyDenied
+            ? "Camera permission was previously disabled. Please enable camera access in your device settings to capture your driver's license."
+            : "Camera permission is required to capture your driver's license for identity verification."}
         </Text>
-        <TouchableOpacity style={styles.permissionButton} onPress={requestPermission} activeOpacity={0.8}>
-          <Text style={styles.permissionButtonText}>Grant Access</Text>
+        <TouchableOpacity
+          style={styles.permissionButton}
+          onPress={handleGrantPermission}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.permissionButtonText}>
+            {isPermanentlyDenied ? "Open Settings" : "Grant Access"}
+          </Text>
         </TouchableOpacity>
+        {isPermanentlyDenied && (
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={() => getPermission()}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.refreshButtonText}>I&apos;ve Enabled It — Check Again</Text>
+          </TouchableOpacity>
+        )}
         {onCancel && (
           <TouchableOpacity style={styles.cancelLink} onPress={onCancel}>
             <Text style={styles.cancelLinkText}>Cancel</Text>
@@ -325,6 +387,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#FFFFFF",
+  },
+  refreshButton: {
+    marginTop: spacing.md,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.12)",
+    alignItems: "center",
+  },
+  refreshButtonText: {
+    fontFamily: "DM Sans Bold",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#38BDF8",
   },
   cancelLink: {
     marginTop: spacing.lg,

@@ -12,11 +12,11 @@ import { colors, spacing, typography } from "../../theme/colors";
 type Props = NativeStackScreenProps<AuthStackParamList, "SSN">;
 
 export const SSNScreen = ({ route, navigation }: Props) => {
-  const { driverId, email } = route.params;
+  const { email } = route.params;
   const user = useAuthStore((s) => s.user);
   const resolvedEmail = email || user?.email || "";
 
-  const { showAuthError } = useAuthToast();
+  const { showAuthError, showAuthToast } = useAuthToast();
   const [ssn, setSsn] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -29,7 +29,11 @@ export const SSNScreen = ({ route, navigation }: Props) => {
       // `ssn` is never written to SecureStore/AsyncStorage and is discarded
       // from component state as soon as this screen unmounts.
       await driversService.uploadSsn(resolvedEmail, ssn);
-      navigation.navigate("AccountCreated");
+      showAuthToast("Account created successfully! Please log in.", { type: "success" });
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login", params: resolvedEmail ? { email: resolvedEmail } : undefined }],
+      });
     } catch (e: any) {
       showAuthError(e, "Couldn't verify your SSN. Please try again.");
     } finally {
@@ -41,7 +45,7 @@ export const SSNScreen = ({ route, navigation }: Props) => {
     <View style={styles.container}>
       <Text style={styles.title}>Last Step...</Text>
       <Text style={styles.subtitle}>
-        You're almost done! We just need to verify your SSN to complete your registration
+        You&apos;re almost done! We just need to verify your SSN to complete your registration
       </Text>
 
       <Text style={styles.label}>Social Security Number</Text>

@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   KeyboardAvoidingView,
+  Linking,
   Platform,
   ScrollView,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { LEGAL_LINKS } from "../../constants/legal";
 import { PasswordRuleChecklist } from "../../components/PasswordRuleChecklist";
 import { AppButton, AppPhoneInput, AppPhoneInputRef, AppTextInput } from "../../components/ui";
 import { SignupPayload } from "../../api/services/auth";
@@ -220,8 +222,20 @@ export const SignUpScreen = ({ navigation }: Props) => {
               </TouchableOpacity>
               <Text style={styles.termsText}>
                 By creating an account, you agree to our{" "}
-                <Text style={styles.boldText}>Terms of Service</Text> and{" "}
-                <Text style={styles.boldText}>Privacy Policy</Text>.
+                <Text
+                  style={styles.linkText}
+                  onPress={() => Linking.openURL(LEGAL_LINKS.termsOfService)}
+                >
+                  Terms of Service
+                </Text>{" "}
+                and{" "}
+                <Text
+                  style={styles.linkText}
+                  onPress={() => Linking.openURL(LEGAL_LINKS.privacyPolicy)}
+                >
+                  Privacy Policy
+                </Text>
+                .
               </Text>
             </View>
           )}
@@ -359,6 +373,12 @@ const styles = StyleSheet.create({
     fontFamily: "DM Sans",
     fontWeight: "500",
     color: colors.inputTextColor,
+  },
+  linkText: {
+    fontFamily: "DM Sans",
+    fontWeight: "600",
+    color: "#375DFB",
+    textDecorationLine: "underline",
   },
   buttonOverride: {
     borderRadius: 16,

@@ -52,7 +52,7 @@ export const ForgotPasswordScreen = ({ navigation }: Props) => {
       >
         <Text style={styles.title}>Forgot Password?</Text>
         <Text style={styles.subtitle}>
-          Enter your email address and we'll send you a reset link
+          Enter your email address and we&apos;ll send you a reset link
         </Text>
 
         <AppTextInput

@@ -5,10 +5,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppLoader } from "../../../components/ui";
 import {
   BankDetailsIconItem,
-  ChatSupportIconItem,
-  CommunitiesIconItem,
+  // CommunitiesIconItem,
   ContactUsIconItem,
   DeactivateIconItem,
+  DeleteAccountIconItem,
   EmergencyContactIconItem,
   FAQIconItem,
   LogoutIconItem,
@@ -62,6 +62,7 @@ export const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const logout = useAuthStore((state) => state.logout);
   const deactivateAccount = useAuthStore((state) => state.deactivateAccount);
+  const deleteAccount = useAuthStore((state) => state.deleteAccount);
   const user = useAuthStore((state) => state.user);
 
   const fullName = getUserFullName(user) || "Driver Account";
@@ -69,10 +70,13 @@ export const SettingsScreen = ({ navigation }: Props) => {
   const avatarUri = getUserAvatar(user) || DEFAULT_AVATAR;
 
   const [showDeactivateModal, setShowDeactivateModal] = React.useState(false);
+  const [showDeleteModal, setShowDeleteModal] = React.useState(false);
   const [showLogoutModal, setShowLogoutModal] = React.useState(false);
   const [hasActiveBookings, setHasActiveBookings] = React.useState(false);
   const [isDeactivating, setIsDeactivating] = React.useState(false);
   const [deactivateError, setDeactivateError] = React.useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+  const [deleteError, setDeleteError] = React.useState<string | null>(null);
 
   const handleLogout = async () => {
     setShowLogoutModal(false);
@@ -83,6 +87,13 @@ export const SettingsScreen = ({ navigation }: Props) => {
     if (isDeactivating) return;
     setShowDeactivateModal(false);
     setDeactivateError(null);
+    setHasActiveBookings(false);
+  };
+
+  const handleCloseDelete = () => {
+    if (isDeleting) return;
+    setShowDeleteModal(false);
+    setDeleteError(null);
     setHasActiveBookings(false);
   };
 
@@ -113,6 +124,36 @@ export const SettingsScreen = ({ navigation }: Props) => {
       setDeactivateError(msg);
     } finally {
       setIsDeactivating(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await deleteAccount();
+      setShowDeleteModal(false);
+      Alert.alert(
+        "Account Deleted",
+        res?.message || "Your account has been deleted successfully."
+      );
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.detail ||
+        (typeof err?.response?.data === "string" ? err.response.data : null) ||
+        err?.message ||
+        "Could not delete account. Please ensure all active bookings are completed.";
+      if (
+        msg.toLowerCase().includes("booking") ||
+        msg.toLowerCase().includes("trip") ||
+        msg.toLowerCase().includes("active")
+      ) {
+        setHasActiveBookings(true);
+      }
+      setDeleteError(msg);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -161,11 +202,11 @@ export const SettingsScreen = ({ navigation }: Props) => {
             label="Vehicles"
             onPress={() => navigation.navigate("Vehicles")}
           />
-          <SettingItem
+          {/* <SettingItem
             icon={<CommunitiesIconItem color="#868C98" size={20} />}
             label="Communities"
             badge="Coming Soon"
-          />
+          /> */}
           <SettingItem
             icon={<BankDetailsIconItem color="#868C98" size={20} />}
             label="Bank Details"
@@ -204,16 +245,21 @@ export const SettingsScreen = ({ navigation }: Props) => {
               setShowDeactivateModal(true);
             }}
           />
+          <SettingItem
+            icon={<DeleteAccountIconItem color={colors.error} size={20} />}
+            label="Delete Account"
+            destructive
+            onPress={() => {
+              setHasActiveBookings(false);
+              setDeleteError(null);
+              setShowDeleteModal(true);
+            }}
+          />
         </View>
 
         {/* Other Section */}
         <Text style={styles.sectionHeader}>Other</Text>
         <View style={styles.sectionCard}>
-          <SettingItem
-            icon={<ChatSupportIconItem color="#868C98" size={20} />}
-            label="Chat with support"
-            onPress={() => navigation.navigate("ChatWithSupport")}
-          />
           <SettingItem
             icon={<FAQIconItem color="#868C98" size={20} />}
             label="FAQs"
@@ -320,7 +366,95 @@ export const SettingsScreen = ({ navigation }: Props) => {
         </View>
       </Modal>
 
-      {/* 2. Logout Bottom Sheet Modal */}
+      {/* 2. Delete Account Bottom Sheet Modal */}
+      <Modal visible={showDeleteModal} transparent animationType="slide">
+        <View style={styles.sheetOverlay}>
+          <TouchableOpacity
+            style={styles.sheetBackdrop}
+            onPress={handleCloseDelete}
+            disabled={isDeleting}
+          />
+          <View style={[styles.sheetContainer, { paddingBottom: Math.max(insets.bottom, 24) }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Delete Account?</Text>
+              <TouchableOpacity onPress={handleCloseDelete} disabled={isDeleting}>
+                <Ionicons name="close-circle-outline" size={24} color="#94A3B8" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sheetSubtitle}>
+              Are you sure you want to <Text style={styles.boldText}>permanently delete</Text> this account? This action cannot be undone and all your data will be permanently wiped.
+            </Text>
+
+            {/* Alert Banner */}
+            <View style={styles.alertBanner}>
+              <View style={{ marginRight: 8 }}>
+                <WarningIconItem color="#9F2D00" size={18} />
+              </View>
+              <Text style={styles.alertText}>
+                {hasActiveBookings
+                  ? "We cannot delete your account at the moment, you still have active bookings. Please complete bookings to proceed."
+                  : "Active bookings must be completed before account deletion."}
+              </Text>
+            </View>
+
+            {deleteError ? (
+              <View
+                style={[
+                  styles.alertBanner,
+                  { backgroundColor: "#FEF2F2", borderColor: "#FFA2A2", borderWidth: 1 },
+                ]}
+              >
+                <View style={{ marginRight: 8 }}>
+                  <WarningIconItem color="#E7000B" size={18} />
+                </View>
+                <Text style={[styles.alertText, { color: "#E7000B" }]}>
+                  {deleteError}
+                </Text>
+              </View>
+            ) : null}
+
+            {hasActiveBookings ? (
+              <TouchableOpacity
+                style={styles.blueBtn}
+                onPress={() => {
+                  handleCloseDelete();
+                  navigation.navigate("BookingsTab");
+                }}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.blueBtnText}>Back to Bookings</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={[styles.redBtn, isDeleting && { opacity: 0.7 }]}
+                  onPress={handleDeleteAccount}
+                  disabled={isDeleting}
+                  activeOpacity={0.8}
+                >
+                  {isDeleting ? (
+                    <AppLoader />
+                  ) : (
+                    <Text style={styles.redBtnText}>Delete Account</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.outlineBtn}
+                  onPress={handleCloseDelete}
+                  disabled={isDeleting}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.outlineBtnText}>Cancel</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* 3. Logout Bottom Sheet Modal */}
       <Modal visible={showLogoutModal} transparent animationType="slide">
         <View style={styles.sheetOverlay}>
           <TouchableOpacity

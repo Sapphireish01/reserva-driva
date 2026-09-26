@@ -1,7 +1,17 @@
 import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import React from "react";
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Svg, { Path } from "react-native-svg";
+import { useCameraPermissions } from "expo-camera";
+import React, { useEffect } from "react";
+import {
+  Alert,
+  AppState,
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { AuthStackParamList } from "../../navigation/types";
 import { colors, spacing, typography } from "../../theme/colors";
 
@@ -14,18 +24,6 @@ const GUIDELINES = [
   "The name on your license must match your driver details.",
 ];
 
-const BackArrowIcon = () => (
-  <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-    <Path
-      d="M19 12H5M12 19L5 12L12 5"
-      stroke="#1E293B"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  </Svg>
-);
-
 const LicenseCardIllustration = () => (
   <Image
     source={require("../../../assets/onboarding/drivers-lin.png")}
@@ -36,13 +34,52 @@ const LicenseCardIllustration = () => (
 
 export const LicenseIntroScreen = ({ route, navigation }: Props) => {
   const { driverId, email } = route.params;
+  const [permission, requestPermission, getPermission] = useCameraPermissions();
+
+  // Re-check camera permission when returning to the app from phone Settings
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextAppState) => {
+      if (nextAppState === "active") {
+        getPermission();
+      }
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, [getPermission]);
+
+  const handleScanPress = async () => {
+    // 0. Always check fresh permission directly from OS
+    const currentPermission = await getPermission();
+
+    // 1. If already granted, navigate directly
+    if (currentPermission?.granted) {
+      navigation.navigate("LicenseFrontCapture", { driverId, email });
+      return;
+    }
+
+    // 2. If can ask again, trigger native OS prompt directly
+    if (!currentPermission || currentPermission.canAskAgain) {
+      const res = await requestPermission();
+      if (res?.granted) {
+        navigation.navigate("LicenseFrontCapture", { driverId, email });
+      }
+      return;
+    }
+
+    // 3. If permanently denied in device settings, offer to open settings
+    Alert.alert(
+      "Camera Access Needed",
+      "Rezarva requires camera access to capture your driver's license for verification. Please enable camera access in your device settings.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Open Settings", onPress: () => Linking.openSettings() },
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
-      {/* <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <BackArrowIcon />
-      </TouchableOpacity> */}
-
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -71,7 +108,7 @@ export const LicenseIntroScreen = ({ route, navigation }: Props) => {
       </Text>
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("LicenseFrontCapture", { driverId, email })}
+        onPress={handleScanPress}
         activeOpacity={0.8}
       >
         <Text style={styles.buttonText}>Scan License</Text>
@@ -87,12 +124,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: 0,
     paddingBottom: spacing.lg,
-  },
-  backButton: {
-    marginBottom: spacing.md,
-    width: 40,
-    height: 40,
-    justifyContent: "center",
   },
   scrollContent: {
     paddingBottom: spacing.md,

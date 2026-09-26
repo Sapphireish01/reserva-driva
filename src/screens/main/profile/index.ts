@@ -1,5 +1,4 @@
 export * from "./BankDetailsScreen";
-export * from "./ChatWithSupportScreen";
 export * from "./ContactUsScreen";
 export * from "./EmergencyContactsScreen";
 export * from "./FAQsScreen";

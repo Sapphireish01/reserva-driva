@@ -241,6 +241,46 @@ export const DeactivateIconItem: React.FC<IconProps> = ({ color = "#868C98", siz
   </Svg>
 );
 
+export const DeleteAccountIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 20 }) => (
+  <Svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+    <Path
+      d="M17.5 4.9834H2.5"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M6.66602 4.9834V3.31673C6.66602 2.39673 7.39935 1.66673 8.33268 1.66673H11.666C12.5993 1.66673 13.3327 2.39673 13.3327 3.31673V4.9834"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M15.6667 7.5L15.1667 15.25C15.1 16.33 14.2 17.18 13.12 17.18H6.88C5.8 17.18 4.9 16.33 4.83 15.25L4.33333 7.5"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M8.33398 9.58337V13.75"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <Path
+      d="M11.666 9.58337V13.75"
+      stroke={color}
+      strokeWidth="1.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </Svg>
+);
+
 export const ChatSupportIconItem: React.FC<IconProps> = ({ color = "#868C98", size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path

@@ -1,6 +1,6 @@
 export type AuthStackParamList = {
   Onboarding: undefined;
-  Login: undefined;
+  Login: { email?: string } | undefined;
   ForgotPassword: undefined;
   ForgotPasswordOTP: { email: string };
   ResetPassword: { email: string; otpCode: string };
@@ -57,7 +57,6 @@ export type MainStackParamList = {
   ReportProblem: undefined;
   TwoFactorAuth: undefined;
   ContactUs: undefined;
-  ChatWithSupport: undefined;
   Vehicles: undefined;
   BankDetails: undefined;
   Preferences: undefined;

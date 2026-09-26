@@ -24,10 +24,10 @@ import { colors, spacing } from "../../theme/colors";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
-export const LoginScreen = ({ navigation }: Props) => {
+export const LoginScreen = ({ navigation, route }: Props) => {
   const insets = useSafeAreaInsets();
   const { showAuthError } = useAuthToast();
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(route.params?.email || "");
   const [password, setPassword] = useState("");
 
   const { mutateAsync: loginDriver, isPending: isLoggingIn } = useLoginMutation();

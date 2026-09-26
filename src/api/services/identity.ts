@@ -23,10 +23,6 @@ export const identityService = {
     });
   },
 
-  getVerificationStatus: (driverId: string) =>
-    apiClient.get<{ status: "pending" | "verified" | "failed" }>(
-      `/drivers/${driverId}/identity/status`
-    ),
 
   uploadDriversLicense: (
     email: string,

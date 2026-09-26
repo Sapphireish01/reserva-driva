@@ -117,7 +117,7 @@ export const ReferralsScreen = ({ navigation }: Props) => {
 
           {/* Footer Terms Note at the bottom */}
           <Text style={styles.footerNote}>
-            Rewards are credited after your friend's first completed trip. Terms apply.
+            Rewards are credited after your friend&apos;s first completed trip. Terms apply.
           </Text>
         </ScrollView>
       )}

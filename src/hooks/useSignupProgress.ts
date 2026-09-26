@@ -9,8 +9,8 @@ export const stageToScreen: Record<SignupStage, keyof AuthStackParamList> = {
   otp_verified: "LicenseIntro",
   license_pending: "LicenseVerifying",
   license_verified: "SSN",
-  ssn_verified: "AccountCreated",
-  active: "AccountCreated",
+  ssn_verified: "Login",
+  active: "Login",
 };
 
 export const useSignupProgress = (driverId: string | null) =>

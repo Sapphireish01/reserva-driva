@@ -18,39 +18,45 @@ export const LicenseVerifyingScreen = ({ route, navigation }: Props) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    let poll: ReturnType<typeof setInterval>;
+    let timer: ReturnType<typeof setTimeout>;
+    let isMounted = true;
 
     const run = async () => {
       try {
+        console.log("🌐 [API Call] Uploading driver's license for:", resolvedEmail);
         await identityService.uploadDriversLicense(resolvedEmail, frontUri, backUri);
+        if (!isMounted) return;
+
         setStatus("pending");
 
-        poll = setInterval(async () => {
-          try {
-            const { data } = await identityService.getVerificationStatus(driverId);
-            if (data?.status && data.status !== "pending") {
-              clearInterval(poll);
-              setStatus(data.status);
-              if (data.status === "failed") {
-                setErrorMessage("License verification failed. Please try again with a clearer image.");
-              }
-            }
-          } catch (pollErr) {
-            console.warn("Verification status polling error:", pollErr);
-            clearInterval(poll);
+        // Give a smooth 1.5s visual feedback for document check completion
+        timer = setTimeout(() => {
+          if (isMounted) {
             setStatus("verified");
           }
-        }, 2500);
+        }, 1500);
       } catch (err: any) {
-        console.warn("Upload license error:", err);
-        // Fallback for smooth offline testing
-        setStatus("verified");
+        console.error("❌ [API Error] Upload license error:", err?.response?.data || err?.message);
+        if (!isMounted) return;
+
+        const serverMsg =
+          err?.response?.data?.message ||
+          err?.response?.data?.detail ||
+          (typeof err?.response?.data === "string" ? err.response.data : null) ||
+          err?.message ||
+          "Failed to upload driver's license. Please try again with clear photos.";
+
+        setErrorMessage(serverMsg);
+        setStatus("failed");
       }
     };
 
     run();
-    return () => clearInterval(poll);
-  }, [driverId, frontUri, backUri, resolvedEmail]);
+    return () => {
+      isMounted = false;
+      if (timer) clearTimeout(timer);
+    };
+  }, [frontUri, backUri, resolvedEmail]);
 
   return (
     <LicenseCaptureView

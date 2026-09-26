@@ -16,11 +16,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     buildNumber: '1',
     infoPlist: {
       NSCameraUsageDescription:
-        "Rezarva Driver requires camera access to capture your driver's license and vehicle documents for account verification.",
+        "Rezarva requires camera access to capture your driver's license and documents for account verification.",
       NSPhotoLibraryUsageDescription:
         'Rezarva Driver requires access to your photo library to select and upload document photos.',
       NSLocationWhenInUseUsageDescription:
         'Rezarva Driver requires access to your location for real-time live trip navigation.',
+      ITSAppUsesNonExemptEncryption: false,
     },
     config: {
       googleMapsApiKey:
@@ -64,7 +65,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'expo-camera',
       {
         cameraPermission:
-          "Rezarva Driver requires camera access to capture your driver's license and vehicle documents for account verification.",
+          "Rezarva requires camera access to capture your driver's license and documents for account verification.",
       },
     ],
     [

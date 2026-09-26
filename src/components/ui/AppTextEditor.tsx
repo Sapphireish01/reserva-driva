@@ -349,7 +349,7 @@ export const AppTextEditor = forwardRef<TextInput, AppTextEditorProps>(
               <Text style={styles.charCount}>
                 {maxLength ? `${currentLength}/${maxLength}` : `${currentLength}`}
               </Text>
-              <Text style={styles.resizeIcon}>//</Text>
+              <Text style={styles.resizeIcon}>{"//"}</Text>
             </View>
           )}
         </View>

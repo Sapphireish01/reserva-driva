@@ -81,7 +81,7 @@ export const OTPForm: React.FC<OTPFormProps> = ({
         <View style={styles.resendRow}>
           {isResending ? (
             <>
-              <Text style={styles.resendPrompt}>Didn't receive a code? </Text>
+              <Text style={styles.resendPrompt}>Didn&apos;t receive a code? </Text>
               <View style={styles.actionRow}>
                 <Text style={styles.resendAction}>Resend </Text>
                 <AppLoader size={16} color="#828282" />
@@ -89,7 +89,7 @@ export const OTPForm: React.FC<OTPFormProps> = ({
             </>
           ) : isResent ? (
             <>
-              <Text style={styles.resendPrompt}>Didn't receive a code? </Text>
+              <Text style={styles.resendPrompt}>Didn&apos;t receive a code? </Text>
               <View style={styles.actionRow}>
                 <Text style={styles.sentAction}>Sent </Text>
                 <CheckIcon size={10} color={colors.success} />
@@ -99,7 +99,7 @@ export const OTPForm: React.FC<OTPFormProps> = ({
             <Text style={styles.resendPrompt}>Code expires in {timer}s</Text>
           ) : (
             <>
-              <Text style={styles.resendPrompt}>Didn't receive a code? </Text>
+              <Text style={styles.resendPrompt}>Didn&apos;t receive a code? </Text>
               <TouchableOpacity onPress={handleResend} activeOpacity={0.7}>
                 <Text style={styles.resendAction}>Resend</Text>
               </TouchableOpacity>

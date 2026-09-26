@@ -366,6 +366,14 @@ export const authService = {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
+
+  deleteAccount: (refresh: string) => {
+    const body = new FormData();
+    body.append("refresh", refresh);
+    return apiClient.post<{ message?: string }>("/accounts/delete/", body, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 

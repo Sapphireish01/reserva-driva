@@ -6,7 +6,6 @@ import { PassengerRequestsScreen } from "../screens/main/bookings";
 import { HomeScreen, NotificationsScreen } from "../screens/main/home";
 import {
   BankDetailsScreen,
-  ChatWithSupportScreen,
   ContactUsScreen,
   EmergencyContactsScreen,
   FAQsScreen,
@@ -126,11 +125,6 @@ export const MainNavigator = () => (
     <Stack.Screen
       name="ContactUs"
       component={ContactUsScreen}
-      options={{ headerShown: false }}
-    />
-    <Stack.Screen
-      name="ChatWithSupport"
-      component={ChatWithSupportScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen
