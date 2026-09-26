@@ -55,7 +55,7 @@
 1. **Clone the repository** (or navigate to the workspace directory):
 
    ```bash
-   git clone git@github-personal:Sapphireish01/rezarva-driva.git
+   <!-- git clone git@github-personal:Sapphireish01/rezarva-driva.git -->
    cd rezarva-driver
    ```
 
