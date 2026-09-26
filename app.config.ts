@@ -6,7 +6,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: config.slug || 'rezarva-driver',
   version: config.version || '1.0.0',
   orientation: 'portrait',
-  icon: './assets/images/icon.png',
+  icon: './assets/RezarvaDriver_app_icon.png',
   scheme: 'rezarvadriver',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
@@ -25,8 +25,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     config: {
       googleMapsApiKey:
+        process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY_IOS ||
         process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
-        'AIzaSyCsS8_vpksMH8am-80GESDs44YOtjjCtLw',
+        '',
     },
   },
   android: {
@@ -34,14 +35,12 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     versionCode: 1,
     permissions: [
       'CAMERA',
-      'READ_EXTERNAL_STORAGE',
-      'WRITE_EXTERNAL_STORAGE',
       'ACCESS_COARSE_LOCATION',
       'ACCESS_FINE_LOCATION',
     ],
     adaptiveIcon: {
-      backgroundColor: '#E6F4FE',
-      foregroundImage: './assets/images/android-icon-foreground.png',
+      backgroundColor: '#FFFFFF',
+      foregroundImage: './assets/RezarvaDriver_android_foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
@@ -50,8 +49,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     config: {
       googleMaps: {
         apiKey:
+          process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY_ANDROID ||
           process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
-          'AIzaSyCsS8_vpksMH8am-80GESDs44YOtjjCtLw',
+          '',
       },
     },
   },
