@@ -44,11 +44,18 @@ app-example
 /ios
 /android
 
-# AGENTS.md rules file
-.agents/AGENTS.md
+# Agent rules & standards
+.agents/
+AGENTS.md
 .AGENTS.md
+API_STANDARDS.md
 .API_STANDARDS.md
+loading-principle-standard.md
+MOBILE_DEVELOPMENT_CHECKLIST.md
 .MOBILE_DEVELOPMENT_CHECKLIST.md
+PROJECT_CONTEXT.md
 .PROJECT_CONTEXT.md
+UI_STANDARDS.md
 .UI_STANDARDS.md
+CLAUDE.md
 .ReactotronConfig.js
