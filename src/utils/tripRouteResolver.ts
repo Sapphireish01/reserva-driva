@@ -5,14 +5,26 @@ import { TripStop, DriverBookingItem } from "../api/services/trips";
  * Known nodal coordinates along established Lagos transit corridors
  */
 export const LAGOS_NODES: Record<string, LatLng> = {
+  // Akowonjo / Alimosho / Egbeda Area
+  akowonjo: { latitude: 6.6083, longitude: 3.3089 },
+  "club rubies": { latitude: 6.6083, longitude: 3.3089 },
+  egbeda: { latitude: 6.6012, longitude: 3.2954 },
+  dopemu: { latitude: 6.6152, longitude: 3.3182 },
+  iyanaipaja: { latitude: 6.6189, longitude: 3.2842 },
+  "iyana ipaja": { latitude: 6.6189, longitude: 3.2842 },
+
   // Ikeja / Airport Area
   ikeja: { latitude: 6.5964, longitude: 3.3444 },
   "ikeja underbridge": { latitude: 6.5932, longitude: 3.3421 },
+  mma2: { latitude: 6.5898, longitude: 3.3567 },
+  "mma 2": { latitude: 6.5898, longitude: 3.3567 },
+  airport: { latitude: 6.5774, longitude: 3.3212 },
+  "murtala muhammed": { latitude: 6.5774, longitude: 3.3212 },
+  "international airport": { latitude: 6.5774, longitude: 3.3212 },
+  "domestic airport": { latitude: 6.5898, longitude: 3.3567 },
   "obe street": { latitude: 6.5342, longitude: 3.3435 },
   "ajao road": { latitude: 6.538, longitude: 3.346 },
   "ajao estate": { latitude: 6.5412, longitude: 3.3512 },
-  airport: { latitude: 6.5774, longitude: 3.3212 },
-  "international airport": { latitude: 6.5774, longitude: 3.3212 },
   mafoluku: { latitude: 6.5489, longitude: 3.3587 },
 
   // Oshodi / Expressway corridor
@@ -23,8 +35,9 @@ export const LAGOS_NODES: Record<string, LatLng> = {
   maryland: { latitude: 6.5721, longitude: 3.3667 },
   ojota: { latitude: 6.5833, longitude: 3.3833 },
   gbagada: { latitude: 6.5538, longitude: 3.3883 },
+  berger: { latitude: 6.6432, longitude: 3.3765 },
 
-  // Mainland Corridors (Ikorodu Rd / Funsho Williams)
+  // Mainland Corridors
   yaba: { latitude: 6.5095, longitude: 3.3711 },
   "montgomery road": { latitude: 6.514, longitude: 3.3725 },
   alagomeji: { latitude: 6.5022, longitude: 3.3775 },
@@ -35,7 +48,7 @@ export const LAGOS_NODES: Record<string, LatLng> = {
   costain: { latitude: 6.4789, longitude: 3.3712 },
   oyingbo: { latitude: 6.4889, longitude: 3.3821 },
 
-  // Island / CMS / Marina
+  // Island / CMS / Marina / Lekki
   "eko bridge": { latitude: 6.4678, longitude: 3.3835 },
   cms: { latitude: 6.4523, longitude: 3.3958 },
   "cms bus stop": { latitude: 6.4523, longitude: 3.3958 },
@@ -44,31 +57,21 @@ export const LAGOS_NODES: Record<string, LatLng> = {
   "victoria island": { latitude: 6.4281, longitude: 3.4219 },
   vi: { latitude: 6.4281, longitude: 3.4219 },
   lekki: { latitude: 6.4698, longitude: 3.5852 },
+
+  // Major Regional Hubs (Interstate)
+  abuja: { latitude: 9.0765, longitude: 7.3986 },
+  "wuse 2": { latitude: 9.0833, longitude: 7.4833 },
+  ibadan: { latitude: 7.3775, longitude: 3.947 },
+  "iwo road": { latitude: 7.4124, longitude: 3.9392 },
+  "port harcourt": { latitude: 4.8156, longitude: 7.0498 },
+  abeokuta: { latitude: 7.1475, longitude: 3.3619 },
+  benin: { latitude: 6.335, longitude: 5.6037 },
+  kano: { latitude: 12.0022, longitude: 8.592 },
 };
 
 /**
- * Established transit road corridor graph:
- * Represents the major arterial expressway connecting Ikeja/Airport down to CMS/Marina.
- */
-const ESTABLISHED_HIGHWAY_CORRIDOR: LatLng[] = [
-  { latitude: 6.5964, longitude: 3.3444 }, // Ikeja Central
-  { latitude: 6.5812, longitude: 3.3385 }, // Airport Junction
-  { latitude: 6.5542, longitude: 3.3458 }, // Ajao Estate Junction
-  { latitude: 6.5519, longitude: 3.3541 }, // Oshodi Interchange
-  { latitude: 6.5412, longitude: 3.3615 }, // Anthony Village
-  { latitude: 6.5284, longitude: 3.3638 }, // Palm Grove
-  { latitude: 6.5147, longitude: 3.3624 }, // Ojuelegba Flyover
-  { latitude: 6.5022, longitude: 3.3715 }, // Alagomeji / Yaba Link
-  { latitude: 6.4889, longitude: 3.3782 }, // Oyingbo / Ebute Metta
-  { latitude: 6.4745, longitude: 3.3812 }, // Eko Bridge North Approach
-  { latitude: 6.4632, longitude: 3.3865 }, // Eko Bridge South Approach
-  { latitude: 6.4542, longitude: 3.3912 }, // Marina Expressway
-  { latitude: 6.4523, longitude: 3.3958 }, // CMS Bus Stop Terminal
-];
-
-/**
  * Resolves a text address to a geographical coordinate.
- * Matches keywords against known Lagos nodes or generates a stable deterministic coordinate.
+ * Matches keywords against known nodes or generates an interpolated fallback.
  */
 export function resolveAddressCoordinate(address: string, fallbackOffset = 0): LatLng {
   if (!address) {
@@ -80,50 +83,30 @@ export function resolveAddressCoordinate(address: string, fallbackOffset = 0): L
   for (const [key, coord] of Object.entries(LAGOS_NODES)) {
     if (lower.includes(key)) {
       return {
-        latitude: coord.latitude + fallbackOffset * 0.0015,
-        longitude: coord.longitude + fallbackOffset * 0.0015,
+        latitude: coord.latitude + fallbackOffset * 0.0005,
+        longitude: coord.longitude + fallbackOffset * 0.0005,
       };
     }
   }
 
-  // Generate a deterministic coordinate in Lagos mainland corridor area
+  // Fallback: estimate coordinate
   let hash = 0;
   for (let i = 0; i < address.length; i++) {
     hash = (hash << 5) - hash + address.charCodeAt(i);
     hash |= 0;
   }
   const absHash = Math.abs(hash);
-  const latOffset = (absHash % 1000) / 10000;
-  const lngOffset = ((absHash >> 3) % 1000) / 10000;
+  const latOffset = (absHash % 400) / 10000;
+  const lngOffset = ((absHash >> 3) % 400) / 10000;
 
   return {
-    latitude: 6.51 + latOffset + fallbackOffset * 0.003,
-    longitude: 3.34 + lngOffset + fallbackOffset * 0.003,
+    latitude: 6.55 + latOffset + fallbackOffset * 0.002,
+    longitude: 3.35 + lngOffset + fallbackOffset * 0.002,
   };
 }
 
 /**
- * Finds the index of the closest node along the established highway corridor
- */
-function findClosestCorridorIndex(coord: LatLng): number {
-  let closestIndex = 0;
-  let minDistance = Infinity;
-
-  ESTABLISHED_HIGHWAY_CORRIDOR.forEach((node, index) => {
-    const dLat = node.latitude - coord.latitude;
-    const dLng = node.longitude - coord.longitude;
-    const dist = dLat * dLat + dLng * dLng;
-    if (dist < minDistance) {
-      minDistance = dist;
-      closestIndex = index;
-    }
-  });
-
-  return closestIndex;
-}
-
-/**
- * Generates an accurate, road-aligned polyline following established transit routes
+ * Generates smooth intermediate path points between stops until real road polyline loads.
  */
 export function generateEstablishedRoutePolyline(stopsInOrder: LatLng[]): LatLng[] {
   if (stopsInOrder.length < 2) return stopsInOrder;
@@ -134,44 +117,34 @@ export function generateEstablishedRoutePolyline(stopsInOrder: LatLng[]): LatLng
     const from = stopsInOrder[i];
     const to = stopsInOrder[i + 1];
 
-    const fromIdx = findClosestCorridorIndex(from);
-    const toIdx = findClosestCorridorIndex(to);
-
     fullRoute.push(from);
 
-    // If traversing corridor nodes
-    if (fromIdx !== toIdx) {
-      const step = fromIdx < toIdx ? 1 : -1;
-      let curr = fromIdx;
-      while (curr !== toIdx) {
-        fullRoute.push(ESTABLISHED_HIGHWAY_CORRIDOR[curr]);
-        curr += step;
-      }
-      fullRoute.push(ESTABLISHED_HIGHWAY_CORRIDOR[toIdx]);
-    } else {
-      // Short hop between nearby stops: add intermediate gentle curves
-      const steps = 3;
-      for (let s = 1; s < steps; s++) {
-        const ratio = s / steps;
-        const lat = from.latitude + (to.latitude - from.latitude) * ratio;
-        const lng = from.longitude + (to.longitude - from.longitude) * ratio;
-        fullRoute.push({ latitude: Number(lat.toFixed(5)), longitude: Number(lng.toFixed(5)) });
-      }
+    // Generate smooth 8-point linear interpolation between actual stops
+    const steps = 8;
+    for (let s = 1; s < steps; s++) {
+      const ratio = s / steps;
+      const lat = from.latitude + (to.latitude - from.latitude) * ratio;
+      const lng = from.longitude + (to.longitude - from.longitude) * ratio;
+      fullRoute.push({
+        latitude: Number(lat.toFixed(6)),
+        longitude: Number(lng.toFixed(6)),
+      });
     }
   }
 
   fullRoute.push(stopsInOrder[stopsInOrder.length - 1]);
 
-  // Remove immediate consecutive duplicates
+  // Remove consecutive duplicate points
   return fullRoute.filter((pt, index) => {
     if (index === 0) return true;
     const prev = fullRoute[index - 1];
     return (
-      Math.abs(pt.latitude - prev.latitude) > 0.0001 ||
-      Math.abs(pt.longitude - prev.longitude) > 0.0001
+      Math.abs(pt.latitude - prev.latitude) > 0.00005 ||
+      Math.abs(pt.longitude - prev.longitude) > 0.00005
     );
   });
 }
+
 
 /**
  * Enriches and builds a complete ActiveTripData model with accurate routes and rider waypoints.
@@ -179,7 +152,9 @@ export function generateEstablishedRoutePolyline(stopsInOrder: LatLng[]): LatLng
 export function buildActiveTripData(
   trip: any,
   serverStops: TripStop[] = [],
-  serverBookings: DriverBookingItem[] = []
+  serverBookings: DriverBookingItem[] = [],
+  overrideOriginCoord?: LatLng,
+  overrideDestCoord?: LatLng
 ): ActiveTripData {
   const originAddress =
     trip?.pickup_location ||
@@ -193,6 +168,7 @@ export function buildActiveTripData(
     "Destination";
 
   const originCoord: LatLng =
+    overrideOriginCoord ||
     trip?.pickupCoordinates ||
     trip?.originCoordinates ||
     trip?.raw?.pickupCoordinates ||
@@ -201,6 +177,7 @@ export function buildActiveTripData(
       : resolveAddressCoordinate(originAddress, 0));
 
   const destinationCoord: LatLng =
+    overrideDestCoord ||
     trip?.destinationCoordinates ||
     trip?.raw?.destinationCoordinates ||
     (trip?.destination_latitude && trip?.destination_longitude
@@ -282,8 +259,9 @@ export function buildActiveTripData(
     });
   }
 
-  // If no passenger bookings yet, create default active passenger along travel vector
-  if (passengers.length === 0) {
+  // If no passenger bookings yet and this is an explicit demo trip, provide demo passenger
+  const isDemo = Boolean(trip?.isDemo || (!trip?.pickup_location && !trip?.destination && !trip?.origin));
+  if (passengers.length === 0 && isDemo) {
     const defaultRiderPickupCoord = {
       latitude: Number((originCoord.latitude + (destinationCoord.latitude - originCoord.latitude) * 0.25).toFixed(5)),
       longitude: Number((originCoord.longitude + (destinationCoord.longitude - originCoord.longitude) * 0.25).toFixed(5)),
@@ -318,6 +296,7 @@ export function buildActiveTripData(
     });
   }
 
+
   // 3. Final Destination
   stopsSequence.push(destinationCoord);
   waypoints.push({
@@ -332,9 +311,13 @@ export function buildActiveTripData(
   // Generate highway-aligned continuous route polyline
   const accurateRouteCoordinates = generateEstablishedRoutePolyline(stopsSequence);
 
-  // Extract street name for guidance banner
-  const addressParts = originAddress.split(",");
-  const nextStreet = addressParts[0].trim() || "Expressway";
+  // Extract street or venue name for guidance banner
+  const targetHeadingLocation =
+    passengers.length > 0
+      ? passengers[0].pickupLocation
+      : destinationAddress;
+  const addressParts = targetHeadingLocation.split(",");
+  const nextStreet = addressParts[0].trim() || destinationAddress.split(",")[0].trim() || "Destination";
 
   const price = Number(trip?.price_per_seat || trip?.pricePerSeat || 15);
   const estimatedEarnings = (price * Math.max(passengers.length, 1)).toFixed(2);

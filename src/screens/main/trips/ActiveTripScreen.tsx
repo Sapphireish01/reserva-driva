@@ -77,6 +77,64 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const { data: serverBookings = [] } = useDriverBookingsQuery(bookingsParams);
 
+  // Geocoded coordinates state
+  const [geocodedOrigin, setGeocodedOrigin] = useState<LatLng | null>(() => {
+    if (rawTrip?.pickupCoordinates) return rawTrip.pickupCoordinates;
+    if (rawTrip?.originCoordinates) return rawTrip.originCoordinates;
+    if (rawTrip?.pickup_latitude && rawTrip?.pickup_longitude) {
+      return { latitude: Number(rawTrip.pickup_latitude), longitude: Number(rawTrip.pickup_longitude) };
+    }
+    return null;
+  });
+
+  const [geocodedDest, setGeocodedDest] = useState<LatLng | null>(() => {
+    if (rawTrip?.destinationCoordinates) return rawTrip.destinationCoordinates;
+    if (rawTrip?.destination_latitude && rawTrip?.destination_longitude) {
+      return { latitude: Number(rawTrip.destination_latitude), longitude: Number(rawTrip.destination_longitude) };
+    }
+    return null;
+  });
+
+  // Asynchronously resolve true real-world coordinates via Google Geocoding
+  useEffect(() => {
+    let isMounted = true;
+    const resolveTrueCoordinates = async () => {
+      const originAddr =
+        rawTrip?.pickup_location ||
+        rawTrip?.origin ||
+        rawTrip?.raw?.pickup_location;
+
+      const destAddr =
+        rawTrip?.destination ||
+        rawTrip?.raw?.destination;
+
+      if (!geocodedOrigin && originAddr) {
+        const resolvedOrigin = await mapsService.geocodeAddress(originAddr);
+        if (isMounted && resolvedOrigin) {
+          setGeocodedOrigin(resolvedOrigin);
+        }
+      }
+
+      if (!geocodedDest && destAddr) {
+        const resolvedDest = await mapsService.geocodeAddress(destAddr);
+        if (isMounted && resolvedDest) {
+          setGeocodedDest(resolvedDest);
+        }
+      }
+    };
+
+    resolveTrueCoordinates();
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    rawTrip?.pickup_location,
+    rawTrip?.destination,
+    rawTrip?.origin,
+    rawTrip?.raw?.pickup_location,
+    rawTrip?.raw?.destination,
+  ]);
+
   // Compute active trip data dynamically from real trip parameters
   const baseTripData = React.useMemo(() => {
     const stopsToUse =
@@ -94,11 +152,25 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
           : [];
 
     if (rawTrip) {
-      return buildActiveTripData(rawTrip, stopsToUse, bookingsToUse);
+      return buildActiveTripData(
+        rawTrip,
+        stopsToUse,
+        bookingsToUse,
+        geocodedOrigin || undefined,
+        geocodedDest || undefined
+      );
     }
 
     return MOCK_ACTIVE_TRIP;
-  }, [rawTrip, serverStops, serverBookings, route.params?.stops, route.params?.bookings]);
+  }, [
+    rawTrip,
+    serverStops,
+    serverBookings,
+    route.params?.stops,
+    route.params?.bookings,
+    geocodedOrigin,
+    geocodedDest,
+  ]);
 
   // Driver dynamic simulated location state
   const [driverLocation, setDriverLocation] = useState(baseTripData.driverLocation);
@@ -108,8 +180,8 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
   useEffect(() => {
     let isMounted = true;
     const fetchRealRoute = async () => {
-      const origin = baseTripData.originCoordinates;
-      const dest = baseTripData.destinationCoordinates;
+      const origin = geocodedOrigin || baseTripData.originCoordinates;
+      const dest = geocodedDest || baseTripData.destinationCoordinates;
       if (!origin || !dest) return;
 
       const intermediateWaypoints = baseTripData.waypoints
@@ -138,6 +210,10 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
       isMounted = false;
     };
   }, [
+    geocodedOrigin?.latitude,
+    geocodedOrigin?.longitude,
+    geocodedDest?.latitude,
+    geocodedDest?.longitude,
     baseTripData.originCoordinates.latitude,
     baseTripData.originCoordinates.longitude,
     baseTripData.destinationCoordinates.latitude,
@@ -162,7 +238,10 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
     }
   }, [baseTripData.id, baseTripData.originCoordinates.latitude, baseTripData.originCoordinates.longitude]);
 
-  const [navState, setNavState] = useState<NavState>("driving_to_pickup");
+  const [navState, setNavState] = useState<NavState>(() => {
+    return baseTripData.passengers.length > 0 ? "driving_to_pickup" : "driving_to_destination";
+  });
+
   const [countdownSeconds, setCountdownSeconds] = useState(270); // 4 mins 30s
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [sheetExpanded, setSheetExpanded] = useState(false);
@@ -281,7 +360,7 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
 
   const handlePrimaryButtonPress = () => {
     if (navState === "driving_to_pickup") {
-      setNavState("arrived_waiting");
+      setNavState(activePassenger ? "arrived_waiting" : "driving_to_destination");
     } else if (navState === "arrived_waiting") {
       setNavState("leave_passenger");
     } else if (navState === "leave_passenger") {
@@ -296,7 +375,7 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
   const getPrimaryButtonLabel = () => {
     switch (navState) {
       case "driving_to_pickup":
-        return "Arrived";
+        return activePassenger ? "Arrived" : "Start Trip";
       case "arrived_waiting":
         return `Leaving in ${formatCountdown(countdownSeconds)}`;
       case "leave_passenger":
@@ -315,11 +394,12 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
   const getStateTitle = () => {
     switch (navState) {
       case "driving_to_pickup":
+        return activePassenger ? `Driving to pickup ${passengerFirstName}` : "En route to destination";
       case "arrived_waiting":
       case "leave_passenger":
-        return `Driving to pickup ${passengerFirstName}`;
+        return activePassenger ? `Waiting for ${passengerFirstName}` : "At pickup point";
       case "driving_to_dropoff":
-        return `Driving to drop-off ${passengerFirstName}`;
+        return activePassenger ? `Driving to drop-off ${passengerFirstName}` : "Driving to destination";
       case "driving_to_destination":
         return "Driving to destination";
       default:
@@ -328,11 +408,12 @@ export const ActiveTripScreen: React.FC<Props> = ({ route, navigation }) => {
   };
 
   const getStateAddress = () => {
-    if (navState === "driving_to_destination") {
+    if (navState === "driving_to_destination" || !activePassenger) {
       return tripData.destination;
     }
     return activePassenger?.pickupLocation || tripData.origin;
   };
+
 
   const isDestinationState = navState === "driving_to_destination";
   const isLeavingCountdown = navState === "arrived_waiting";

@@ -32,7 +32,7 @@ import { Step2RecurringForm } from "./availability/Step2RecurringForm";
 import { Step3SeatsPriceForm } from "./availability/Step3SeatsPriceForm";
 import { Step4ReviewSchedule } from "./availability/Step4ReviewSchedule";
 import { PlaceSearchModal } from "@/components/map/PlaceSearchModal";
-import { LatLng, PlaceLocation } from "@/api/services/maps";
+import { LatLng, PlaceLocation, mapsService } from "@/api/services/maps";
 
 interface SetAvailabilityModalProps {
   visible: boolean;
@@ -229,15 +229,29 @@ export const SetAvailabilityModal: React.FC<SetAvailabilityModalProps> = ({
   };
 
   const handlePlaceSelect = (place: PlaceLocation) => {
+    const selectedName = place.name || place.address;
     if (placeSearchTarget === "pickup") {
-      setPickup(place.name || place.address);
+      setPickup(selectedName);
       setPickupCoords(place.coordinates);
+      if (place.coordinates) {
+        mapsService.cacheAddressCoordinates(selectedName, place.coordinates);
+        if (place.address && place.address !== selectedName) {
+          mapsService.cacheAddressCoordinates(place.address, place.coordinates);
+        }
+      }
     } else if (placeSearchTarget === "destination") {
-      setDestination(place.name || place.address);
+      setDestination(selectedName);
       setDestinationCoords(place.coordinates);
+      if (place.coordinates) {
+        mapsService.cacheAddressCoordinates(selectedName, place.coordinates);
+        if (place.address && place.address !== selectedName) {
+          mapsService.cacheAddressCoordinates(place.address, place.coordinates);
+        }
+      }
     }
     setPlaceSearchTarget(null);
   };
+
 
   const handleClose = () => {
     resetFormState();

@@ -30,6 +30,8 @@ const GOOGLE_MAPS_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ||
   "AIzaSyCsS8_vpksMH8am-80GESDs44YOtjjCtLw";
 
+const addressCache = new Map<string, LatLng>();
+
 /**
  * Decodes an encoded Google Maps polyline string into an array of LatLng coordinates.
  * Standard polyline lossy compression decoding algorithm.
@@ -169,6 +171,75 @@ export const mapsService = {
   },
 
   /**
+   * Geocode a human-readable address string into geographic coordinates.
+   * Uses in-memory cache to prevent duplicate requests.
+   * Supports nationwide Nigeria resolution with international fallback.
+   */
+  geocodeAddress: async (address: string): Promise<LatLng | null> => {
+    const trimmed = address?.trim();
+    if (!trimmed || trimmed.length < 2) return null;
+
+    const normalizedKey = trimmed.toLowerCase();
+    if (addressCache.has(normalizedKey)) {
+      return addressCache.get(normalizedKey)!;
+    }
+
+    try {
+      const url = "https://maps.googleapis.com/maps/api/geocode/json";
+      
+      // Attempt 1: Targeted Nigeria nationwide query
+      let res = await axios.get(url, {
+        params: {
+          address: trimmed,
+          components: "country:ng",
+          key: GOOGLE_MAPS_KEY,
+        },
+        timeout: 7000,
+      });
+
+      // Attempt 2: Fallback without component filter if not found in Nigeria
+      if (res.data.status === "ZERO_RESULTS") {
+        res = await axios.get(url, {
+          params: {
+            address: trimmed,
+            key: GOOGLE_MAPS_KEY,
+          },
+          timeout: 7000,
+        });
+      }
+
+      if (res.data.status !== "OK" || !res.data.results?.length) {
+        console.warn("Google Geocoding status:", res.data.status, res.data.error_message);
+        return null;
+      }
+
+      const location = res.data.results[0]?.geometry?.location;
+      if (location && typeof location.lat === "number" && typeof location.lng === "number") {
+        const coords: LatLng = {
+          latitude: location.lat,
+          longitude: location.lng,
+        };
+        addressCache.set(normalizedKey, coords);
+        return coords;
+      }
+
+      return null;
+    } catch (err) {
+      console.warn("Error geocoding address:", err);
+      return null;
+    }
+  },
+
+  /**
+   * Prime the coordinate cache for an address directly (e.g. from Autocomplete selection).
+   */
+  cacheAddressCoordinates: (address: string, coords: LatLng) => {
+    if (address && coords) {
+      addressCache.set(address.trim().toLowerCase(), coords);
+    }
+  },
+
+  /**
    * Fetch road-following directions polyline, duration, and distance from Google Directions API.
    */
   getDirectionsRoute: async (
@@ -229,3 +300,4 @@ export const mapsService = {
     }
   },
 };
+
